@@ -425,12 +425,11 @@ function renderMap(){
   // ── BOROUGH LABELS — drawn last so always on top of everything ──
   // Use hardcoded lat/lon centers for each borough for reliable placement
   const BORO_LABEL_CENTERS = [
-    {name:'BRONX',       lon:-73.865, lat:40.860, rot:0,   fs:15, key:'BRONX'},
-    {name:'MANHATTAN',   lon:-73.971, lat:40.776, rot:-58, fs:12, key:'MANHATTAN'},
-    {name:'BROOKLYN',    lon:-73.949, lat:40.638, rot:0,   fs:14, key:'BROOKLYN'},
-    {name:'QUEENS',      lon:-73.820, lat:40.728, rot:0,   fs:14, key:'QUEENS'},
-    {name:'STATEN
-ISLAND', lon:-74.150, lat:40.570, rot:-32, fs:12, key:'STATEN ISLAND'},
+    {name:'BRONX',         lon:-73.865, lat:40.855, rot:0,   fs:15, key:'BRONX'},
+    {name:'MANHATTAN',     lon:-73.962, lat:40.780, rot:-55, fs:11, key:'MANHATTAN'},
+    {name:'BROOKLYN',      lon:-73.955, lat:40.635, rot:0,   fs:14, key:'BROOKLYN'},
+    {name:'QUEENS',        lon:-73.820, lat:40.740, rot:0,   fs:14, key:'QUEENS'},
+    {name:'STATEN ISLAND', lon:-74.145, lat:40.570, rot:-30, fs:11, key:'STATEN ISLAND'}
   ];
 
   const labelG = svg.append('g').style('pointer-events','none');
@@ -439,7 +438,7 @@ ISLAND', lon:-74.150, lat:40.570, rot:-32, fs:12, key:'STATEN ISLAND'},
     if(!pt) return;
     const isActive = activeBorough===d.key || activeBorough==='ALL';
     const color = isActive ? BC[d.key] : 'rgba(255,255,255,0.15)';
-    const lines = d.name.split('\n');
+    const lines = [d.name];
     const transform = `translate(${pt[0]},${pt[1]}) rotate(${d.rot})`;
 
     lines.forEach((line, i) => {
