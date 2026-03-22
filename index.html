@@ -10,19 +10,20 @@
 <style>
 :root{--bg:#0a0c10;--surface:#12151c;--surface2:#1a1e27;--border:rgba(255,255,255,0.06);--text:#eeecea;--muted:#6b7180;--accent:#e85d3a;--fh:'Syne',sans-serif;--fm:'DM Mono',monospace;}
 *{box-sizing:border-box;margin:0;padding:0;}
-html,body{height:100%;background:var(--bg);color:var(--text);font-family:var(--fm);overflow:hidden;}
+
+body{background:var(--bg);color:var(--text);font-family:var(--fm);overflow:hidden;}
 
 /* ── LAYOUT ── */
-.shell{display:grid;grid-template-rows:56px 1fr;height:100vh;}
-.topbar{display:flex;align-items:center;justify-content:space-between;padding:0 1.5rem;border-bottom:1px solid var(--border);flex-shrink:0;}
+.shell{display:flex;flex-direction:column;position:fixed;inset:0;overflow:hidden;}
+.topbar{display:flex;align-items:center;justify-content:space-between;padding:0 1.5rem;border-bottom:1px solid var(--border);flex-shrink:0;height:52px;min-height:52px;}
 .topbar-title{font-family:var(--fh);font-size:1.2rem;font-weight:800;letter-spacing:-0.02em;}
 .topbar-title span{color:var(--accent);}
 .topbar-meta{font-size:0.62rem;color:var(--muted);}
 .topbar-pills{display:flex;gap:6px;}
 
-.content{display:grid;grid-template-columns:1fr 380px;overflow:hidden;}
+.content{display:grid;grid-template-columns:1fr 380px;position:absolute;top:52px;left:0;right:0;bottom:0;overflow:hidden;}
 .map-wrap{position:relative;overflow:hidden;background:var(--bg);}
-#map-svg{display:block;width:100%;height:100%;}
+#map-svg{position:absolute;top:0;left:0;}
 
 /* ── SIDE PANEL ── */
 .side{display:flex;flex-direction:column;border-left:1px solid var(--border);overflow:hidden;background:var(--surface);}
@@ -331,8 +332,10 @@ function getR(c){return Math.sqrt(c/9639)*11+2.5;}
 
 function renderMap(){
   const wrap=document.getElementById('mapWrap');
-  const W=wrap.clientWidth, H=wrap.clientHeight;
-  const svg=d3.select('#map-svg').attr('width',W).attr('height',H);
+  const W=wrap.offsetWidth||window.innerWidth-380;
+  const H=wrap.offsetHeight||(window.innerHeight-52);
+  d3.select('#map-svg').attr('width',W).attr('height',H);
+  const svg=d3.select('#map-svg');
   svg.selectAll('*').remove();
 
   const proj=makeProj(W,H);
@@ -452,10 +455,14 @@ function setBorough(b){
 }
 
 /* ─────────────── INIT ─────────────── */
-renderPills();
-renderMap();
-updateSide();
-updateBoroughChart();
+function init(){
+  renderPills();
+  updateSide();
+  updateBoroughChart();
+  requestAnimationFrame(()=>requestAnimationFrame(()=>renderMap()));
+}
+if(document.readyState==='complete'){setTimeout(init,0);}
+else{window.addEventListener('load',()=>setTimeout(init,0));}
 window.addEventListener('resize',()=>{renderMap();});
 window.setBorough=setBorough;
 window.selectZip=selectZip;
