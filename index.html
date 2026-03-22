@@ -378,44 +378,45 @@ function renderMap(){
     });
 
   // borough name labels on outline
-  // Shadow/outline layer for labels
-  gBoro.selectAll('.boro-label-shadow')
-    .data(NYC_BOROUGHS.features)
-    .join('text')
-    .attr('class','boro-label-shadow')
-    .attr('transform',d=>{const c=path.centroid(d);return `translate(${c[0]},${c[1]})`;})
-    .attr('text-anchor','middle')
-    .attr('dy','0.35em')
-    .attr('font-family','Syne,sans-serif')
-    .attr('font-size',d=>d.properties.name==='Staten Island'?'13px':'15px')
-    .attr('font-weight','800')
-    .attr('fill','none')
-    .attr('stroke','#0a0c10')
-    .attr('stroke-width','4')
-    .attr('stroke-linejoin','round')
-    .attr('pointer-events','none')
-    .attr('letter-spacing','0.12em')
-    .text(d=>d.properties.name.toUpperCase());
+  // Per-borough label config: [offsetX, offsetY, rotation, fontSize]
+  const LABEL_CFG = {
+    'Manhattan':   [0, 0, -55, 13],
+    'Bronx':       [0, 0,   0, 15],
+    'Brooklyn':    [0, 20,  0, 14],
+    'Queens':      [0, 0,   0, 15],
+    'Staten Island':[0, 10, -38, 12]
+  };
 
-  // Main label layer
-  gBoro.selectAll('.boro-label')
-    .data(NYC_BOROUGHS.features)
-    .join('text')
-    .attr('class','boro-label')
-    .attr('transform',d=>{const c=path.centroid(d);return `translate(${c[0]},${c[1]})`;})
-    .attr('text-anchor','middle')
-    .attr('dy','0.35em')
-    .attr('font-family','Syne,sans-serif')
-    .attr('font-size',d=>d.properties.name==='Staten Island'?'13px':'15px')
-    .attr('font-weight','800')
-    .attr('fill',d=>{
-      const bKey=Object.keys(BC).find(k=>BNAMES[k]===d.properties.name);
-      const isActive=activeBorough===bKey||activeBorough==='ALL';
-      return isActive?(BC[bKey]||'#ffffff'):'rgba(255,255,255,0.25)';
-    })
-    .attr('pointer-events','none')
-    .attr('letter-spacing','0.12em')
-    .text(d=>d.properties.name.toUpperCase());
+  // Draw labels AFTER dots so they sit on top
+  const labelG = svg.append('g').attr('class','label-group');
+
+  NYC_BOROUGHS.features.forEach(d=>{
+    const bKey=Object.keys(BC).find(k=>BNAMES[k]===d.properties.name)||d.properties.name.toUpperCase();
+    const isActive=activeBorough===bKey||activeBorough==='ALL';
+    const color=isActive?(BC[bKey]||'#ffffff'):'rgba(255,255,255,0.2)';
+    const cent=path.centroid(d);
+    const cfg=LABEL_CFG[d.properties.name]||[0,0,0,15];
+    const tx=cent[0]+cfg[0], ty=cent[1]+cfg[1];
+    const rot=cfg[2], fs=cfg[3];
+    const transform=`translate(${tx},${ty}) rotate(${rot})`;
+
+    // shadow
+    labelG.append('text')
+      .attr('transform', transform)
+      .attr('text-anchor','middle').attr('dy','0.35em')
+      .attr('font-family','Syne,sans-serif').attr('font-size',fs+'px').attr('font-weight','800')
+      .attr('fill','none').attr('stroke','#0a0c10').attr('stroke-width','5')
+      .attr('stroke-linejoin','round').attr('pointer-events','none').attr('letter-spacing','0.1em')
+      .text(d.properties.name.toUpperCase());
+
+    // main
+    labelG.append('text')
+      .attr('transform', transform)
+      .attr('text-anchor','middle').attr('dy','0.35em')
+      .attr('font-family','Syne,sans-serif').attr('font-size',fs+'px').attr('font-weight','800')
+      .attr('fill',color).attr('pointer-events','none').attr('letter-spacing','0.1em')
+      .text(d.properties.name.toUpperCase());
+  });
 
   // ── ZIP DOTS ──
   const filtered=ZIP_DATA.filter(d=>(activeBorough==='ALL'||d[0]===activeBorough)&&d[3]&&d[4]);
