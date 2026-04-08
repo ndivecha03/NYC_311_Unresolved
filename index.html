@@ -3,522 +3,405 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>NYC 311 — Unsolved Complaints</title>
-<link href="https://fonts.googleapis.com/css2?family=DM+Mono:wght@400;500&family=Syne:wght@400;700;800&display=swap" rel="stylesheet">
-<script src="https://cdnjs.cloudflare.com/ajax/libs/d3/7.8.5/d3.min.js"></script>
-<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.js"></script>
+<title>NYC Street Light — Unresolved Complaints</title>
+<link href="https://fonts.googleapis.com/css2?family=DM+Mono:wght@300;400;500&family=Syne:wght@700;800&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.css"/>
 <style>
-:root{--bg:#0a0c10;--surface:#12151c;--surface2:#1a1e27;--border:rgba(255,255,255,0.06);--text:#eeecea;--muted:#6b7180;--accent:#e85d3a;--fh:'Syne',sans-serif;--fm:'DM Mono',monospace;}
-*{box-sizing:border-box;margin:0;padding:0;}
+*{margin:0;padding:0;box-sizing:border-box}
+:root{
+  --bg:#0a0a0f;--surface:#13131a;--surface2:#1c1c27;--border:#2a2a3d;
+  --text:#e8e8f0;--muted:#6b6b8a;--accent:#f7c948;--green:#3ddc97;
+  --red:#ff5c5c;--blue:#4d9fff;--orange:#ff8c42;
+}
+body{background:var(--bg);color:var(--text);font-family:'DM Mono',monospace;height:100vh;overflow:hidden}
+#app{display:grid;grid-template-columns:360px 1fr;grid-template-rows:52px 1fr;height:100vh}
 
-body{background:var(--bg);color:var(--text);font-family:var(--fm);overflow:hidden;}
+/* Header */
+#header{grid-column:1/-1;background:var(--surface);border-bottom:1px solid var(--border);display:flex;align-items:center;padding:0 18px;gap:16px;z-index:200}
+.logo{font-family:'Syne',sans-serif;font-weight:800;font-size:14px;letter-spacing:.06em;color:var(--accent)}
+.logo span{color:var(--muted);font-weight:700}
+.sep{width:1px;height:18px;background:var(--border)}
+.hd{font-size:10px;color:var(--muted)}
+.hstats{display:flex;gap:20px;margin-left:auto}
+.hs{display:flex;align-items:center;gap:7px;font-size:10px}
+.hsdot{width:7px;height:7px;border-radius:50%}
+.hsv{font-size:12px;font-weight:500;color:var(--text)}
+.hsl{color:var(--muted)}
 
-/* ── LAYOUT ── */
-.shell{display:flex;flex-direction:column;position:fixed;inset:0;overflow:hidden;}
-.topbar{display:flex;align-items:center;justify-content:space-between;padding:0 1.5rem;border-bottom:1px solid var(--border);flex-shrink:0;height:52px;min-height:52px;}
-.topbar-title{font-family:var(--fh);font-size:1.2rem;font-weight:800;letter-spacing:-0.02em;}
-.topbar-title span{color:var(--accent);}
-.topbar-meta{font-size:0.62rem;color:var(--muted);}
-.topbar-pills{display:flex;gap:6px;}
+/* Sidebar */
+#sidebar{background:var(--surface);border-right:1px solid var(--border);overflow-y:auto;display:flex;flex-direction:column}
+.ss{padding:14px;border-bottom:1px solid var(--border)}
+.sl{font-size:9px;letter-spacing:.14em;color:var(--muted);text-transform:uppercase;margin-bottom:9px;font-family:'Syne',sans-serif}
+.pills{display:flex;flex-wrap:wrap;gap:5px}
+.pill{padding:4px 9px;border:1px solid var(--border);border-radius:3px;font-size:10px;cursor:pointer;transition:all .12s;color:var(--muted);font-family:'DM Mono',monospace}
+.pill:hover{border-color:var(--accent);color:var(--accent)}
+.pill.on{background:var(--accent);border-color:var(--accent);color:#0a0a0f;font-weight:500}
+.mgrid{display:grid;grid-template-columns:1fr 1fr;gap:7px}
+.mc{background:var(--surface2);border:1px solid var(--border);border-radius:4px;padding:9px}
+.mv{font-size:17px;font-weight:500;font-family:'Syne',sans-serif;line-height:1}
+.ml{font-size:9px;color:var(--muted);margin-top:3px;letter-spacing:.1em;text-transform:uppercase}
+.mc.r .mv{color:var(--red)}.mc.g .mv{color:var(--green)}.mc.y .mv{color:var(--accent)}.mc.b .mv{color:var(--blue)}
 
-.content{display:grid;grid-template-columns:1fr 380px;position:absolute;top:52px;left:0;right:0;bottom:0;overflow:hidden;}
-.map-wrap{position:relative;overflow:hidden;background:var(--bg);}
-#map-svg{position:absolute;top:0;left:0;}
+/* ZIP Detail */
+#zd{flex:1;padding:14px;display:none;flex-direction:column;gap:10px;min-height:0}
+#zd.show{display:flex}
+.zh{display:flex;align-items:flex-start;justify-content:space-between;flex-shrink:0}
+.zcode{font-family:'Syne',sans-serif;font-size:22px;font-weight:800;color:var(--accent);line-height:1}
+.zboro{font-size:9px;color:var(--muted);letter-spacing:.1em;text-transform:uppercase;margin-top:2px}
+.cbtn{background:none;border:1px solid var(--border);color:var(--muted);cursor:pointer;padding:3px 8px;border-radius:3px;font-size:10px;font-family:'DM Mono'}
+.cbtn:hover{border-color:var(--red);color:var(--red)}
 
-/* ── SIDE PANEL ── */
-.side{display:flex;flex-direction:column;border-left:1px solid var(--border);overflow:hidden;background:var(--surface);height:100%;}
-.side-head{padding:1rem 1.25rem 0.75rem;border-bottom:1px solid var(--border);flex-shrink:0;}
-.side-head h2{font-family:var(--fh);font-size:0.85rem;font-weight:700;margin-bottom:0.5rem;}
-.side-stats{display:grid;grid-template-columns:1fr 1fr;gap:8px;}
-.stat-card{background:var(--surface2);border-radius:6px;padding:0.6rem 0.8rem;}
-.stat-label{font-size:0.58rem;text-transform:uppercase;letter-spacing:0.1em;color:var(--muted);margin-bottom:3px;}
-.stat-val{font-family:var(--fh);font-size:1.1rem;font-weight:700;}
-.stat-sub{font-size:0.6rem;color:var(--muted);margin-top:2px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+/* Stat comparison row */
+.srow{display:grid;grid-template-columns:1fr 1fr;gap:7px;flex-shrink:0}
+.sb{background:var(--surface2);border:1px solid var(--border);border-radius:4px;padding:9px}
+.sv{font-size:20px;font-weight:500;font-family:'Syne',sans-serif}
+.ss2{font-size:9px;color:var(--muted);margin-top:2px;text-transform:uppercase;letter-spacing:.1em}
+.ss3{font-size:9px;color:var(--muted);margin-top:1px}
 
-.zip-list-wrap{flex:1;overflow-y:auto;}
-.zip-list-head{padding:0.65rem 1.25rem;border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between;position:sticky;top:0;background:var(--surface);z-index:2;}
-.zip-list-head span{font-size:0.6rem;text-transform:uppercase;letter-spacing:0.1em;color:var(--muted);}
-.zip-list{list-style:none;}
-.zip-row{display:grid;grid-template-columns:24px 1fr auto;align-items:center;gap:8px;padding:0.5rem 1.25rem;border-bottom:1px solid var(--border);cursor:pointer;transition:background 0.1s;}
-.zip-row:hover{background:var(--surface2);}
-.zip-row.active{background:rgba(232,93,58,0.08);border-left:2px solid var(--accent);}
-.zr-num{font-size:0.58rem;color:var(--muted);text-align:right;font-family:var(--fh);font-weight:700;}
-.zr-zip{font-family:var(--fh);font-size:0.8rem;font-weight:700;}
-.zr-bar-bg{width:50px;height:3px;background:var(--surface2);border-radius:2px;overflow:hidden;margin-top:3px;}
-.zr-bar{height:100%;border-radius:2px;}
-.zr-count{font-size:0.68rem;font-weight:500;text-align:right;min-width:36px;}
+/* Resolution bar */
+.barw{background:var(--surface2);border:1px solid var(--border);border-radius:4px;padding:9px;flex-shrink:0}
+.blr{display:flex;justify-content:space-between;font-size:10px;margin-bottom:5px}
+.btrack{height:5px;background:var(--bg);border-radius:3px;overflow:hidden}
+.bfill{height:100%;border-radius:3px;transition:width .4s ease}
 
-.bottom-chart{border-top:1px solid var(--border);padding:0.85rem 1.25rem;flex-shrink:0;background:var(--surface);}
-.bc-title{font-size:0.58rem;text-transform:uppercase;letter-spacing:0.1em;color:var(--muted);margin-bottom:0.6rem;}
-.bc-wrap{position:relative;height:90px;}
+/* Type breakdown panel - LARGE */
+.twrap{background:var(--surface2);border:1px solid var(--border);border-radius:4px;padding:12px;flex:1;overflow-y:auto;min-height:0}
+.ttitle{font-size:9px;color:var(--muted);text-transform:uppercase;letter-spacing:.1em;margin-bottom:10px;display:flex;justify-content:space-between;align-items:center;flex-shrink:0}
+.tcols{font-size:9px;color:var(--muted);display:grid;grid-template-columns:1fr 52px 52px 60px;gap:4px;padding-bottom:6px;border-bottom:1px solid var(--border);margin-bottom:6px}
+.titem{display:grid;grid-template-columns:1fr 52px 52px 60px;gap:4px;align-items:center;padding:5px 0;border-bottom:1px solid #1a1a25}
+.titem:last-child{border-bottom:none}
+.tdot{width:7px;height:7px;border-radius:50%;flex-shrink:0;margin-right:5px}
+.tname-wrap{display:flex;align-items:center;min-width:0}
+.tname{font-size:10px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.tnum{font-size:11px;font-weight:500;text-align:right}
+.tpct{font-size:10px;color:var(--muted);text-align:right}
+.tclose{font-size:10px;text-align:right}
+.tbar-wrap{grid-column:1/-1;height:3px;background:var(--bg);border-radius:2px;overflow:hidden;margin-top:2px}
+.tbar-fill{height:100%;border-radius:2px}
 
-/* ── TOOLTIP ── */
-.map-tip{position:absolute;background:var(--surface2);border:1px solid var(--border);border-left:3px solid var(--accent);padding:0.55rem 0.85rem;font-size:0.7rem;pointer-events:none;opacity:0;transition:opacity 0.12s;min-width:160px;z-index:20;}
-.mt-boro{font-size:0.58rem;text-transform:uppercase;letter-spacing:0.1em;color:var(--muted);}
-.mt-zip{font-family:var(--fh);font-size:0.95rem;font-weight:700;margin:2px 0;}
-.mt-count{color:var(--accent);font-weight:500;}
-.mt-top{font-size:0.6rem;color:var(--muted);margin-top:3px;}
+/* No-select msg */
+#nomsg{flex:1;display:flex;align-items:center;justify-content:center}
+.nomsg-inner{text-align:center;color:var(--muted);font-size:11px;line-height:1.7}
 
-/* ── ZIP DRAWER (slides up from bottom of map) ── */
-.zip-drawer{position:absolute;left:0;right:0;bottom:0;height:260px;background:var(--surface);border-top:1px solid var(--border);transform:translateY(100%);transition:transform 0.3s cubic-bezier(0.4,0,0.2,1);z-index:15;display:flex;flex-direction:column;}
-.zip-drawer.open{transform:translateY(0);}
-.zd-head{display:flex;align-items:center;gap:1rem;padding:0.85rem 1.25rem 0.7rem;border-bottom:1px solid var(--border);flex-shrink:0;}
-.zd-zip{font-family:var(--fh);font-size:1.4rem;font-weight:800;letter-spacing:-0.03em;}
-.zd-boro{font-size:0.6rem;text-transform:uppercase;letter-spacing:0.1em;color:var(--muted);margin-top:2px;}
-.zd-total{font-size:0.75rem;margin-top:1px;}
-.zd-total span{font-weight:500;}
-.zd-close{margin-left:auto;background:none;border:1px solid var(--border);color:var(--muted);width:26px;height:26px;border-radius:50%;cursor:pointer;font-size:0.85rem;display:flex;align-items:center;justify-content:center;font-family:var(--fm);transition:all 0.15s;}
-.zd-close:hover{border-color:var(--accent);color:var(--accent);}
-.zd-body{display:grid;grid-template-columns:1fr 220px;flex:1;overflow:hidden;}
-.zd-bars{padding:0.75rem 1.25rem;overflow-y:auto;}
-.zd-chart-wrap{border-left:1px solid var(--border);padding:0.75rem 1rem;position:relative;}
-
-.cbar-item{display:flex;align-items:center;gap:8px;margin-bottom:7px;}
-.cbar-rank{font-size:0.56rem;color:var(--muted);width:14px;flex-shrink:0;font-family:var(--fh);font-weight:700;}
-.cbar-label{font-size:0.68rem;color:var(--text);flex:1;min-width:0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
-.cbar-count{font-size:0.63rem;color:var(--muted);flex-shrink:0;min-width:28px;text-align:right;}
-.cbar-track{height:3px;background:var(--surface2);border-radius:2px;overflow:hidden;margin-left:22px;margin-top:-5px;margin-bottom:2px;}
-.cbar-fill{height:100%;border-radius:2px;}
-
-/* ── LEGEND ── */
-.map-legend{position:absolute;bottom:1rem;left:1rem;font-size:0.6rem;color:var(--muted);z-index:5;pointer-events:none;}
-.leg-grad{display:flex;align-items:center;gap:5px;margin-top:3px;}
-.leg-swatch{width:80px;height:5px;border-radius:2px;background:linear-gradient(to right,#1a2030,#e85d3a);}
-
-/* borough pill buttons */
-.bpill{font-size:0.6rem;padding:4px 10px;border-radius:20px;border:1px solid var(--border);cursor:pointer;transition:all 0.15s;color:var(--muted);background:transparent;font-family:var(--fm);text-transform:uppercase;letter-spacing:0.08em;}
-.bpill:hover{border-color:rgba(255,255,255,0.2);color:var(--text);}
-.bpill.active{color:#fff;}
+/* Map */
+#mapwrap{position:relative;overflow:hidden}
+#map{width:100%;height:100%;background:#07070e}
+.leaflet-container{background:#07070e !important}
+.boro-label{background:transparent!important;border:none!important;box-shadow:none!important;pointer-events:none!important}
+#map-status{position:absolute;top:12px;left:50%;transform:translateX(-50%);background:rgba(19,19,26,.9);border:1px solid var(--border);padding:6px 14px;border-radius:4px;font-size:10px;color:var(--muted);z-index:500;display:none}
+#leg{position:absolute;bottom:16px;right:16px;background:rgba(19,19,26,.95);border:1px solid var(--border);border-radius:5px;padding:10px;z-index:500;min-width:155px}
+.lt{font-size:9px;color:var(--muted);text-transform:uppercase;letter-spacing:.12em;margin-bottom:7px;font-family:'Syne',sans-serif}
+.lr{display:flex;align-items:center;gap:7px;margin-bottom:4px;font-size:10px;color:var(--muted)}
+.ls{width:11px;height:11px;border-radius:50%;border:2px solid rgba(255,255,255,.12)}
+::-webkit-scrollbar{width:3px}
+::-webkit-scrollbar-thumb{background:var(--border);border-radius:2px}
 </style>
 </head>
 <body>
-<div class="shell">
+<div id="app">
+  <header id="header">
+    <div class="logo">LIGHTWATCH <span>/ NYC 311</span></div>
+    <div class="sep"></div>
+    <div class="hd">Unresolved Street Light Complaints &middot; 2010&ndash;2019</div>
+    <div class="hstats">
+      <div class="hs"><div class="hsdot" style="background:var(--red)"></div><span class="hsv" id="hunres">—</span><span class="hsl">unresolved</span></div>
+      <div class="hs"><div class="hsdot" style="background:var(--accent)"></div><span class="hsv" id="hrate">—</span><span class="hsl">unresolved rate</span></div>
+      <div class="hs"><div class="hsdot" style="background:var(--blue)"></div><span class="hsv" id="hopen">—</span><span class="hsl">avg days open</span></div>
+      <div class="hs"><div class="hsdot" style="background:var(--green)"></div><span class="hsv" id="hclose">—</span><span class="hsl">avg close (resolved)</span></div>
+    </div>
+  </header>
 
-  <!-- topbar -->
-  <div class="topbar">
-    <div class="topbar-title">NYC 311 <span>Unsolved</span></div>
-    <div class="topbar-pills" id="bpills"></div>
-    <div class="topbar-meta">Open · Assigned · Pending · In Progress</div>
+  <div id="sidebar">
+    <div class="ss">
+      <div class="sl">Borough</div>
+      <div class="pills">
+        <div class="pill on" data-b="ALL">All</div>
+        <div class="pill" data-b="BRONX">Bronx</div>
+        <div class="pill" data-b="BROOKLYN">Brooklyn</div>
+        <div class="pill" data-b="MANHATTAN">Manhattan</div>
+        <div class="pill" data-b="QUEENS">Queens</div>
+        <div class="pill" data-b="STATEN ISLAND">SI</div>
+      </div>
+    </div>
+
+    <div class="ss">
+      <div class="sl">Overview</div>
+      <div class="mgrid">
+        <div class="mc r"><div class="mv" id="munres">—</div><div class="ml">Unresolved</div></div>
+        <div class="mc g"><div class="mv" id="mres">—</div><div class="ml">Resolved</div></div>
+        <div class="mc b"><div class="mv" id="mopen">—</div><div class="ml">Avg Open</div></div>
+        <div class="mc y"><div class="mv" id="mclose">—</div><div class="ml">Avg Close</div></div>
+      </div>
+    </div>
+
+    <!-- ZIP Detail Panel -->
+    <div id="zd">
+      <div class="zh">
+        <div><div class="zcode" id="dzip">—</div><div class="zboro" id="dboro">—</div></div>
+        <button class="cbtn" id="closebtn">✕ close</button>
+      </div>
+
+      <!-- Key stats: unresolved vs resolved comparison -->
+      <div class="srow">
+        <div class="sb">
+          <div class="sv" style="color:var(--red)" id="d-unres">—</div>
+          <div class="ss2">Unresolved</div>
+          <div class="ss3" id="d-open">avg open: —</div>
+        </div>
+        <div class="sb">
+          <div class="sv" style="color:var(--green)" id="d-res">—</div>
+          <div class="ss2">Resolved (historical)</div>
+          <div class="ss3" id="d-close">avg close: —</div>
+        </div>
+      </div>
+
+      <!-- Resolution rate bar -->
+      <div class="barw">
+        <div class="blr">
+          <span style="color:var(--red);font-size:10px">Unresolved</span>
+          <span id="d-pct" style="font-size:11px;font-weight:500;color:var(--text)"></span>
+          <span style="color:var(--green);font-size:10px">Resolved</span>
+        </div>
+        <div class="btrack">
+          <div class="bfill" id="d-bar" style="background:var(--red)"></div>
+        </div>
+      </div>
+
+      <!-- LARGE complaint type breakdown -->
+      <div class="twrap">
+        <div class="ttitle">
+          <span>Complaint Types — Unresolved</span>
+          <span style="color:var(--muted);font-weight:400" id="d-total-types"></span>
+        </div>
+        <div class="tcols">
+          <div>Type</div>
+          <div style="text-align:right">Count</div>
+          <div style="text-align:right">Share</div>
+          <div style="text-align:right">Avg Close</div>
+        </div>
+        <div id="dtypes"></div>
+      </div>
+    </div>
+
+    <div id="nomsg">
+      <div class="nomsg-inner">
+        <div style="font-size:22px;margin-bottom:6px">◎</div>
+        Click any bubble on the map<br>to see unresolved complaints<br>and historical close times
+      </div>
+    </div>
   </div>
 
-  <!-- main content -->
-  <div class="content">
-
-    <!-- MAP -->
-    <div class="map-wrap" id="mapWrap">
-      <svg id="map-svg"></svg>
-      <div class="map-tip" id="mTip"></div>
-      <div class="map-legend"><div>complaint volume</div><div class="leg-grad"><span>low</span><div class="leg-swatch"></div><span>high</span></div></div>
-
-      <!-- ZIP drawer slides up from bottom of map -->
-      <div class="zip-drawer" id="zipDrawer">
-        <div class="zd-head">
-          <div>
-            <div class="zd-zip" id="zd-zip">—</div>
-            <div class="zd-boro" id="zd-boro">—</div>
-            <div class="zd-total">Unsolved: <span id="zd-total">—</span></div>
-          </div>
-          <button class="zd-close" onclick="closeDrawer()">✕</button>
-        </div>
-        <div class="zd-body">
-          <div class="zd-bars" id="zd-bars"></div>
-          <div class="zd-chart-wrap"><canvas id="zdChart"></canvas></div>
-        </div>
+  <div id="mapwrap">
+    <div id="map"></div>
+    <div id="map-status">Loading borough boundaries...</div>
+    <div id="leg">
+      <div class="lt">Bubble Size</div>
+      <div class="lr" style="gap:4px;margin-bottom:8px">
+        <div style="width:8px;height:8px;border-radius:50%;background:rgba(255,92,92,.2);border:2px solid rgba(255,92,92,.5)"></div>
+        <div style="width:14px;height:14px;border-radius:50%;background:rgba(255,92,92,.2);border:2px solid rgba(255,92,92,.5)"></div>
+        <div style="width:22px;height:22px;border-radius:50%;background:rgba(255,92,92,.2);border:2px solid rgba(255,92,92,.5)"></div>
+        <span style="margin-left:4px">Unresolved volume</span>
       </div>
+      <div class="lt">Color Intensity</div>
+      <div class="lr">Higher red = more backlog</div>
     </div>
-
-    <!-- SIDE PANEL -->
-    <div class="side">
-      <div class="side-head">
-        <h2 id="side-title">All Boroughs</h2>
-        <div class="side-stats">
-          <div class="stat-card">
-            <div class="stat-label">Total Unsolved</div>
-            <div class="stat-val" id="s-total">—</div>
-            <div class="stat-sub" id="s-sub">across all boroughs</div>
-          </div>
-          <div class="stat-card">
-            <div class="stat-label">Top ZIP</div>
-            <div class="stat-val" id="s-topzip">—</div>
-            <div class="stat-sub" id="s-topcount">—</div>
-          </div>
-        </div>
-      </div>
-      <div class="zip-list-wrap">
-        <div class="zip-list-head">
-          <span>ZIP Rankings</span>
-          <span id="zip-count-label">—</span>
-        </div>
-        <ul class="zip-list" id="zipList"></ul>
-      </div>
-      <div class="bottom-chart">
-        <div class="bc-title">By borough</div>
-        <div class="bc-wrap"><canvas id="boroughChart"></canvas></div>
-      </div>
-    </div>
-
   </div>
 </div>
 
+<script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/topojson/3.0.2/topojson.min.js"></script>
 <script>
-/* ─────────────── DATA ─────────────── */
-const ZIP_DATA=[["BRONX", "10469", 7866, 40.867808, -73.847506], ["BRONX", "10467", 6878, 40.873164, -73.870487], ["BRONX", "10465", 6522, 40.828505, -73.820583], ["BRONX", "10461", 6281, 40.846161, -73.841395], ["BRONX", "10473", 5717, 40.818762, -73.858336], ["BRONX", "10466", 5639, 40.892048, -73.84769], ["BRONX", "10462", 5587, 40.844338, -73.859258], ["BRONX", "10458", 5460, 40.862793, -73.889241], ["BRONX", "10472", 5335, 40.829134, -73.869964], ["BRONX", "10468", 4999, 40.865869, -73.899568], ["BRONX", "10453", 4739, 40.852095, -73.911746], ["BRONX", "10456", 4359, 40.830863, -73.909182], ["BRONX", "10463", 4127, 40.8813, -73.905918], ["BRONX", "10452", 4080, 40.837797, -73.921416], ["BRONX", "10457", 3943, 40.847253, -73.8995], ["BRONX", "10460", 3746, 40.840329, -73.878612], ["BRONX", "10459", 3209, 40.825138, -73.894053], ["BRONX", "10455", 2726, 40.815346, -73.907369], ["BRONX", "10474", 2710, 40.81335, -73.887034], ["BRONX", "10475", 2266, 40.877802, -73.827796], ["BRONX", "10451", 2188, 40.822062, -73.921414], ["BRONX", "10471", 1856, 40.902557, -73.902243], ["BRONX", "10454", 1742, 40.807912, -73.91926], ["BRONX", "10464", 1645, 40.848054, -73.787616], ["BRONX", "10470", 1629, 40.901, -73.859177], ["BROOKLYN", "11207", 7320, 40.67181, -73.895675], ["BROOKLYN", "11234", 7297, 40.618462, -73.923148], ["BROOKLYN", "11226", 6801, 40.646909, -73.956879], ["BROOKLYN", "11235", 6529, 40.584273, -73.951309], ["BROOKLYN", "11221", 6448, 40.691004, -73.927736], ["BROOKLYN", "11229", 6382, 40.601299, -73.947778], ["BROOKLYN", "11215", 5850, 40.667592, -73.983893], ["BROOKLYN", "11233", 5630, 40.67869, -73.918971], ["BROOKLYN", "11208", 5481, 40.67475, -73.8736], ["BROOKLYN", "11230", 5458, 40.622587, -73.964873], ["BROOKLYN", "11203", 5294, 40.649936, -73.935231], ["BROOKLYN", "11216", 5252, 40.680002, -73.949335], ["BROOKLYN", "11213", 5173, 40.671066, -73.936251], ["BROOKLYN", "11212", 5044, 40.661764, -73.914743], ["BROOKLYN", "11220", 4877, 40.641337, -74.013925], ["BROOKLYN", "11210", 4825, 40.630184, -73.946411], ["BROOKLYN", "11236", 4755, 40.640563, -73.902991], ["BROOKLYN", "11238", 4638, 40.680051, -73.963014], ["BROOKLYN", "11225", 4468, 40.663285, -73.95446], ["BROOKLYN", "11201", 4432, 40.693604, -73.990343], ["BROOKLYN", "11218", 4409, 40.642957, -73.976551], ["BROOKLYN", "11223", 4365, 40.599423, -73.972038], ["BROOKLYN", "11209", 4275, 40.625641, -74.02977], ["BROOKLYN", "11204", 4247, 40.61842, -73.985038], ["BROOKLYN", "11214", 4209, 40.601482, -73.996228], ["BROOKLYN", "11211", 4121, 40.711824, -73.953251], ["BROOKLYN", "11206", 4059, 40.700581, -73.942338], ["BROOKLYN", "11219", 3963, 40.633212, -73.996469], ["BROOKLYN", "11237", 3780, 40.70177, -73.919078], ["BROOKLYN", "11217", 3213, 40.68247, -73.979069], ["BROOKLYN", "11231", 3153, 40.679144, -74.002012], ["BROOKLYN", "11222", 2962, 40.727638, -73.949592], ["BROOKLYN", "11228", 2773, 40.618049, -74.011864], ["BROOKLYN", "11205", 2695, 40.693132, -73.963066], ["BROOKLYN", "11232", 2678, 40.65502, -74.003292], ["BROOKLYN", "11224", 1534, 40.576604, -73.989652], ["BROOKLYN", "11249", 861, 40.712621, -73.962646], ["BROOKLYN", "11239", 315, 40.649992, -73.877058], ["MANHATTAN", "10031", 4600, 40.825023, -73.949158], ["MANHATTAN", "10032", 3612, 40.837479, -73.941219], ["MANHATTAN", "10002", 3542, 40.716951, -73.988901], ["MANHATTAN", "10027", 3495, 40.811154, -73.950843], ["MANHATTAN", "10003", 3442, 40.731126, -73.988748], ["MANHATTAN", "10040", 3379, 40.858659, -73.929163], ["MANHATTAN", "10025", 3212, 40.797827, -73.967709], ["MANHATTAN", "10011", 3094, 40.741157, -73.999226], ["MANHATTAN", "10019", 3014, 40.764739, -73.984239], ["MANHATTAN", "10034", 2962, 40.86636, -73.922025], ["MANHATTAN", "10036", 2677, 40.759331, -73.98933], ["MANHATTAN", "10013", 2563, 40.719594, -74.002766], ["MANHATTAN", "10016", 2558, 40.745512, -73.979761], ["MANHATTAN", "10029", 2544, 40.792811, -73.943935], ["MANHATTAN", "10014", 2524, 40.734072, -74.005127], ["MANHATTAN", "10033", 2505, 40.849588, -73.935594], ["MANHATTAN", "10009", 2442, 40.726195, -73.981333], ["MANHATTAN", "10024", 2363, 40.786349, -73.975859], ["MANHATTAN", "10001", 2270, 40.749057, -73.993884], ["MANHATTAN", "10023", 2180, 40.776102, -73.981254], ["MANHATTAN", "10035", 2053, 40.802489, -73.93802], ["MANHATTAN", "10026", 2039, 40.802694, -73.953058], ["MANHATTAN", "10128", 1999, 40.781844, -73.951322], ["MANHATTAN", "10021", 1984, 40.769955, -73.95892], ["MANHATTAN", "10030", 1928, 40.818151, -73.942763], ["MANHATTAN", "10012", 1875, 40.725151, -73.99776], ["MANHATTAN", "10022", 1769, 40.758674, -73.968276], ["MANHATTAN", "10010", 1739, 40.739611, -73.984073], ["MANHATTAN", "10028", 1598, 40.776318, -73.953048], ["MANHATTAN", "10018", 1398, 40.753874, -73.989793], ["MANHATTAN", "10038", 1266, 40.709491, -74.00458], ["MANHATTAN", "10065", 1229, 40.764552, -73.963597], ["MANHATTAN", "10017", 1202, 40.753032, -73.974433], ["MANHATTAN", "10075", 1062, 40.773155, -73.956292], ["MANHATTAN", "10037", 991, 40.81334, -73.938386], ["MANHATTAN", "10039", 959, 40.82488, -73.93895], ["MANHATTAN", "10007", 912, 40.71402, -74.00833], ["MANHATTAN", "10004", 517, 40.704328, -74.012896], ["MANHATTAN", "10005", 403, 40.706451, -74.00887], ["MANHATTAN", "10006", 232, 40.708286, -74.01334], ["QUEENS", "11385", 7086, 40.703726, -73.893256], ["QUEENS", "11434", 4683, 40.677745, -73.776461], ["QUEENS", "11375", 4098, 40.720791, -73.847268], ["QUEENS", "11377", 3975, 40.744755, -73.905288], ["QUEENS", "11432", 3677, 40.713177, -73.793526], ["QUEENS", "11358", 3673, 40.76113, -73.796657], ["QUEENS", "11368", 3457, 40.748586, -73.859371], ["QUEENS", "11420", 3430, 40.675412, -73.815603], ["QUEENS", "11357", 3335, 40.785413, -73.810893], ["QUEENS", "11691", 3298, 40.600436, -73.757537], ["QUEENS", "11414", 3197, 40.658288, -73.842776], ["QUEENS", "11355", 3191, 40.75267, -73.821688], ["QUEENS", "11373", 3159, 40.739619, -73.878428], ["QUEENS", "11354", 3088, 40.766609, -73.824559], ["QUEENS", "11365", 3033, 40.738934, -73.794459], ["QUEENS", "11101", 3006, 40.748051, -73.939262], ["QUEENS", "11413", 2929, 40.67297, -73.751006], ["QUEENS", "11435", 2927, 40.701114, -73.809253], ["QUEENS", "11379", 2902, 40.718657, -73.880014], ["QUEENS", "11372", 2862, 40.75144, -73.884011], ["QUEENS", "11367", 2837, 40.727679, -73.820875], ["QUEENS", "11364", 2824, 40.746281, -73.760098], ["QUEENS", "11378", 2777, 40.724305, -73.901953], ["QUEENS", "11361", 2765, 40.763883, -73.773999], ["QUEENS", "11694", 2726, 40.578703, -73.842524], ["QUEENS", "11105", 2651, 40.775997, -73.908956], ["QUEENS", "11412", 2608, 40.69872, -73.759657], ["QUEENS", "11418", 2589, 40.698695, -73.833442], ["QUEENS", "11433", 2435, 40.697583, -73.78806], ["QUEENS", "11419", 2407, 40.68873, -73.824258], ["QUEENS", "11417", 2365, 40.677232, -73.844381], ["QUEENS", "11103", 2334, 40.763087, -73.913894], ["QUEENS", "11106", 2235, 40.76163, -73.92913], ["QUEENS", "11423", 2136, 40.715504, -73.768405], ["QUEENS", "11421", 2126, 40.691618, -73.85702], ["QUEENS", "11374", 2070, 40.726441, -73.861465], ["QUEENS", "11369", 2043, 40.763035, -73.87344], ["QUEENS", "11422", 1941, 40.663366, -73.734848], ["QUEENS", "11426", 1891, 40.733929, -73.720742], ["QUEENS", "11362", 1890, 40.761, -73.733052], ["QUEENS", "11427", 1814, 40.728969, -73.748645], ["QUEENS", "11429", 1762, 40.709782, -73.739736], ["QUEENS", "11370", 1747, 40.764147, -73.890641], ["QUEENS", "11102", 1689, 40.771126, -73.924564], ["QUEENS", "11366", 1611, 40.728086, -73.793078], ["QUEENS", "11428", 1611, 40.721293, -73.742149], ["QUEENS", "11416", 1510, 40.684699, -73.849302], ["QUEENS", "11104", 1475, 40.744123, -73.921073], ["QUEENS", "11411", 1430, 40.694415, -73.736677], ["QUEENS", "11436", 1412, 40.676981, -73.796449], ["QUEENS", "11004", 1375, 40.743753, -73.711101], ["QUEENS", "11356", 1343, 40.785392, -73.844201], ["QUEENS", "11692", 1273, 40.59292, -73.795079], ["QUEENS", "11360", 1192, 40.779002, -73.781821], ["QUEENS", "11363", 1127, 40.772518, -73.74591], ["QUEENS", "11415", 1101, 40.707996, -73.830029], ["QUEENS", "11693", 832, 40.591599, -73.81443], ["QUEENS", "11001", 367, 40.73348, -73.707892], ["QUEENS", "11040", 294, 40.74982, -73.705258], ["STATEN ISLAND", "10314", 9639, 40.605156, -74.146738], ["STATEN ISLAND", "10312", 8391, 40.543883, -74.177375], ["STATEN ISLAND", "10306", 8051, 40.569248, -74.117284], ["STATEN ISLAND", "10301", 4841, 40.631804, -74.091964], ["STATEN ISLAND", "10304", 4176, 40.611162, -74.08838], ["STATEN ISLAND", "10305", 4097, 40.596654, -74.077486], ["STATEN ISLAND", "10309", 4090, 40.533014, -74.21335], ["STATEN ISLAND", "10308", 3904, 40.551891, -74.150597], ["STATEN ISLAND", "10310", 2549, 40.631552, -74.116076], ["STATEN ISLAND", "10302", 2048, 40.63037, -74.137468], ["STATEN ISLAND", "10303", 1796, 40.630908, -74.160112], ["STATEN ISLAND", "10307", 1585, 40.507903, -74.243069]];
+const ZIP_DATA = [{"z": "10002", "b": "MANHATTAN", "lat": 40.71589, "lon": -73.98832, "unres": 821, "res": 2394, "ac": 27.2, "ao": 2161.1, "types": {"Street Light Out": 86.1, "Lamppost Base Door/Cover Open": 2.8, "Street Light Dayburning": 2.2, "Traffic Signal Light": 2.1, "Multiple Street Lights Out": 2.1, "Flood Light Lamp Out": 1.8, "Other": 3.0}, "type_detail": {"Street Light Out": {"pct": 86.1, "cnt": 707}, "Lamppost Base Door/Cover Open": {"pct": 2.8, "cnt": 23}, "Street Light Dayburning": {"pct": 2.2, "cnt": 18}, "Traffic Signal Light": {"pct": 2.1, "cnt": 17}, "Multiple Street Lights Out": {"pct": 2.1, "cnt": 17}, "Flood Light Lamp Out": {"pct": 1.8, "cnt": 15}, "Other": {"pct": 3.0, "cnt": 25}}}, {"z": "10003", "b": "MANHATTAN", "lat": 40.73011, "lon": -73.99185, "unres": 49, "res": 327, "ac": 25.5, "ao": 2005.1, "types": {}}, {"z": "10004", "b": "MANHATTAN", "lat": 40.70385, "lon": -74.01309, "unres": 127, "res": 640, "ac": 25.7, "ao": 2369.1, "types": {}}, {"z": "10005", "b": "MANHATTAN", "lat": 40.70658, "lon": -74.00855, "unres": 144, "res": 757, "ac": 26.2, "ao": 2352.0, "types": {}}, {"z": "10006", "b": "MANHATTAN", "lat": 40.70873, "lon": -74.01393, "unres": 74, "res": 288, "ac": 25.6, "ao": 2502.0, "types": {}}, {"z": "10007", "b": "MANHATTAN", "lat": 40.71354, "lon": -74.00893, "unres": 311, "res": 892, "ac": 57.3, "ao": 2439.3, "types": {"Street Light Out": 79.1, "Lamppost Wire Exposed": 6.7, "Lamppost Base Door/Cover Open": 3.4, "Multiple Street Lights Out": 3.1, "Street Light Cycling": 2.4, "Street Light Dayburning": 1.9, "Other": 3.3}, "type_detail": {"Street Light Out": {"pct": 79.1, "cnt": 246}, "Lamppost Wire Exposed": {"pct": 6.7, "cnt": 21}, "Lamppost Base Door/Cover Open": {"pct": 3.4, "cnt": 11}, "Multiple Street Lights Out": {"pct": 3.1, "cnt": 10}, "Street Light Cycling": {"pct": 2.4, "cnt": 7}, "Street Light Dayburning": {"pct": 1.9, "cnt": 6}, "Other": {"pct": 3.3, "cnt": 10}}}, {"z": "10011", "b": "MANHATTAN", "lat": 40.73501, "lon": -74.00059, "unres": 45, "res": 224, "ac": 75.9, "ao": 2206.6, "types": {}}, {"z": "10012", "b": "MANHATTAN", "lat": 40.7247, "lon": -73.9977, "unres": 278, "res": 785, "ac": 29.6, "ao": 2166.6, "types": {"Street Light Out": 90.6, "Lamppost Base Door/Cover Open": 3.6, "Street Light Cycling": 2.9, "Street Light Dayburning": 2.8}, "type_detail": {"Street Light Out": {"pct": 90.6, "cnt": 252}, "Lamppost Base Door/Cover Open": {"pct": 3.6, "cnt": 10}, "Street Light Cycling": {"pct": 2.9, "cnt": 8}, "Street Light Dayburning": {"pct": 2.8, "cnt": 8}}}, {"z": "10013", "b": "MANHATTAN", "lat": 40.72025, "lon": -74.0037, "unres": 715, "res": 1753, "ac": 31.0, "ao": 2153.3, "types": {"Street Light Out": 85.0, "Lamppost Base Door/Cover Open": 3.7, "Street Light Dayburning": 2.5, "Street Light Cycling": 2.4, "Traffic Signal Light": 1.9, "Lamppost Leaning": 1.7, "Other": 2.8}, "type_detail": {"Street Light Out": {"pct": 85.0, "cnt": 608}, "Lamppost Base Door/Cover Open": {"pct": 3.7, "cnt": 26}, "Street Light Dayburning": {"pct": 2.5, "cnt": 18}, "Street Light Cycling": {"pct": 2.4, "cnt": 17}, "Traffic Signal Light": {"pct": 1.9, "cnt": 14}, "Lamppost Leaning": {"pct": 1.7, "cnt": 12}, "Other": {"pct": 2.8, "cnt": 20}}}, {"z": "10014", "b": "MANHATTAN", "lat": 40.7335, "lon": -74.00648, "unres": 391, "res": 1470, "ac": 30.1, "ao": 2297.9, "types": {"Street Light Out": 87.9, "Street Light Cycling": 3.3, "Street Light Dayburning": 2.4, "Lamppost Base Door/Cover Open": 2.3, "Lamppost Damaged": 2.1, "Lamppost Leaning": 2.0}, "type_detail": {"Street Light Out": {"pct": 87.9, "cnt": 344}, "Street Light Cycling": {"pct": 3.3, "cnt": 13}, "Street Light Dayburning": {"pct": 2.4, "cnt": 9}, "Lamppost Base Door/Cover Open": {"pct": 2.3, "cnt": 9}, "Lamppost Damaged": {"pct": 2.1, "cnt": 8}, "Lamppost Leaning": {"pct": 2.0, "cnt": 8}}}, {"z": "10019", "b": "MANHATTAN", "lat": 40.76583, "lon": -73.98136, "unres": 176, "res": 388, "ac": 29.8, "ao": 2479.5, "types": {"Street Light Out": 81.0, "Lamppost Base Door/Cover Open": 6.6, "Multiple Street Lights Out": 5.6, "Fixture/Luminaire Out Of Position": 3.7, "Street Light Cycling": 3.1}, "type_detail": {"Street Light Out": {"pct": 81.0, "cnt": 143}, "Lamppost Base Door/Cover Open": {"pct": 6.6, "cnt": 12}, "Multiple Street Lights Out": {"pct": 5.6, "cnt": 10}, "Fixture/Luminaire Out Of Position": {"pct": 3.7, "cnt": 7}, "Street Light Cycling": {"pct": 3.1, "cnt": 5}}}, {"z": "10023", "b": "MANHATTAN", "lat": 40.76966, "lon": -73.98151, "unres": 21, "res": 241, "ac": 34.7, "ao": 2532.0, "types": {"Street Light Out": 92.7, "Lamppost Base Door/Cover Open": 3.8, "Lamppost Base Door/Cover Damaged": 3.4}, "type_detail": {"Street Light Out": {"pct": 92.7, "cnt": 19}, "Lamppost Base Door/Cover Open": {"pct": 3.8, "cnt": 1}, "Lamppost Base Door/Cover Damaged": {"pct": 3.4, "cnt": 1}}}, {"z": "10025", "b": "MANHATTAN", "lat": 40.79979, "lon": -73.96691, "unres": 30, "res": 364, "ac": 27.6, "ao": 2588.8, "types": {"Street Light Out": 86.1, "Multiple Street Lights Out": 5.4, "Street Light Dayburning": 4.5, "Street Light Cycling": 4.0}, "type_detail": {"Street Light Out": {"pct": 86.1, "cnt": 26}, "Multiple Street Lights Out": {"pct": 5.4, "cnt": 2}, "Street Light Dayburning": {"pct": 4.5, "cnt": 1}, "Street Light Cycling": {"pct": 4.0, "cnt": 1}}}, {"z": "10026", "b": "MANHATTAN", "lat": 40.80025, "lon": -73.95723, "unres": 48, "res": 218, "ac": 38.6, "ao": 2313.8, "types": {"Street Light Out": 94.6, "Multiple Street Lights Out": 5.4}, "type_detail": {"Street Light Out": {"pct": 94.6, "cnt": 45}, "Multiple Street Lights Out": {"pct": 5.4, "cnt": 3}}}, {"z": "10027", "b": "MANHATTAN", "lat": 40.81321, "lon": -73.95748, "unres": 118, "res": 336, "ac": 62.5, "ao": 2092.4, "types": {"Street Light Out": 88.6, "Multiple Street Lights Out": 4.3, "Street Light Cycling": 3.7, "Lamppost Base Door/Cover Open": 3.5}, "type_detail": {"Street Light Out": {"pct": 88.6, "cnt": 105}, "Multiple Street Lights Out": {"pct": 4.3, "cnt": 5}, "Street Light Cycling": {"pct": 3.7, "cnt": 4}, "Lamppost Base Door/Cover Open": {"pct": 3.5, "cnt": 4}}}, {"z": "10034", "b": "MANHATTAN", "lat": 40.86643, "lon": -73.92456, "unres": 382, "res": 818, "ac": 27.8, "ao": 2399.9, "types": {"Street Light Out": 82.6, "Street Light Cycling": 7.4, "Lamppost Base Door/Cover Open": 4.7, "Lamppost Wire Exposed": 3.1, "Street Light Dayburning": 2.2}, "type_detail": {"Street Light Out": {"pct": 82.6, "cnt": 316}, "Street Light Cycling": {"pct": 7.4, "cnt": 28}, "Lamppost Base Door/Cover Open": {"pct": 4.7, "cnt": 18}, "Lamppost Wire Exposed": {"pct": 3.1, "cnt": 12}, "Street Light Dayburning": {"pct": 2.2, "cnt": 8}}}, {"z": "10038", "b": "MANHATTAN", "lat": 40.70945, "lon": -74.00476, "unres": 342, "res": 1168, "ac": 31.4, "ao": 2152.8, "types": {"Street Light Out": 81.0, "Lamppost Wire Exposed": 8.1, "Street Light Dayburning": 4.6, "Traffic Signal Light": 4.0, "Lamppost Base Door/Cover Open": 2.3}, "type_detail": {"Street Light Out": {"pct": 81.0, "cnt": 277}, "Lamppost Wire Exposed": {"pct": 8.1, "cnt": 28}, "Street Light Dayburning": {"pct": 4.6, "cnt": 16}, "Traffic Signal Light": {"pct": 4.0, "cnt": 14}, "Lamppost Base Door/Cover Open": {"pct": 2.3, "cnt": 8}}}, {"z": "10040", "b": "MANHATTAN", "lat": 40.86066, "lon": -73.92892, "unres": 391, "res": 793, "ac": 39.5, "ao": 2274.5, "types": {"Street Light Out": 85.7, "Street Light Cycling": 7.1, "Lamppost Base Door/Cover Open": 4.5, "Lamppost Wire Exposed": 2.7}, "type_detail": {"Street Light Out": {"pct": 85.7, "cnt": 335}, "Street Light Cycling": {"pct": 7.1, "cnt": 28}, "Lamppost Base Door/Cover Open": {"pct": 4.5, "cnt": 18}, "Lamppost Wire Exposed": {"pct": 2.7, "cnt": 11}}}, {"z": "10301", "b": "STATEN ISLAND", "lat": 40.63002, "lon": -74.09302, "unres": 1354, "res": 4874, "ac": 13.5, "ao": 2070.3, "types": {"Street Light Out": 96.5, "Street Light Cycling": 2.3, "Street Light Dayburning": 1.2}, "type_detail": {"Street Light Out": {"pct": 96.5, "cnt": 1307}, "Street Light Cycling": {"pct": 2.3, "cnt": 31}, "Street Light Dayburning": {"pct": 1.2, "cnt": 16}}}, {"z": "10302", "b": "STATEN ISLAND", "lat": 40.63104, "lon": -74.13782, "unres": 414, "res": 1656, "ac": 11.9, "ao": 2175.3, "types": {"Street Light Out": 96.1, "Street Light Cycling": 3.9}, "type_detail": {"Street Light Out": {"pct": 96.1, "cnt": 398}, "Street Light Cycling": {"pct": 3.9, "cnt": 16}}}, {"z": "10303", "b": "STATEN ISLAND", "lat": 40.63047, "lon": -74.1626, "unres": 415, "res": 2165, "ac": 30.5, "ao": 1926.9, "types": {"Street Light Out": 97.1, "Street Light Cycling": 2.9}, "type_detail": {"Street Light Out": {"pct": 97.1, "cnt": 403}, "Street Light Cycling": {"pct": 2.9, "cnt": 12}}}, {"z": "10304", "b": "STATEN ISLAND", "lat": 40.61162, "lon": -74.08832, "unres": 1040, "res": 3607, "ac": 15.5, "ao": 2116.4, "types": {"Street Light Out": 96.9, "Street Light Cycling": 3.1}, "type_detail": {"Street Light Out": {"pct": 96.9, "cnt": 1008}, "Street Light Cycling": {"pct": 3.1, "cnt": 32}}}, {"z": "10305", "b": "STATEN ISLAND", "lat": 40.59538, "lon": -74.07748, "unres": 946, "res": 3868, "ac": 18.4, "ao": 1952.0, "types": {"Street Light Out": 94.3, "Multiple Street Lights Out": 3.0, "Street Light Cycling": 2.6}, "type_detail": {"Street Light Out": {"pct": 94.3, "cnt": 892}, "Multiple Street Lights Out": {"pct": 3.0, "cnt": 28}, "Street Light Cycling": {"pct": 2.6, "cnt": 25}}}, {"z": "10306", "b": "STATEN ISLAND", "lat": 40.56904, "lon": -74.11806, "unres": 1578, "res": 6189, "ac": 14.3, "ao": 2099.5, "types": {"Street Light Out": 95.1, "Street Light Cycling": 4.9}, "type_detail": {"Street Light Out": {"pct": 95.1, "cnt": 1501}, "Street Light Cycling": {"pct": 4.9, "cnt": 77}}}, {"z": "10307", "b": "STATEN ISLAND", "lat": 40.50835, "lon": -74.24318, "unres": 283, "res": 1043, "ac": 18.9, "ao": 2089.6, "types": {"Street Light Out": 100.0}, "type_detail": {"Street Light Out": {"pct": 100.0, "cnt": 283}}}, {"z": "10308", "b": "STATEN ISLAND", "lat": 40.55153, "lon": -74.1498, "unres": 778, "res": 2874, "ac": 10.0, "ao": 2065.0, "types": {"Street Light Out": 95.0, "Street Light Cycling": 5.0}, "type_detail": {"Street Light Out": {"pct": 95.0, "cnt": 739}, "Street Light Cycling": {"pct": 5.0, "cnt": 39}}}, {"z": "10309", "b": "STATEN ISLAND", "lat": 40.53163, "lon": -74.21424, "unres": 1070, "res": 3806, "ac": 18.0, "ao": 2088.9, "types": {"Street Light Out": 95.8, "Street Light Cycling": 4.2}, "type_detail": {"Street Light Out": {"pct": 95.8, "cnt": 1025}, "Street Light Cycling": {"pct": 4.2, "cnt": 45}}}, {"z": "10310", "b": "STATEN ISLAND", "lat": 40.63177, "lon": -74.1169, "unres": 574, "res": 2097, "ac": 9.5, "ao": 1978.8, "types": {"Street Light Out": 97.0, "Street Light Cycling": 3.0}, "type_detail": {"Street Light Out": {"pct": 97.0, "cnt": 557}, "Street Light Cycling": {"pct": 3.0, "cnt": 17}}}, {"z": "10312", "b": "STATEN ISLAND", "lat": 40.54367, "lon": -74.17854, "unres": 1466, "res": 6926, "ac": 15.8, "ao": 2106.9, "types": {"Street Light Out": 95.8, "Street Light Cycling": 4.2}, "type_detail": {"Street Light Out": {"pct": 95.8, "cnt": 1404}, "Street Light Cycling": {"pct": 4.2, "cnt": 62}}}, {"z": "10314", "b": "STATEN ISLAND", "lat": 40.60401, "lon": -74.14969, "unres": 1880, "res": 9166, "ac": 18.4, "ao": 2126.0, "types": {"Street Light Out": 96.5, "Street Light Cycling": 3.5}, "type_detail": {"Street Light Out": {"pct": 96.5, "cnt": 1814}, "Street Light Cycling": {"pct": 3.5, "cnt": 66}}}, {"z": "10451", "b": "BRONX", "lat": 40.82271, "lon": -73.92322, "unres": 39, "res": 275, "ac": 33.6, "ao": 2174.1, "types": {"Street Light Out": 94.8, "Lamppost Wire Exposed": 3.0, "Lamppost Base Door/Cover Damaged": 2.2}, "type_detail": {"Street Light Out": {"pct": 94.8, "cnt": 37}, "Lamppost Wire Exposed": {"pct": 3.0, "cnt": 1}, "Lamppost Base Door/Cover Damaged": {"pct": 2.2, "cnt": 1}}}, {"z": "10452", "b": "BRONX", "lat": 40.83978, "lon": -73.92097, "unres": 570, "res": 1673, "ac": 16.8, "ao": 2122.3, "types": {"Street Light Out": 86.5, "Street Light Cycling": 7.1, "Multiple Street Lights Out": 2.7, "Lamppost Base Door/Cover Open": 2.0, "Fixture/Luminaire Hanging": 1.8}, "type_detail": {"Street Light Out": {"pct": 86.5, "cnt": 493}, "Street Light Cycling": {"pct": 7.1, "cnt": 40}, "Multiple Street Lights Out": {"pct": 2.7, "cnt": 15}, "Lamppost Base Door/Cover Open": {"pct": 2.0, "cnt": 11}, "Fixture/Luminaire Hanging": {"pct": 1.8, "cnt": 10}}}, {"z": "10453", "b": "BRONX", "lat": 40.85252, "lon": -73.91115, "unres": 398, "res": 1220, "ac": 13.4, "ao": 2309.6, "types": {"Street Light Out": 91.2, "Street Light Cycling": 6.9, "Multiple Street Lights Out": 2.0}, "type_detail": {"Street Light Out": {"pct": 91.2, "cnt": 363}, "Street Light Cycling": {"pct": 6.9, "cnt": 27}, "Multiple Street Lights Out": {"pct": 2.0, "cnt": 8}}}, {"z": "10454", "b": "BRONX", "lat": 40.80707, "lon": -73.91921, "unres": 270, "res": 495, "ac": 46.9, "ao": 2303.3, "types": {"Street Light Out": 94.6, "Street Light Cycling": 5.4}, "type_detail": {"Street Light Out": {"pct": 94.6, "cnt": 255}, "Street Light Cycling": {"pct": 5.4, "cnt": 15}}}, {"z": "10455", "b": "BRONX", "lat": 40.8156, "lon": -73.90565, "unres": 779, "res": 1040, "ac": 17.1, "ao": 2403.8, "types": {"Street Light Out": 89.2, "Street Light Cycling": 3.7, "Glassware Broken": 3.6, "Multiple Street Lights Out": 3.5}, "type_detail": {"Street Light Out": {"pct": 89.2, "cnt": 695}, "Street Light Cycling": {"pct": 3.7, "cnt": 29}, "Glassware Broken": {"pct": 3.6, "cnt": 28}, "Multiple Street Lights Out": {"pct": 3.5, "cnt": 27}}}, {"z": "10456", "b": "BRONX", "lat": 40.83087, "lon": -73.90905, "unres": 578, "res": 1159, "ac": 12.9, "ao": 2410.1, "types": {"Street Light Out": 93.0, "Street Light Cycling": 3.9, "Lamppost Wire Exposed": 3.1}, "type_detail": {"Street Light Out": {"pct": 93.0, "cnt": 538}, "Street Light Cycling": {"pct": 3.9, "cnt": 23}, "Lamppost Wire Exposed": {"pct": 3.1, "cnt": 18}}}, {"z": "10457", "b": "BRONX", "lat": 40.84403, "lon": -73.89759, "unres": 339, "res": 977, "ac": 22.9, "ao": 2290.2, "types": {"Street Light Out": 94.5, "Street Light Cycling": 3.4, "Flood Light Lamp Out": 2.1}, "type_detail": {"Street Light Out": {"pct": 94.5, "cnt": 320}, "Street Light Cycling": {"pct": 3.4, "cnt": 12}, "Flood Light Lamp Out": {"pct": 2.1, "cnt": 7}}}, {"z": "10458", "b": "BRONX", "lat": 40.86417, "lon": -73.88823, "unres": 401, "res": 868, "ac": 14.2, "ao": 2207.1, "types": {"Street Light Out": 95.0, "Street Light Cycling": 3.1, "Lamppost Damaged": 1.9}, "type_detail": {"Street Light Out": {"pct": 95.0, "cnt": 381}, "Street Light Cycling": {"pct": 3.1, "cnt": 12}, "Lamppost Damaged": {"pct": 1.9, "cnt": 8}}}, {"z": "10459", "b": "BRONX", "lat": 40.82473, "lon": -73.89321, "unres": 705, "res": 1755, "ac": 18.5, "ao": 2142.2, "types": {"Street Light Out": 92.9, "Lamppost Base Door/Cover Open": 4.3, "Multiple Street Lights Out": 2.8}, "type_detail": {"Street Light Out": {"pct": 92.9, "cnt": 655}, "Lamppost Base Door/Cover Open": {"pct": 4.3, "cnt": 30}, "Multiple Street Lights Out": {"pct": 2.8, "cnt": 20}}}, {"z": "10460", "b": "BRONX", "lat": 40.84008, "lon": -73.87783, "unres": 850, "res": 1577, "ac": 15.1, "ao": 2156.7, "types": {"Street Light Out": 94.6, "Lamppost Base Door/Cover Open": 3.1, "Fixture/Luminaire Door Open": 2.3}, "type_detail": {"Street Light Out": {"pct": 94.6, "cnt": 804}, "Lamppost Base Door/Cover Open": {"pct": 3.1, "cnt": 26}, "Fixture/Luminaire Door Open": {"pct": 2.3, "cnt": 20}}}, {"z": "10461", "b": "BRONX", "lat": 40.84555, "lon": -73.8417, "unres": 2164, "res": 4902, "ac": 9.9, "ao": 2168.0, "types": {"Street Light Out": 94.0, "Street Light Cycling": 4.7, "Street Light Dayburning": 1.3}, "type_detail": {"Street Light Out": {"pct": 94.0, "cnt": 2034}, "Street Light Cycling": {"pct": 4.7, "cnt": 102}, "Street Light Dayburning": {"pct": 1.3, "cnt": 28}}}, {"z": "10462", "b": "BRONX", "lat": 40.84273, "lon": -73.85751, "unres": 1822, "res": 4374, "ac": 11.5, "ao": 2177.4, "types": {"Street Light Out": 94.2, "Street Light Cycling": 4.6, "Lamppost Base Door/Cover Open": 1.3}, "type_detail": {"Street Light Out": {"pct": 94.2, "cnt": 1716}, "Street Light Cycling": {"pct": 4.6, "cnt": 84}, "Lamppost Base Door/Cover Open": {"pct": 1.3, "cnt": 24}}}, {"z": "10463", "b": "BRONX", "lat": 40.87991, "lon": -73.90512, "unres": 679, "res": 1477, "ac": 18.8, "ao": 2118.6, "types": {"Street Light Out": 94.4, "Street Light Cycling": 5.6}, "type_detail": {"Street Light Out": {"pct": 94.4, "cnt": 641}, "Street Light Cycling": {"pct": 5.6, "cnt": 38}}}, {"z": "10464", "b": "BRONX", "lat": 40.84741, "lon": -73.78711, "unres": 761, "res": 1338, "ac": 4.9, "ao": 2402.8, "types": {"Street Light Out": 88.2, "Street Light Cycling": 11.8}, "type_detail": {"Street Light Out": {"pct": 88.2, "cnt": 671}, "Street Light Cycling": {"pct": 11.8, "cnt": 90}}}, {"z": "10465", "b": "BRONX", "lat": 40.828, "lon": -73.82117, "unres": 2879, "res": 5250, "ac": 6.6, "ao": 2230.4, "types": {"Street Light Out": 94.6, "Street Light Cycling": 3.8, "Fixture/Luminaire Door Open": 1.7}, "type_detail": {"Street Light Out": {"pct": 94.6, "cnt": 2724}, "Street Light Cycling": {"pct": 3.8, "cnt": 109}, "Fixture/Luminaire Door Open": {"pct": 1.7, "cnt": 49}}}, {"z": "10466", "b": "BRONX", "lat": 40.89252, "lon": -73.84352, "unres": 1098, "res": 2301, "ac": 7.3, "ao": 2121.4, "types": {"Street Light Out": 93.8, "Fixture/Luminaire Door Open": 3.5, "Street Light Cycling": 2.7}, "type_detail": {"Street Light Out": {"pct": 93.8, "cnt": 1030}, "Fixture/Luminaire Door Open": {"pct": 3.5, "cnt": 38}, "Street Light Cycling": {"pct": 2.7, "cnt": 30}}}, {"z": "10467", "b": "BRONX", "lat": 40.86851, "lon": -73.86686, "unres": 1369, "res": 2395, "ac": 12.9, "ao": 2178.5, "types": {"Street Light Out": 95.1, "Street Light Cycling": 2.8, "Lamppost Base Door/Cover Open": 2.1}, "type_detail": {"Street Light Out": {"pct": 95.1, "cnt": 1302}, "Street Light Cycling": {"pct": 2.8, "cnt": 38}, "Lamppost Base Door/Cover Open": {"pct": 2.1, "cnt": 29}}}, {"z": "10468", "b": "BRONX", "lat": 40.86832, "lon": -73.89894, "unres": 653, "res": 1165, "ac": 19.5, "ao": 2324.3, "types": {"Street Light Out": 96.3, "Street Light Cycling": 3.7}, "type_detail": {"Street Light Out": {"pct": 96.3, "cnt": 629}, "Street Light Cycling": {"pct": 3.7, "cnt": 24}}}, {"z": "10469", "b": "BRONX", "lat": 40.86736, "lon": -73.84746, "unres": 2993, "res": 5449, "ac": 7.2, "ao": 2162.1, "types": {"Street Light Out": 94.2, "Fixture/Luminaire Door Open": 3.2, "Street Light Cycling": 2.6}, "type_detail": {"Street Light Out": {"pct": 94.2, "cnt": 2819}, "Fixture/Luminaire Door Open": {"pct": 3.2, "cnt": 96}, "Street Light Cycling": {"pct": 2.6, "cnt": 78}}}, {"z": "10470", "b": "BRONX", "lat": 40.90031, "lon": -73.85678, "unres": 282, "res": 375, "ac": 6.0, "ao": 2192.6, "types": {"Street Light Out": 100.0}, "type_detail": {"Street Light Out": {"pct": 100.0, "cnt": 282}}}, {"z": "10471", "b": "BRONX", "lat": 40.90127, "lon": -73.90176, "unres": 280, "res": 564, "ac": 13.8, "ao": 2173.4, "types": {"Street Light Out": 100.0}, "type_detail": {"Street Light Out": {"pct": 100.0, "cnt": 280}}}, {"z": "10472", "b": "BRONX", "lat": 40.82895, "lon": -73.86877, "unres": 1745, "res": 2605, "ac": 11.6, "ao": 2256.2, "types": {"Street Light Out": 96.2, "Street Light Cycling": 3.8}, "type_detail": {"Street Light Out": {"pct": 96.2, "cnt": 1679}, "Street Light Cycling": {"pct": 3.8, "cnt": 66}}}, {"z": "10473", "b": "BRONX", "lat": 40.81848, "lon": -73.85798, "unres": 3759, "res": 4581, "ac": 7.5, "ao": 2231.8, "types": {"Street Light Out": 95.3, "Street Light Cycling": 4.7}, "type_detail": {"Street Light Out": {"pct": 95.3, "cnt": 3582}, "Street Light Cycling": {"pct": 4.7, "cnt": 177}}}, {"z": "10474", "b": "BRONX", "lat": 40.81323, "lon": -73.88693, "unres": 1827, "res": 1986, "ac": 11.2, "ao": 2111.2, "types": {"Street Light Out": 97.2, "Street Light Cycling": 2.8}, "type_detail": {"Street Light Out": {"pct": 97.2, "cnt": 1776}, "Street Light Cycling": {"pct": 2.8, "cnt": 51}}}, {"z": "10475", "b": "BRONX", "lat": 40.87855, "lon": -73.82809, "unres": 1617, "res": 2037, "ac": 9.1, "ao": 2281.5, "types": {"Street Light Out": 95.9, "Street Light Cycling": 4.1}, "type_detail": {"Street Light Out": {"pct": 95.9, "cnt": 1551}, "Street Light Cycling": {"pct": 4.1, "cnt": 66}}}, {"z": "11004", "b": "QUEENS", "lat": 40.74444, "lon": -73.71096, "unres": 332, "res": 2118, "ac": 23.6, "ao": 1754.6, "types": {"Street Light Out": 92.8, "Lamppost Base Door/Cover Open": 7.2}, "type_detail": {"Street Light Out": {"pct": 92.8, "cnt": 308}, "Lamppost Base Door/Cover Open": {"pct": 7.2, "cnt": 24}}}, {"z": "11101", "b": "QUEENS", "lat": 40.74779, "lon": -73.93929, "unres": 916, "res": 4150, "ac": 33.0, "ao": 1848.2, "types": {"Street Light Out": 91.7, "Lamppost Base Door/Cover Open": 5.0, "Street Light Cycling": 3.3}, "type_detail": {"Street Light Out": {"pct": 91.7, "cnt": 840}, "Lamppost Base Door/Cover Open": {"pct": 5.0, "cnt": 46}, "Street Light Cycling": {"pct": 3.3, "cnt": 30}}}, {"z": "11102", "b": "QUEENS", "lat": 40.77179, "lon": -73.92566, "unres": 315, "res": 1753, "ac": 27.1, "ao": 1889.1, "types": {"Street Light Out": 94.9, "Street Light Cycling": 5.1}, "type_detail": {"Street Light Out": {"pct": 94.9, "cnt": 299}, "Street Light Cycling": {"pct": 5.1, "cnt": 16}}}, {"z": "11103", "b": "QUEENS", "lat": 40.76244, "lon": -73.91285, "unres": 322, "res": 1986, "ac": 15.9, "ao": 1740.7, "types": {"Street Light Out": 94.4, "Street Light Cycling": 5.6}, "type_detail": {"Street Light Out": {"pct": 94.4, "cnt": 304}, "Street Light Cycling": {"pct": 5.6, "cnt": 18}}}, {"z": "11104", "b": "QUEENS", "lat": 40.74467, "lon": -73.92043, "unres": 272, "res": 1300, "ac": 17.5, "ao": 1965.4, "types": {"Street Light Out": 94.8, "Street Light Cycling": 5.2}, "type_detail": {"Street Light Out": {"pct": 94.8, "cnt": 258}, "Street Light Cycling": {"pct": 5.2, "cnt": 14}}}, {"z": "11105", "b": "QUEENS", "lat": 40.77612, "lon": -73.9083, "unres": 590, "res": 3018, "ac": 15.3, "ao": 1697.3, "types": {"Street Light Out": 95.4, "Street Light Cycling": 4.6}, "type_detail": {"Street Light Out": {"pct": 95.4, "cnt": 563}, "Street Light Cycling": {"pct": 4.6, "cnt": 27}}}, {"z": "11106", "b": "QUEENS", "lat": 40.7615, "lon": -73.93111, "unres": 382, "res": 2034, "ac": 30.8, "ao": 1726.1, "types": {"Street Light Out": 94.6, "Lamppost Base Door/Cover Open": 5.4}, "type_detail": {"Street Light Out": {"pct": 94.6, "cnt": 361}, "Lamppost Base Door/Cover Open": {"pct": 5.4, "cnt": 21}}}, {"z": "11201", "b": "BROOKLYN", "lat": 40.69433, "lon": -73.98987, "unres": 1238, "res": 5186, "ac": 23.3, "ao": 1707.7, "types": {"Street Light Out": 79.2, "Lamppost Base Door/Cover Open": 6.9, "Street Light Cycling": 5.6, "Fixture/Luminaire Out Of Position": 4.3, "Street Light Dayburning": 4.0}, "type_detail": {"Street Light Out": {"pct": 79.2, "cnt": 980}, "Lamppost Base Door/Cover Open": {"pct": 6.9, "cnt": 85}, "Street Light Cycling": {"pct": 5.6, "cnt": 69}, "Fixture/Luminaire Out Of Position": {"pct": 4.3, "cnt": 53}, "Street Light Dayburning": {"pct": 4.0, "cnt": 50}}}, {"z": "11203", "b": "BROOKLYN", "lat": 40.65053, "lon": -73.93562, "unres": 518, "res": 2242, "ac": 13.8, "ao": 1913.0, "types": {"Street Light Out": 95.5, "Street Light Cycling": 4.5}, "type_detail": {"Street Light Out": {"pct": 95.5, "cnt": 495}, "Street Light Cycling": {"pct": 4.5, "cnt": 23}}}, {"z": "11204", "b": "BROOKLYN", "lat": 40.61977, "lon": -73.98573, "unres": 778, "res": 4357, "ac": 14.6, "ao": 1887.9, "types": {"Street Light Out": 95.3, "Street Light Cycling": 4.7}, "type_detail": {"Street Light Out": {"pct": 95.3, "cnt": 741}, "Street Light Cycling": {"pct": 4.7, "cnt": 37}}}, {"z": "11205", "b": "BROOKLYN", "lat": 40.69321, "lon": -73.96156, "unres": 797, "res": 2742, "ac": 15.1, "ao": 1767.1, "types": {"Street Light Out": 85.6, "Lamppost Base Door/Cover Open": 9.7, "Street Light Cycling": 4.7}, "type_detail": {"Street Light Out": {"pct": 85.6, "cnt": 682}, "Lamppost Base Door/Cover Open": {"pct": 9.7, "cnt": 77}, "Street Light Cycling": {"pct": 4.7, "cnt": 37}}}, {"z": "11206", "b": "BROOKLYN", "lat": 40.70214, "lon": -73.94271, "unres": 1133, "res": 4494, "ac": 18.8, "ao": 1741.3, "types": {"Street Light Out": 85.8, "Lamppost Base Door/Cover Open": 8.1, "Fixture/Luminaire Out Of Position": 6.1}, "type_detail": {"Street Light Out": {"pct": 85.8, "cnt": 972}, "Lamppost Base Door/Cover Open": {"pct": 8.1, "cnt": 92}, "Fixture/Luminaire Out Of Position": {"pct": 6.1, "cnt": 69}}}, {"z": "11207", "b": "BROOKLYN", "lat": 40.66869, "lon": -73.89443, "unres": 1860, "res": 7785, "ac": 17.1, "ao": 1980.4, "types": {"Street Light Out": 90.5, "Street Light Cycling": 6.2, "Street Light Dayburning": 3.3}, "type_detail": {"Street Light Out": {"pct": 90.5, "cnt": 1683}, "Street Light Cycling": {"pct": 6.2, "cnt": 115}, "Street Light Dayburning": {"pct": 3.3, "cnt": 61}}}, {"z": "11208", "b": "BROOKLYN", "lat": 40.67313, "lon": -73.87322, "unres": 1335, "res": 5089, "ac": 15.1, "ao": 2013.6, "types": {"Street Light Out": 93.0, "Street Light Cycling": 7.0}, "type_detail": {"Street Light Out": {"pct": 93.0, "cnt": 1242}, "Street Light Cycling": {"pct": 7.0, "cnt": 93}}}, {"z": "11209", "b": "BROOKLYN", "lat": 40.62545, "lon": -74.03068, "unres": 650, "res": 3629, "ac": 15.3, "ao": 1848.6, "types": {"Street Light Out": 93.5, "Street Light Cycling": 6.5}, "type_detail": {"Street Light Out": {"pct": 93.5, "cnt": 608}, "Street Light Cycling": {"pct": 6.5, "cnt": 42}}}, {"z": "11210", "b": "BROOKLYN", "lat": 40.62893, "lon": -73.94636, "unres": 360, "res": 1668, "ac": 11.4, "ao": 1717.8, "types": {"Street Light Out": 94.1, "Fixture/Luminaire Out Of Position": 5.9}, "type_detail": {"Street Light Out": {"pct": 94.1, "cnt": 339}, "Fixture/Luminaire Out Of Position": {"pct": 5.9, "cnt": 21}}}, {"z": "11211", "b": "BROOKLYN", "lat": 40.71064, "lon": -73.95104, "unres": 619, "res": 3176, "ac": 18.3, "ao": 1902.3, "types": {"Street Light Out": 93.7, "Street Light Cycling": 6.3}, "type_detail": {"Street Light Out": {"pct": 93.7, "cnt": 580}, "Street Light Cycling": {"pct": 6.3, "cnt": 39}}}, {"z": "11212", "b": "BROOKLYN", "lat": 40.66257, "lon": -73.90916, "unres": 754, "res": 3867, "ac": 19.3, "ao": 1958.1, "types": {"Street Light Out": 93.0, "Street Light Cycling": 7.0}, "type_detail": {"Street Light Out": {"pct": 93.0, "cnt": 701}, "Street Light Cycling": {"pct": 7.0, "cnt": 53}}}, {"z": "11213", "b": "BROOKLYN", "lat": 40.67135, "lon": -73.93683, "unres": 824, "res": 4114, "ac": 13.7, "ao": 1933.0, "types": {"Street Light Out": 91.3, "Street Light Cycling": 8.7}, "type_detail": {"Street Light Out": {"pct": 91.3, "cnt": 752}, "Street Light Cycling": {"pct": 8.7, "cnt": 72}}}, {"z": "11214", "b": "BROOKLYN", "lat": 40.60066, "lon": -73.99524, "unres": 930, "res": 5047, "ac": 17.6, "ao": 1939.3, "types": {"Street Light Out": 95.0, "Street Light Cycling": 5.0}, "type_detail": {"Street Light Out": {"pct": 95.0, "cnt": 884}, "Street Light Cycling": {"pct": 5.0, "cnt": 46}}}, {"z": "11215", "b": "BROOKLYN", "lat": 40.6671, "lon": -73.9855, "unres": 1330, "res": 5802, "ac": 12.0, "ao": 1887.4, "types": {"Street Light Out": 84.8, "Street Light Cycling": 8.3, "Lamppost Base Door/Cover Open": 6.8}, "type_detail": {"Street Light Out": {"pct": 84.8, "cnt": 1128}, "Street Light Cycling": {"pct": 8.3, "cnt": 110}, "Lamppost Base Door/Cover Open": {"pct": 6.8, "cnt": 90}}}, {"z": "11216", "b": "BROOKLYN", "lat": 40.68011, "lon": -73.94915, "unres": 834, "res": 3421, "ac": 15.9, "ao": 1778.1, "types": {"Street Light Out": 90.6, "Lamppost Base Door/Cover Open": 5.2, "Street Light Cycling": 4.2}, "type_detail": {"Street Light Out": {"pct": 90.6, "cnt": 756}, "Lamppost Base Door/Cover Open": {"pct": 5.2, "cnt": 43}, "Street Light Cycling": {"pct": 4.2, "cnt": 35}}}, {"z": "11217", "b": "BROOKLYN", "lat": 40.6825, "lon": -73.97986, "unres": 877, "res": 3146, "ac": 16.3, "ao": 1947.1, "types": {"Street Light Out": 84.8, "Street Light Cycling": 8.7, "Lamppost Base Door/Cover Open": 6.5}, "type_detail": {"Street Light Out": {"pct": 84.8, "cnt": 744}, "Street Light Cycling": {"pct": 8.7, "cnt": 76}, "Lamppost Base Door/Cover Open": {"pct": 6.5, "cnt": 57}}}, {"z": "11218", "b": "BROOKLYN", "lat": 40.64397, "lon": -73.97912, "unres": 635, "res": 2769, "ac": 20.1, "ao": 1899.6, "types": {"Street Light Out": 94.3, "Street Light Cycling": 5.7}, "type_detail": {"Street Light Out": {"pct": 94.3, "cnt": 599}, "Street Light Cycling": {"pct": 5.7, "cnt": 36}}}, {"z": "11219", "b": "BROOKLYN", "lat": 40.63277, "lon": -73.99596, "unres": 781, "res": 4298, "ac": 14.4, "ao": 1861.3, "types": {"Street Light Out": 94.0, "Street Light Cycling": 6.0}, "type_detail": {"Street Light Out": {"pct": 94.0, "cnt": 734}, "Street Light Cycling": {"pct": 6.0, "cnt": 47}}}, {"z": "11220", "b": "BROOKLYN", "lat": 40.64097, "lon": -74.01481, "unres": 1378, "res": 5282, "ac": 14.0, "ao": 1864.7, "types": {"Street Light Out": 92.7, "Street Light Cycling": 7.3}, "type_detail": {"Street Light Out": {"pct": 92.7, "cnt": 1277}, "Street Light Cycling": {"pct": 7.3, "cnt": 101}}}, {"z": "11221", "b": "BROOKLYN", "lat": 40.69156, "lon": -73.92747, "unres": 1178, "res": 4890, "ac": 17.1, "ao": 1816.5, "types": {"Street Light Out": 90.2, "Lamppost Base Door/Cover Open": 5.5, "Street Light Cycling": 4.4}, "type_detail": {"Street Light Out": {"pct": 90.2, "cnt": 1063}, "Lamppost Base Door/Cover Open": {"pct": 5.5, "cnt": 65}, "Street Light Cycling": {"pct": 4.4, "cnt": 52}}}, {"z": "11222", "b": "BROOKLYN", "lat": 40.72706, "lon": -73.94856, "unres": 681, "res": 3365, "ac": 27.0, "ao": 2049.3, "types": {"Street Light Out": 87.0, "Street Light Cycling": 7.9, "Lamppost Base Door/Cover Open": 5.1}, "type_detail": {"Street Light Out": {"pct": 87.0, "cnt": 592}, "Street Light Cycling": {"pct": 7.9, "cnt": 54}, "Lamppost Base Door/Cover Open": {"pct": 5.1, "cnt": 35}}}, {"z": "11223", "b": "BROOKLYN", "lat": 40.59835, "lon": -73.97023, "unres": 490, "res": 2065, "ac": 14.1, "ao": 1722.9, "types": {"Street Light Out": 95.2, "Street Light Cycling": 4.8}, "type_detail": {"Street Light Out": {"pct": 95.2, "cnt": 466}, "Street Light Cycling": {"pct": 4.8, "cnt": 24}}}, {"z": "11224", "b": "BROOKLYN", "lat": 40.57734, "lon": -73.99481, "unres": 200, "res": 1255, "ac": 25.7, "ao": 1676.5, "types": {"Street Light Out": 100.0}, "type_detail": {"Street Light Out": {"pct": 100.0, "cnt": 200}}}, {"z": "11225", "b": "BROOKLYN", "lat": 40.66275, "lon": -73.95442, "unres": 597, "res": 2891, "ac": 13.4, "ao": 1783.7, "types": {"Street Light Out": 94.5, "Street Light Cycling": 5.5}, "type_detail": {"Street Light Out": {"pct": 94.5, "cnt": 564}, "Street Light Cycling": {"pct": 5.5, "cnt": 33}}}, {"z": "11226", "b": "BROOKLYN", "lat": 40.64928, "lon": -73.95557, "unres": 359, "res": 2069, "ac": 16.3, "ao": 1859.1, "types": {"Street Light Out": 94.8, "Street Light Cycling": 5.2}, "type_detail": {"Street Light Out": {"pct": 94.8, "cnt": 340}, "Street Light Cycling": {"pct": 5.2, "cnt": 19}}}, {"z": "11228", "b": "BROOKLYN", "lat": 40.617, "lon": -74.01266, "unres": 612, "res": 2242, "ac": 15.5, "ao": 1770.8, "types": {"Street Light Out": 100.0}, "type_detail": {"Street Light Out": {"pct": 100.0, "cnt": 612}}}, {"z": "11229", "b": "BROOKLYN", "lat": 40.59971, "lon": -73.93833, "unres": 663, "res": 3088, "ac": 12.7, "ao": 1676.6, "types": {"Street Light Out": 94.4, "Street Light Cycling": 5.6}, "type_detail": {"Street Light Out": {"pct": 94.4, "cnt": 626}, "Street Light Cycling": {"pct": 5.6, "cnt": 37}}}, {"z": "11230", "b": "BROOKLYN", "lat": 40.62368, "lon": -73.96809, "unres": 563, "res": 1850, "ac": 16.6, "ao": 1948.6, "types": {"Street Light Out": 93.5, "Street Light Cycling": 6.5}, "type_detail": {"Street Light Out": {"pct": 93.5, "cnt": 526}, "Street Light Cycling": {"pct": 6.5, "cnt": 37}}}, {"z": "11231", "b": "BROOKLYN", "lat": 40.67808, "lon": -74.0043, "unres": 1118, "res": 3810, "ac": 13.9, "ao": 1892.0, "types": {"Street Light Out": 90.1, "Street Light Cycling": 9.9}, "type_detail": {"Street Light Out": {"pct": 90.1, "cnt": 1007}, "Street Light Cycling": {"pct": 9.9, "cnt": 111}}}, {"z": "11232", "b": "BROOKLYN", "lat": 40.65611, "lon": -74.0042, "unres": 1252, "res": 3806, "ac": 11.2, "ao": 1823.8, "types": {"Street Light Out": 89.9, "Street Light Cycling": 10.1}, "type_detail": {"Street Light Out": {"pct": 89.9, "cnt": 1126}, "Street Light Cycling": {"pct": 10.1, "cnt": 126}}}, {"z": "11233", "b": "BROOKLYN", "lat": 40.67853, "lon": -73.9195, "unres": 972, "res": 4388, "ac": 17.2, "ao": 1871.9, "types": {"Street Light Out": 90.3, "Lamppost Base Door/Cover Open": 6.4, "Street Light Cycling": 3.3}, "type_detail": {"Street Light Out": {"pct": 90.3, "cnt": 878}, "Lamppost Base Door/Cover Open": {"pct": 6.4, "cnt": 62}, "Street Light Cycling": {"pct": 3.3, "cnt": 32}}}, {"z": "11234", "b": "BROOKLYN", "lat": 40.61613, "lon": -73.92138, "unres": 905, "res": 3566, "ac": 16.4, "ao": 2012.7, "types": {"Street Light Out": 94.0, "Street Light Cycling": 6.0}, "type_detail": {"Street Light Out": {"pct": 94.0, "cnt": 851}, "Street Light Cycling": {"pct": 6.0, "cnt": 54}}}, {"z": "11235", "b": "BROOKLYN", "lat": 40.58365, "lon": -73.94923, "unres": 1034, "res": 4475, "ac": 17.1, "ao": 2213.2, "types": {"Street Light Out": 96.9, "Street Light Cycling": 3.1}, "type_detail": {"Street Light Out": {"pct": 96.9, "cnt": 1002}, "Street Light Cycling": {"pct": 3.1, "cnt": 32}}}, {"z": "11236", "b": "BROOKLYN", "lat": 40.64031, "lon": -73.90416, "unres": 240, "res": 1387, "ac": 18.6, "ao": 2159.1, "types": {"Street Light Out": 93.4, "Street Light Cycling": 6.6}, "type_detail": {"Street Light Out": {"pct": 93.4, "cnt": 224}, "Street Light Cycling": {"pct": 6.6, "cnt": 16}}}, {"z": "11237", "b": "BROOKLYN", "lat": 40.70294, "lon": -73.91937, "unres": 467, "res": 2544, "ac": 18.4, "ao": 1894.0, "types": {"Street Light Out": 94.6, "Street Light Cycling": 5.4}, "type_detail": {"Street Light Out": {"pct": 94.6, "cnt": 442}, "Street Light Cycling": {"pct": 5.4, "cnt": 25}}}, {"z": "11238", "b": "BROOKLYN", "lat": 40.68047, "lon": -73.96364, "unres": 923, "res": 3408, "ac": 17.7, "ao": 1902.7, "types": {"Street Light Out": 95.5, "Street Light Cycling": 4.5}, "type_detail": {"Street Light Out": {"pct": 95.5, "cnt": 881}, "Street Light Cycling": {"pct": 4.5, "cnt": 42}}}, {"z": "11239", "b": "BROOKLYN", "lat": 40.64855, "lon": -73.87868, "unres": 115, "res": 487, "ac": 20.5, "ao": 1717.0, "types": {"Street Light Out": 100.0}, "type_detail": {"Street Light Out": {"pct": 100.0, "cnt": 115}}}, {"z": "11249", "b": "BROOKLYN", "lat": 40.70527, "lon": -73.96409, "unres": 113, "res": 497, "ac": 18.3, "ao": 1356.7, "types": {"Street Light Out": 100.0}, "type_detail": {"Street Light Out": {"pct": 100.0, "cnt": 113}}}, {"z": "11354", "b": "QUEENS", "lat": 40.76743, "lon": -73.82495, "unres": 739, "res": 3486, "ac": 17.9, "ao": 1955.8, "types": {"Street Light Out": 91.9, "Street Light Cycling": 5.1, "Street Light Dayburning": 3.0}, "type_detail": {"Street Light Out": {"pct": 91.9, "cnt": 679}, "Street Light Cycling": {"pct": 5.1, "cnt": 38}, "Street Light Dayburning": {"pct": 3.0, "cnt": 22}}}, {"z": "11355", "b": "QUEENS", "lat": 40.75193, "lon": -73.82179, "unres": 676, "res": 3555, "ac": 21.7, "ao": 1875.8, "types": {"Street Light Out": 89.8, "Street Light Cycling": 5.9, "Lamppost Base Door/Cover Open": 4.3}, "type_detail": {"Street Light Out": {"pct": 89.8, "cnt": 607}, "Street Light Cycling": {"pct": 5.9, "cnt": 40}, "Lamppost Base Door/Cover Open": {"pct": 4.3, "cnt": 29}}}, {"z": "11357", "b": "QUEENS", "lat": 40.78461, "lon": -73.80853, "unres": 803, "res": 4283, "ac": 17.8, "ao": 1727.4, "types": {"Street Light Out": 93.4, "Street Light Cycling": 3.9, "Street Light Dayburning": 2.7}, "type_detail": {"Street Light Out": {"pct": 93.4, "cnt": 750}, "Street Light Cycling": {"pct": 3.9, "cnt": 31}, "Street Light Dayburning": {"pct": 2.7, "cnt": 22}}}, {"z": "11358", "b": "QUEENS", "lat": 40.76106, "lon": -73.79635, "unres": 991, "res": 4061, "ac": 11.6, "ao": 1543.0, "types": {"Street Light Out": 90.5, "Street Light Cycling": 5.9, "Lamppost Base Door/Cover Open": 3.5}, "type_detail": {"Street Light Out": {"pct": 90.5, "cnt": 897}, "Street Light Cycling": {"pct": 5.9, "cnt": 58}, "Lamppost Base Door/Cover Open": {"pct": 3.5, "cnt": 35}}}, {"z": "11360", "b": "QUEENS", "lat": 40.77874, "lon": -73.78256, "unres": 302, "res": 1507, "ac": 17.2, "ao": 1942.8, "types": {"Street Light Out": 96.7, "Lamppost Base Door/Cover Open": 3.3}, "type_detail": {"Street Light Out": {"pct": 96.7, "cnt": 292}, "Lamppost Base Door/Cover Open": {"pct": 3.3, "cnt": 10}}}, {"z": "11361", "b": "QUEENS", "lat": 40.76345, "lon": -73.77414, "unres": 591, "res": 2840, "ac": 11.7, "ao": 1672.0, "types": {"Street Light Out": 89.5, "Lamppost Base Door/Cover Open": 5.5, "Street Light Cycling": 5.0}, "type_detail": {"Street Light Out": {"pct": 89.5, "cnt": 529}, "Lamppost Base Door/Cover Open": {"pct": 5.5, "cnt": 33}, "Street Light Cycling": {"pct": 5.0, "cnt": 30}}}, {"z": "11362", "b": "QUEENS", "lat": 40.76048, "lon": -73.73211, "unres": 524, "res": 2229, "ac": 16.1, "ao": 2051.0, "types": {"Street Light Out": 95.1, "Street Light Cycling": 4.9}, "type_detail": {"Street Light Out": {"pct": 95.1, "cnt": 498}, "Street Light Cycling": {"pct": 4.9, "cnt": 26}}}, {"z": "11363", "b": "QUEENS", "lat": 40.77151, "lon": -73.74726, "unres": 301, "res": 1048, "ac": 12.2, "ao": 2143.0, "types": {"Street Light Out": 94.9, "Street Light Cycling": 5.1}, "type_detail": {"Street Light Out": {"pct": 94.9, "cnt": 286}, "Street Light Cycling": {"pct": 5.1, "cnt": 15}}}, {"z": "11364", "b": "QUEENS", "lat": 40.745, "lon": -73.75934, "unres": 815, "res": 4253, "ac": 18.1, "ao": 1736.3, "types": {"Street Light Out": 88.6, "Street Light Cycling": 6.5, "Lamppost Base Door/Cover Open": 4.9}, "type_detail": {"Street Light Out": {"pct": 88.6, "cnt": 722}, "Street Light Cycling": {"pct": 6.5, "cnt": 53}, "Lamppost Base Door/Cover Open": {"pct": 4.9, "cnt": 40}}}, {"z": "11365", "b": "QUEENS", "lat": 40.74016, "lon": -73.793, "unres": 587, "res": 3621, "ac": 18.3, "ao": 1655.4, "types": {"Street Light Out": 89.7, "Lamppost Base Door/Cover Open": 5.4, "Street Light Cycling": 5.0}, "type_detail": {"Street Light Out": {"pct": 89.7, "cnt": 527}, "Lamppost Base Door/Cover Open": {"pct": 5.4, "cnt": 32}, "Street Light Cycling": {"pct": 5.0, "cnt": 29}}}, {"z": "11366", "b": "QUEENS", "lat": 40.72819, "lon": -73.79215, "unres": 344, "res": 2139, "ac": 15.4, "ao": 1804.0, "types": {"Street Light Out": 82.7, "Lamppost Base Door/Cover Open": 6.0, "Street Light Cycling": 3.9, "Fixture/Luminaire Door Open": 2.3, "Lamppost Wire Exposed": 2.0, "Street Light Dayburning": 1.8, "Other": 1.3}, "type_detail": {"Street Light Out": {"pct": 82.7, "cnt": 284}, "Lamppost Base Door/Cover Open": {"pct": 6.0, "cnt": 21}, "Street Light Cycling": {"pct": 3.9, "cnt": 13}, "Fixture/Luminaire Door Open": {"pct": 2.3, "cnt": 8}, "Lamppost Wire Exposed": {"pct": 2.0, "cnt": 7}, "Street Light Dayburning": {"pct": 1.8, "cnt": 6}, "Other": {"pct": 1.3, "cnt": 4}}}, {"z": "11367", "b": "QUEENS", "lat": 40.7274, "lon": -73.82099, "unres": 703, "res": 2583, "ac": 21.5, "ao": 2279.3, "types": {"Street Light Out": 88.9, "Street Light Cycling": 5.6, "Lamppost Base Door/Cover Open": 5.5}, "type_detail": {"Street Light Out": {"pct": 88.9, "cnt": 625}, "Street Light Cycling": {"pct": 5.6, "cnt": 39}, "Lamppost Base Door/Cover Open": {"pct": 5.5, "cnt": 39}}}, {"z": "11368", "b": "QUEENS", "lat": 40.7496, "lon": -73.85845, "unres": 898, "res": 4223, "ac": 19.3, "ao": 1838.2, "types": {"Street Light Out": 96.8, "Street Light Cycling": 3.2}, "type_detail": {"Street Light Out": {"pct": 96.8, "cnt": 869}, "Street Light Cycling": {"pct": 3.2, "cnt": 29}}}, {"z": "11369", "b": "QUEENS", "lat": 40.76334, "lon": -73.87309, "unres": 544, "res": 2755, "ac": 12.5, "ao": 1646.1, "types": {"Street Light Out": 94.6, "Street Light Cycling": 5.4}, "type_detail": {"Street Light Out": {"pct": 94.6, "cnt": 515}, "Street Light Cycling": {"pct": 5.4, "cnt": 29}}}, {"z": "11370", "b": "QUEENS", "lat": 40.76432, "lon": -73.89044, "unres": 534, "res": 2415, "ac": 10.7, "ao": 1655.6, "types": {"Street Light Out": 95.2, "Street Light Cycling": 4.8}, "type_detail": {"Street Light Out": {"pct": 95.2, "cnt": 508}, "Street Light Cycling": {"pct": 4.8, "cnt": 26}}}, {"z": "11372", "b": "QUEENS", "lat": 40.75166, "lon": -73.88381, "unres": 424, "res": 2726, "ac": 13.0, "ao": 1717.3, "types": {"Street Light Out": 94.9, "Street Light Cycling": 5.1}, "type_detail": {"Street Light Out": {"pct": 94.9, "cnt": 402}, "Street Light Cycling": {"pct": 5.1, "cnt": 22}}}, {"z": "11373", "b": "QUEENS", "lat": 40.73878, "lon": -73.87946, "unres": 660, "res": 4126, "ac": 17.0, "ao": 1802.2, "types": {"Street Light Out": 95.7, "Street Light Cycling": 4.3}, "type_detail": {"Street Light Out": {"pct": 95.7, "cnt": 632}, "Street Light Cycling": {"pct": 4.3, "cnt": 28}}}, {"z": "11374", "b": "QUEENS", "lat": 40.72557, "lon": -73.86341, "unres": 470, "res": 2431, "ac": 18.4, "ao": 1782.1, "types": {"Street Light Out": 91.6, "Lamppost Base Door/Cover Open": 8.4}, "type_detail": {"Street Light Out": {"pct": 91.6, "cnt": 431}, "Lamppost Base Door/Cover Open": {"pct": 8.4, "cnt": 39}}}, {"z": "11375", "b": "QUEENS", "lat": 40.72217, "lon": -73.84658, "unres": 605, "res": 4382, "ac": 21.0, "ao": 1907.4, "types": {"Street Light Out": 92.3, "Lamppost Base Door/Cover Open": 4.5, "Street Light Cycling": 3.2}, "type_detail": {"Street Light Out": {"pct": 92.3, "cnt": 558}, "Lamppost Base Door/Cover Open": {"pct": 4.5, "cnt": 27}, "Street Light Cycling": {"pct": 3.2, "cnt": 19}}}, {"z": "11377", "b": "QUEENS", "lat": 40.74438, "lon": -73.90432, "unres": 1113, "res": 5769, "ac": 14.2, "ao": 1719.8, "types": {"Street Light Out": 93.0, "Street Light Cycling": 7.0}, "type_detail": {"Street Light Out": {"pct": 93.0, "cnt": 1035}, "Street Light Cycling": {"pct": 7.0, "cnt": 78}}}, {"z": "11378", "b": "QUEENS", "lat": 40.72539, "lon": -73.90505, "unres": 679, "res": 4101, "ac": 24.4, "ao": 1831.7, "types": {"Street Light Out": 94.4, "Street Light Cycling": 5.6}, "type_detail": {"Street Light Out": {"pct": 94.4, "cnt": 641}, "Street Light Cycling": {"pct": 5.6, "cnt": 38}}}, {"z": "11379", "b": "QUEENS", "lat": 40.71827, "lon": -73.88081, "unres": 477, "res": 3305, "ac": 15.6, "ao": 1780.8, "types": {"Street Light Out": 94.9, "Street Light Cycling": 5.1}, "type_detail": {"Street Light Out": {"pct": 94.9, "cnt": 453}, "Street Light Cycling": {"pct": 5.1, "cnt": 24}}}, {"z": "11385", "b": "QUEENS", "lat": 40.70436, "lon": -73.89231, "unres": 1034, "res": 7592, "ac": 20.6, "ao": 1836.9, "types": {"Street Light Out": 93.9, "Street Light Cycling": 6.1}, "type_detail": {"Street Light Out": {"pct": 93.9, "cnt": 971}, "Street Light Cycling": {"pct": 6.1, "cnt": 63}}}, {"z": "11411", "b": "QUEENS", "lat": 40.6937, "lon": -73.73695, "unres": 350, "res": 2208, "ac": 16.7, "ao": 1745.3, "types": {"Street Light Out": 94.3, "Street Light Cycling": 5.7}, "type_detail": {"Street Light Out": {"pct": 94.3, "cnt": 330}, "Street Light Cycling": {"pct": 5.7, "cnt": 20}}}, {"z": "11412", "b": "QUEENS", "lat": 40.69904, "lon": -73.76048, "unres": 621, "res": 3493, "ac": 8.6, "ao": 1876.8, "types": {"Street Light Out": 93.6, "Street Light Cycling": 6.4}, "type_detail": {"Street Light Out": {"pct": 93.6, "cnt": 581}, "Street Light Cycling": {"pct": 6.4, "cnt": 40}}}, {"z": "11413", "b": "QUEENS", "lat": 40.6732, "lon": -73.75204, "unres": 673, "res": 4817, "ac": 7.1, "ao": 1850.7, "types": {"Street Light Out": 93.6, "Fixture/Luminaire Door Open": 3.2, "Street Light Cycling": 3.1}, "type_detail": {"Street Light Out": {"pct": 93.6, "cnt": 630}, "Fixture/Luminaire Door Open": {"pct": 3.2, "cnt": 22}, "Street Light Cycling": {"pct": 3.1, "cnt": 21}}}, {"z": "11414", "b": "QUEENS", "lat": 40.6591, "lon": -73.84331, "unres": 633, "res": 3564, "ac": 10.0, "ao": 1944.2, "types": {"Street Light Out": 91.5, "Street Light Cycling": 8.5}, "type_detail": {"Street Light Out": {"pct": 91.5, "cnt": 579}, "Street Light Cycling": {"pct": 8.5, "cnt": 54}}}, {"z": "11415", "b": "QUEENS", "lat": 40.70837, "lon": -73.82918, "unres": 150, "res": 1269, "ac": 26.0, "ao": 1913.3, "types": {"Street Light Out": 100.0}, "type_detail": {"Street Light Out": {"pct": 100.0, "cnt": 150}}}, {"z": "11416", "b": "QUEENS", "lat": 40.68458, "lon": -73.84887, "unres": 440, "res": 1995, "ac": 11.4, "ao": 1782.2, "types": {"Street Light Out": 90.6, "Street Light Cycling": 9.4}, "type_detail": {"Street Light Out": {"pct": 90.6, "cnt": 399}, "Street Light Cycling": {"pct": 9.4, "cnt": 41}}}, {"z": "11417", "b": "QUEENS", "lat": 40.67742, "lon": -73.84387, "unres": 530, "res": 2626, "ac": 13.1, "ao": 1861.8, "types": {"Street Light Out": 91.0, "Street Light Cycling": 9.0}, "type_detail": {"Street Light Out": {"pct": 91.0, "cnt": 482}, "Street Light Cycling": {"pct": 9.0, "cnt": 48}}}, {"z": "11418", "b": "QUEENS", "lat": 40.69893, "lon": -73.83065, "unres": 487, "res": 2706, "ac": 16.3, "ao": 1840.3, "types": {"Street Light Out": 96.2, "Street Light Cycling": 3.8}, "type_detail": {"Street Light Out": {"pct": 96.2, "cnt": 468}, "Street Light Cycling": {"pct": 3.8, "cnt": 19}}}, {"z": "11419", "b": "QUEENS", "lat": 40.68977, "lon": -73.82387, "unres": 492, "res": 2415, "ac": 9.8, "ao": 1551.2, "types": {"Street Light Out": 96.4, "Lamppost Base Door/Cover Open": 3.6}, "type_detail": {"Street Light Out": {"pct": 96.4, "cnt": 474}, "Lamppost Base Door/Cover Open": {"pct": 3.6, "cnt": 18}}}, {"z": "11420", "b": "QUEENS", "lat": 40.67523, "lon": -73.81579, "unres": 891, "res": 4046, "ac": 6.2, "ao": 1560.1, "types": {"Street Light Out": 92.0, "Street Light Cycling": 8.0}, "type_detail": {"Street Light Out": {"pct": 92.0, "cnt": 820}, "Street Light Cycling": {"pct": 8.0, "cnt": 71}}}, {"z": "11421", "b": "QUEENS", "lat": 40.69201, "lon": -73.85555, "unres": 407, "res": 2688, "ac": 19.9, "ao": 2088.7, "types": {"Street Light Out": 91.8, "Street Light Cycling": 8.2}, "type_detail": {"Street Light Out": {"pct": 91.8, "cnt": 374}, "Street Light Cycling": {"pct": 8.2, "cnt": 33}}}, {"z": "11422", "b": "QUEENS", "lat": 40.66356, "lon": -73.73507, "unres": 313, "res": 3252, "ac": 9.1, "ao": 1913.3, "types": {"Street Light Out": 95.5, "Street Light Cycling": 4.5}, "type_detail": {"Street Light Out": {"pct": 95.5, "cnt": 299}, "Street Light Cycling": {"pct": 4.5, "cnt": 14}}}, {"z": "11423", "b": "QUEENS", "lat": 40.71651, "lon": -73.76866, "unres": 501, "res": 2549, "ac": 11.9, "ao": 2044.9, "types": {"Street Light Out": 93.2, "Street Light Cycling": 6.8}, "type_detail": {"Street Light Out": {"pct": 93.2, "cnt": 467}, "Street Light Cycling": {"pct": 6.8, "cnt": 34}}}, {"z": "11426", "b": "QUEENS", "lat": 40.73456, "lon": -73.72085, "unres": 367, "res": 2136, "ac": 18.0, "ao": 1849.9, "types": {"Street Light Out": 93.7, "Lamppost Base Door/Cover Open": 6.3}, "type_detail": {"Street Light Out": {"pct": 93.7, "cnt": 344}, "Lamppost Base Door/Cover Open": {"pct": 6.3, "cnt": 23}}}, {"z": "11427", "b": "QUEENS", "lat": 40.73035, "lon": -73.74768, "unres": 568, "res": 2277, "ac": 19.0, "ao": 2047.2, "types": {"Street Light Out": 93.2, "Lamppost Base Door/Cover Open": 6.8}, "type_detail": {"Street Light Out": {"pct": 93.2, "cnt": 529}, "Lamppost Base Door/Cover Open": {"pct": 6.8, "cnt": 39}}}, {"z": "11428", "b": "QUEENS", "lat": 40.72139, "lon": -73.74262, "unres": 442, "res": 2130, "ac": 15.9, "ao": 1918.0, "types": {"Street Light Out": 94.1, "Street Light Cycling": 5.9}, "type_detail": {"Street Light Out": {"pct": 94.1, "cnt": 416}, "Street Light Cycling": {"pct": 5.9, "cnt": 26}}}, {"z": "11429", "b": "QUEENS", "lat": 40.70956, "lon": -73.73952, "unres": 392, "res": 2179, "ac": 13.0, "ao": 1977.1, "types": {"Street Light Out": 93.3, "Street Light Cycling": 6.7}, "type_detail": {"Street Light Out": {"pct": 93.3, "cnt": 366}, "Street Light Cycling": {"pct": 6.7, "cnt": 26}}}, {"z": "11432", "b": "QUEENS", "lat": 40.71326, "lon": -73.79375, "unres": 669, "res": 3612, "ac": 23.8, "ao": 1934.2, "types": {"Street Light Out": 94.5, "Lamppost Base Door/Cover Open": 5.5}, "type_detail": {"Street Light Out": {"pct": 94.5, "cnt": 632}, "Lamppost Base Door/Cover Open": {"pct": 5.5, "cnt": 37}}}, {"z": "11433", "b": "QUEENS", "lat": 40.6985, "lon": -73.78737, "unres": 599, "res": 2603, "ac": 17.2, "ao": 2069.4, "types": {"Street Light Out": 93.3, "Street Light Cycling": 6.7}, "type_detail": {"Street Light Out": {"pct": 93.3, "cnt": 559}, "Street Light Cycling": {"pct": 6.7, "cnt": 40}}}, {"z": "11434", "b": "QUEENS", "lat": 40.67774, "lon": -73.77765, "unres": 2050, "res": 4627, "ac": 9.9, "ao": 1991.7, "types": {"Street Light Out": 92.1, "Street Light Cycling": 4.0, "Fixture/Luminaire Door Open": 3.9}, "type_detail": {"Street Light Out": {"pct": 92.1, "cnt": 1888}, "Street Light Cycling": {"pct": 4.0, "cnt": 82}, "Fixture/Luminaire Door Open": {"pct": 3.9, "cnt": 80}}}, {"z": "11435", "b": "QUEENS", "lat": 40.7005, "lon": -73.80889, "unres": 659, "res": 3157, "ac": 20.5, "ao": 1833.4, "types": {"Street Light Out": 96.5, "Street Light Cycling": 3.5}, "type_detail": {"Street Light Out": {"pct": 96.5, "cnt": 636}, "Street Light Cycling": {"pct": 3.5, "cnt": 23}}}, {"z": "11436", "b": "QUEENS", "lat": 40.67699, "lon": -73.797, "unres": 494, "res": 1949, "ac": 4.7, "ao": 1752.4, "types": {"Street Light Out": 96.5, "Street Light Cycling": 3.5}, "type_detail": {"Street Light Out": {"pct": 96.5, "cnt": 477}, "Street Light Cycling": {"pct": 3.5, "cnt": 17}}}, {"z": "11691", "b": "QUEENS", "lat": 40.59943, "lon": -73.76007, "unres": 991, "res": 4131, "ac": 8.5, "ao": 1942.3, "types": {"Street Light Out": 95.0, "Street Light Cycling": 5.0}, "type_detail": {"Street Light Out": {"pct": 95.0, "cnt": 941}, "Street Light Cycling": {"pct": 5.0, "cnt": 50}}}, {"z": "11692", "b": "QUEENS", "lat": 40.5925, "lon": -73.79583, "unres": 522, "res": 1786, "ac": 13.6, "ao": 1784.2, "types": {"Street Light Out": 95.7, "Street Light Cycling": 4.3}, "type_detail": {"Street Light Out": {"pct": 95.7, "cnt": 500}, "Street Light Cycling": {"pct": 4.3, "cnt": 22}}}, {"z": "11693", "b": "QUEENS", "lat": 40.58906, "lon": -73.8137, "unres": 326, "res": 1311, "ac": 14.3, "ao": 1825.7, "types": {"Street Light Out": 100.0}, "type_detail": {"Street Light Out": {"pct": 100.0, "cnt": 326}}}, {"z": "11694", "b": "QUEENS", "lat": 40.57903, "lon": -73.84179, "unres": 784, "res": 3072, "ac": 11.4, "ao": 1733.7, "types": {"Street Light Out": 95.7, "Street Light Cycling": 4.3}, "type_detail": {"Street Light Out": {"pct": 95.7, "cnt": 750}, "Street Light Cycling": {"pct": 4.3, "cnt": 34}}}];
+const BORO_LABELS = {"The Bronx": [40.853, -73.866], "Brooklyn": [40.645, -73.948], "Manhattan": [40.776, -73.971], "Queens": [40.706, -73.795], "Staten Island": [40.576, -74.145]};
 
-const COMPLAINTS={"10001": [["Non-Residential Heat", 305], ["Food Establishment", 262], ["Food Poisoning", 206], ["Smoking", 204], ["Homeless Person Assistance", 176], ["New Tree Request", 123], ["Noise", 83], ["Street Condition", 82], ["Rodent", 70], ["For Hire Vehicle Complaint", 66]], "10002": [["Street Light Condition", 821], ["Smoking", 320], ["Food Establishment", 279], ["New Tree Request", 250], ["Graffiti", 219], ["Rodent", 162], ["Food Poisoning", 122], ["Street Condition", 112], ["PLUMBING", 88], ["Non-Residential Heat", 81]], "10003": [["New Tree Request", 497], ["Food Establishment", 363], ["Food Poisoning", 279], ["Homeless Person Assistance", 200], ["Smoking", 199], ["Rodent", 154], ["Non-Residential Heat", 144], ["Damaged Tree", 110], ["Graffiti", 109], ["Taxi Complaint", 93]], "10004": [["Street Light Condition", 127], ["Smoking", 70], ["Food Establishment", 68], ["Non-Residential Heat", 42], ["Food Poisoning", 39], ["Street Condition", 32], ["Unleashed Dog", 19], ["Homeless Person Assistance", 15], ["Noise", 12], ["For Hire Vehicle Complaint", 11]], "10005": [["Street Light Condition", 144], ["Non-Residential Heat", 49], ["Food Establishment", 31], ["Smoking", 24], ["Food Poisoning", 23], ["Homeless Person Assistance", 15], ["Mobile Food Vendor", 14], ["Street Condition", 13], ["Indoor Air Quality", 11], ["Noise", 10]], "10006": [["Street Light Condition", 74], ["Food Establishment", 26], ["Non-Residential Heat", 22], ["Food Poisoning", 16], ["Noise", 16], ["Homeless Person Assistance", 12], ["Street Condition", 11], ["Smoking", 10], ["Indoor Air Quality", 5], ["Rodent", 3]], "10007": [["Street Light Condition", 311], ["Food Establishment", 98], ["Non-Residential Heat", 83], ["Food Poisoning", 78], ["Smoking", 76], ["Street Condition", 30], ["Rodent", 26], ["New Tree Request", 23], ["Homeless Person Assistance", 23], ["Mobile Food Vendor", 15]], "10009": [["New Tree Request", 338], ["Rodent", 205], ["Food Establishment", 134], ["Smoking", 133], ["Graffiti", 110], ["GENERAL CONSTRUCTION", 96], ["PLUMBING", 94], ["Food Poisoning", 90], ["HEAT/HOT WATER", 89], ["Indoor Air Quality", 82]], "10010": [["Indoor Air Quality", 398], ["Smoking", 243], ["Food Establishment", 165], ["Food Poisoning", 110], ["Non-Residential Heat", 109], ["New Tree Request", 88], ["Homeless Person Assistance", 63], ["Taxi Complaint", 51], ["Rodent", 49], ["Street Condition", 44]], "10011": [["New Tree Request", 661], ["Food Establishment", 273], ["Food Poisoning", 195], ["Smoking", 166], ["Homeless Person Assistance", 129], ["Rodent", 125], ["Damaged Tree", 119], ["Non-Residential Heat", 111], ["GENERAL CONSTRUCTION", 86], ["Street Condition", 82]], "10012": [["Street Light Condition", 278], ["Food Establishment", 185], ["New Tree Request", 159], ["Non-Residential Heat", 128], ["Food Poisoning", 116], ["Smoking", 87], ["Rodent", 81], ["Damaged Tree", 81], ["Graffiti", 73], ["Street Condition", 62]], "10013": [["Street Light Condition", 715], ["Food Establishment", 333], ["Smoking", 182], ["Food Poisoning", 174], ["Graffiti", 117], ["Non-Residential Heat", 115], ["New Tree Request", 114], ["Rodent", 100], ["Street Condition", 81], ["Homeless Person Assistance", 51]], "10014": [["Street Light Condition", 391], ["New Tree Request", 346], ["Food Establishment", 188], ["Smoking", 156], ["Damaged Tree", 143], ["Rodent", 143], ["Food Poisoning", 136], ["Dead/Dying Tree", 84], ["Overgrown Tree/Branches", 81], ["Dead Tree", 69]], "10016": [["New Tree Request", 317], ["Food Establishment", 307], ["Food Poisoning", 205], ["Non-Residential Heat", 183], ["Smoking", 156], ["Homeless Person Assistance", 133], ["Noise", 125], ["Taxi Complaint", 81], ["Street Condition", 80], ["Rodent", 77]], "10017": [["Food Establishment", 199], ["Food Poisoning", 151], ["Smoking", 119], ["Non-Residential Heat", 100], ["Homeless Person Assistance", 95], ["New Tree Request", 71], ["Street Condition", 50], ["Taxi Complaint", 44], ["For Hire Vehicle Complaint", 36], ["Damaged Tree", 36]], "10018": [["Smoking", 269], ["Food Establishment", 237], ["Non-Residential Heat", 228], ["Food Poisoning", 122], ["Homeless Person Assistance", 84], ["Street Condition", 53], ["New Tree Request", 46], ["Water System", 37], ["Taxi Complaint", 36], ["Rodent", 27]], "10019": [["Food Establishment", 354], ["Food Poisoning", 281], ["New Tree Request", 251], ["Smoking", 185], ["Street Light Condition", 176], ["Taxi Complaint", 146], ["Non-Residential Heat", 143], ["Homeless Person Assistance", 136], ["Street Condition", 114], ["Indoor Air Quality", 98]], "10021": [["New Tree Request", 836], ["Damaged Tree", 114], ["Food Establishment", 87], ["Food Poisoning", 82], ["Rodent", 73], ["Overgrown Tree/Branches", 62], ["Smoking", 61], ["Street Condition", 47], ["Dead/Dying Tree", 47], ["Dead Tree", 40]], "10022": [["Food Establishment", 197], ["Food Poisoning", 186], ["New Tree Request", 153], ["Smoking", 149], ["Non-Residential Heat", 122], ["Street Condition", 112], ["Homeless Person Assistance", 76], ["Taxi Complaint", 72], ["For Hire Vehicle Complaint", 68], ["Rodent", 56]], "10023": [["Homeless Person Assistance", 241], ["New Tree Request", 231], ["Food Establishment", 151], ["Rodent", 146], ["Food Poisoning", 137], ["Damaged Tree", 114], ["Overgrown Tree/Branches", 77], ["Smoking", 74], ["Indoor Air Quality", 73], ["Dead Tree", 64]], "10024": [["New Tree Request", 334], ["Rodent", 260], ["Food Establishment", 162], ["Food Poisoning", 121], ["Damaged Tree", 112], ["Homeless Person Assistance", 106], ["GENERAL CONSTRUCTION", 87], ["Smoking", 76], ["Street Condition", 74], ["Overgrown Tree/Branches", 73]], "10025": [["New Tree Request", 344], ["Rodent", 305], ["Food Establishment", 198], ["Smoking", 180], ["PLUMBING", 178], ["PAINT - PLASTER", 151], ["GENERAL CONSTRUCTION", 129], ["Food Poisoning", 127], ["Homeless Person Assistance", 111], ["NONCONST", 110]], "10026": [["New Tree Request", 172], ["Rodent", 165], ["GENERAL CONSTRUCTION", 164], ["PLUMBING", 151], ["PAINT - PLASTER", 121], ["Food Establishment", 95], ["HEAT/HOT WATER", 79], ["ELECTRIC", 67], ["NONCONST", 66], ["Smoking", 65]], "10027": [["New Tree Request", 399], ["PLUMBING", 297], ["GENERAL CONSTRUCTION", 234], ["PAINT - PLASTER", 191], ["Food Establishment", 188], ["Rodent", 174], ["NONCONST", 139], ["Non-Residential Heat", 134], ["Street Light Condition", 118], ["Food Poisoning", 116]], "10028": [["New Tree Request", 333], ["Food Establishment", 140], ["Rodent", 100], ["Food Poisoning", 95], ["Smoking", 83], ["Damaged Tree", 77], ["Dead/Dying Tree", 54], ["Overgrown Tree/Branches", 54], ["Dead Tree", 51], ["Street Condition", 42]], "10029": [["Food Establishment", 287], ["Smoking", 212], ["Rodent", 195], ["New Tree Request", 187], ["GENERAL CONSTRUCTION", 185], ["PLUMBING", 140], ["PAINT - PLASTER", 132], ["Food Poisoning", 94], ["NONCONST", 81], ["Indoor Air Quality", 77]], "10030": [["GENERAL CONSTRUCTION", 222], ["PLUMBING", 211], ["PAINT - PLASTER", 142], ["NONCONST", 142], ["HEAT/HOT WATER", 130], ["Rodent", 123], ["New Tree Request", 106], ["Smoking", 83], ["ELECTRIC", 66], ["Overgrown Tree/Branches", 58]], "10031": [["GENERAL CONSTRUCTION", 587], ["PAINT - PLASTER", 462], ["PLUMBING", 427], ["Indoor Air Quality", 377], ["Rodent", 321], ["NONCONST", 266], ["HEATING", 222], ["Smoking", 217], ["ELECTRIC", 203], ["New Tree Request", 197]], "10032": [["GENERAL CONSTRUCTION", 554], ["PLUMBING", 473], ["PAINT - PLASTER", 364], ["NONCONST", 192], ["Rodent", 191], ["Smoking", 190], ["New Tree Request", 183], ["ELECTRIC", 131], ["HEAT/HOT WATER", 100], ["Food Establishment", 93]], "10033": [["GENERAL CONSTRUCTION", 326], ["PAINT - PLASTER", 284], ["PLUMBING", 235], ["New Tree Request", 203], ["NONCONST", 176], ["Smoking", 138], ["Rodent", 123], ["Food Establishment", 92], ["ELECTRIC", 87], ["Damaged Tree", 85]], "10034": [["GENERAL CONSTRUCTION", 414], ["Street Light Condition", 382], ["PAINT - PLASTER", 296], ["PLUMBING", 281], ["New Tree Request", 267], ["Rodent", 215], ["NONCONST", 139], ["Smoking", 122], ["Food Establishment", 88], ["ELECTRIC", 81]], "10035": [["New Tree Request", 224], ["GENERAL CONSTRUCTION", 147], ["Rodent", 136], ["PLUMBING", 135], ["Food Establishment", 128], ["Smoking", 123], ["PAINT - PLASTER", 104], ["NONCONST", 82], ["Homeless Person Assistance", 78], ["Food Poisoning", 69]], "10036": [["New Tree Request", 336], ["Food Establishment", 285], ["Non-Residential Heat", 264], ["Food Poisoning", 248], ["Homeless Person Assistance", 214], ["Smoking", 205], ["Taxi Complaint", 152], ["Rodent", 91], ["Street Condition", 64], ["GENERAL CONSTRUCTION", 62]], "10037": [["New Tree Request", 161], ["GENERAL CONSTRUCTION", 100], ["PLUMBING", 70], ["PAINT - PLASTER", 55], ["NONCONST", 51], ["Food Establishment", 48], ["Rodent", 45], ["Non-Residential Heat", 44], ["ELECTRIC", 44], ["HEAT/HOT WATER", 39]], "10038": [["Street Light Condition", 342], ["Non-Residential Heat", 184], ["Food Establishment", 142], ["Smoking", 85], ["Food Poisoning", 76], ["Rodent", 63], ["New Tree Request", 31], ["Noise", 28], ["Homeless Person Assistance", 27], ["Street Condition", 26]], "10039": [["PLUMBING", 113], ["PAINT - PLASTER", 107], ["NONCONST", 80], ["GENERAL CONSTRUCTION", 77], ["Smoking", 63], ["New Tree Request", 55], ["Rodent", 49], ["Food Establishment", 47], ["ELECTRIC", 25], ["Non-Residential Heat", 25]], "10040": [["GENERAL CONSTRUCTION", 555], ["Street Light Condition", 391], ["PLUMBING", 389], ["PAINT - PLASTER", 384], ["Indoor Air Quality", 379], ["Rodent", 167], ["NONCONST", 162], ["New Tree Request", 150], ["Smoking", 91], ["ELECTRIC", 84]], "10065": [["New Tree Request", 246], ["Food Establishment", 91], ["Rodent", 78], ["Food Poisoning", 70], ["Damaged Tree", 62], ["Street Condition", 57], ["Smoking", 50], ["Non-Residential Heat", 47], ["Overgrown Tree/Branches", 36], ["Homeless Person Assistance", 35]], "10075": [["New Tree Request", 389], ["Food Establishment", 73], ["Rodent", 52], ["Damaged Tree", 47], ["Food Poisoning", 42], ["Dead/Dying Tree", 33], ["Street Condition", 27], ["Non-Residential Heat", 27], ["Overgrown Tree/Branches", 25], ["Smoking", 24]], "10128": [["New Tree Request", 541], ["Rodent", 197], ["Smoking", 87], ["Food Establishment", 86], ["GENERAL CONSTRUCTION", 79], ["Damaged Tree", 73], ["Dead Tree", 73], ["Overgrown Tree/Branches", 61], ["Dead/Dying Tree", 61], ["NONCONST", 57]], "10451": [["GENERAL CONSTRUCTION", 230], ["PLUMBING", 197], ["PAINT - PLASTER", 156], ["Rodent", 154], ["Damaged Tree", 137], ["New Tree Request", 130], ["Non-Residential Heat", 99], ["Smoking", 98], ["NONCONST", 88], ["Food Establishment", 87]], "10452": [["Street Light Condition", 570], ["GENERAL CONSTRUCTION", 546], ["PAINT - PLASTER", 487], ["PLUMBING", 461], ["Rodent", 228], ["NONCONST", 208], ["Smoking", 160], ["Damaged Tree", 150], ["New Tree Request", 126], ["ELECTRIC", 113]], "10453": [["GENERAL CONSTRUCTION", 695], ["PLUMBING", 596], ["PAINT - PLASTER", 546], ["Street Light Condition", 398], ["NONCONST", 348], ["Rodent", 296], ["Damaged Tree", 202], ["New Tree Request", 180], ["ELECTRIC", 164], ["Overgrown Tree/Branches", 134]], "10454": [["Street Light Condition", 270], ["GENERAL CONSTRUCTION", 132], ["PAINT - PLASTER", 123], ["Rodent", 122], ["PLUMBING", 99], ["NONCONST", 93], ["Damaged Tree", 78], ["Graffiti", 67], ["Non-Residential Heat", 64], ["New Tree Request", 64]], "10455": [["Street Light Condition", 779], ["Rodent", 187], ["GENERAL CONSTRUCTION", 181], ["PAINT - PLASTER", 154], ["PLUMBING", 144], ["Damaged Tree", 134], ["Overgrown Tree/Branches", 104], ["Graffiti", 94], ["Food Establishment", 94], ["NONCONST", 90]], "10456": [["Street Light Condition", 578], ["GENERAL CONSTRUCTION", 471], ["PLUMBING", 433], ["PAINT - PLASTER", 338], ["Rodent", 265], ["Smoking", 234], ["NONCONST", 228], ["Overgrown Tree/Branches", 189], ["Damaged Tree", 176], ["New Tree Request", 127]], "10457": [["GENERAL CONSTRUCTION", 587], ["PAINT - PLASTER", 430], ["PLUMBING", 395], ["Street Light Condition", 339], ["Rodent", 244], ["NONCONST", 220], ["New Tree Request", 146], ["ELECTRIC", 144], ["Damaged Tree", 135], ["Graffiti", 128]], "10458": [["GENERAL CONSTRUCTION", 749], ["PAINT - PLASTER", 641], ["PLUMBING", 553], ["NONCONST", 401], ["Street Light Condition", 401], ["New Tree Request", 349], ["Damaged Tree", 256], ["Rodent", 245], ["ELECTRIC", 178], ["Smoking", 175]], "10459": [["Street Light Condition", 705], ["PLUMBING", 257], ["GENERAL CONSTRUCTION", 231], ["Rodent", 200], ["PAINT - PLASTER", 195], ["Overgrown Tree/Branches", 179], ["Damaged Tree", 150], ["NONCONST", 117], ["New Tree Request", 107], ["Graffiti", 96]], "10460": [["Street Light Condition", 850], ["GENERAL CONSTRUCTION", 416], ["PLUMBING", 340], ["PAINT - PLASTER", 287], ["Rodent", 213], ["Damaged Tree", 196], ["NONCONST", 184], ["Overgrown Tree/Branches", 161], ["Root/Sewer/Sidewalk Condition", 92], ["ELECTRIC", 87]], "10461": [["Street Light Condition", 2164], ["Overgrown Tree/Branches", 876], ["Damaged Tree", 810], ["Root/Sewer/Sidewalk Condition", 371], ["New Tree Request", 284], ["Dead Tree", 251], ["Food Establishment", 127], ["Literature Request", 109], ["Dead/Dying Tree", 109], ["Illegal Tree Damage", 95]], "10462": [["Street Light Condition", 1822], ["Overgrown Tree/Branches", 473], ["Damaged Tree", 456], ["GENERAL CONSTRUCTION", 309], ["PAINT - PLASTER", 219], ["PLUMBING", 215], ["Root/Sewer/Sidewalk Condition", 213], ["Food Establishment", 166], ["Rodent", 166], ["Dead Tree", 164]], "10463": [["Damaged Tree", 833], ["Street Light Condition", 679], ["Overgrown Tree/Branches", 293], ["New Tree Request", 274], ["GENERAL CONSTRUCTION", 198], ["PLUMBING", 181], ["Dead Tree", 166], ["Rodent", 166], ["PAINT - PLASTER", 140], ["Smoking", 109]], "10464": [["Street Light Condition", 761], ["Overgrown Tree/Branches", 277], ["Damaged Tree", 154], ["Root/Sewer/Sidewalk Condition", 73], ["Dead Tree", 70], ["New Tree Request", 54], ["Food Establishment", 41], ["Rodent", 39], ["Standing Water", 26], ["Literature Request", 24]], "10465": [["Street Light Condition", 2879], ["Overgrown Tree/Branches", 953], ["Damaged Tree", 806], ["Root/Sewer/Sidewalk Condition", 346], ["Dead Tree", 284], ["New Tree Request", 167], ["Literature Request", 139], ["Unsanitary Animal Pvt Property", 94], ["Rodent", 85], ["Dead/Dying Tree", 82]], "10466": [["Street Light Condition", 1098], ["Overgrown Tree/Branches", 990], ["Damaged Tree", 763], ["Root/Sewer/Sidewalk Condition", 429], ["PLUMBING", 280], ["GENERAL CONSTRUCTION", 271], ["PAINT - PLASTER", 247], ["Dead Tree", 183], ["NONCONST", 148], ["Rodent", 136]], "10467": [["Street Light Condition", 1369], ["GENERAL CONSTRUCTION", 669], ["PAINT - PLASTER", 561], ["PLUMBING", 523], ["Damaged Tree", 516], ["Rodent", 347], ["NONCONST", 302], ["New Tree Request", 297], ["Overgrown Tree/Branches", 278], ["Smoking", 226]], "10468": [["Street Light Condition", 653], ["Smoking", 562], ["GENERAL CONSTRUCTION", 540], ["PLUMBING", 530], ["PAINT - PLASTER", 460], ["Rodent", 309], ["NONCONST", 244], ["Damaged Tree", 227], ["New Tree Request", 199], ["ELECTRIC", 154]], "10469": [["Street Light Condition", 2993], ["Damaged Tree", 1011], ["Overgrown Tree/Branches", 992], ["Root/Sewer/Sidewalk Condition", 693], ["Dead Tree", 345], ["New Tree Request", 160], ["Rodent", 158], ["GENERAL CONSTRUCTION", 156], ["PLUMBING", 131], ["Literature Request", 110]], "10470": [["Street Light Condition", 282], ["Damaged Tree", 230], ["Overgrown Tree/Branches", 229], ["GENERAL CONSTRUCTION", 105], ["New Tree Request", 85], ["PLUMBING", 82], ["Root/Sewer/Sidewalk Condition", 74], ["Dead Tree", 68], ["NONCONST", 61], ["PAINT - PLASTER", 47]], "10471": [["Damaged Tree", 583], ["Street Light Condition", 280], ["Overgrown Tree/Branches", 254], ["Dead Tree", 122], ["Root/Sewer/Sidewalk Condition", 96], ["New Tree Request", 74], ["Dead/Dying Tree", 48], ["Rodent", 45], ["Literature Request", 37], ["Street Condition", 35]], "10472": [["Street Light Condition", 1745], ["GENERAL CONSTRUCTION", 416], ["PLUMBING", 343], ["Overgrown Tree/Branches", 330], ["PAINT - PLASTER", 318], ["Damaged Tree", 267], ["Smoking", 208], ["NONCONST", 200], ["Rodent", 196], ["Root/Sewer/Sidewalk Condition", 154]], "10473": [["Street Light Condition", 3759], ["Overgrown Tree/Branches", 320], ["Damaged Tree", 290], ["Root/Sewer/Sidewalk Condition", 131], ["Rodent", 125], ["PLUMBING", 86], ["GENERAL CONSTRUCTION", 82], ["Dead Tree", 69], ["Food Establishment", 66], ["New Tree Request", 54]], "10474": [["Street Light Condition", 1827], ["New Tree Request", 112], ["GENERAL CONSTRUCTION", 95], ["Damaged Tree", 67], ["PLUMBING", 66], ["PAINT - PLASTER", 64], ["Overgrown Tree/Branches", 56], ["Rodent", 48], ["Graffiti", 45], ["NONCONST", 30]], "10475": [["Street Light Condition", 1617], ["Food Establishment", 80], ["Damaged Tree", 77], ["Overgrown Tree/Branches", 62], ["Food Poisoning", 51], ["Rodent", 42], ["Root/Sewer/Sidewalk Condition", 42], ["Non-Residential Heat", 41], ["Dead Tree", 35], ["PLUMBING", 30]], "11201": [["Street Light Condition", 1238], ["New Tree Request", 486], ["Street Condition", 277], ["Food Establishment", 265], ["Damaged Tree", 219], ["Non-Residential Heat", 206], ["Food Poisoning", 161], ["Dead/Dying Tree", 132], ["Smoking", 131], ["Overgrown Tree/Branches", 109]], "11203": [["Overgrown Tree/Branches", 568], ["Root/Sewer/Sidewalk Condition", 551], ["Street Light Condition", 518], ["GENERAL CONSTRUCTION", 358], ["PLUMBING", 331], ["Damaged Tree", 328], ["New Tree Request", 276], ["PAINT - PLASTER", 262], ["Rodent", 237], ["NONCONST", 217]], "11204": [["Street Light Condition", 778], ["New Tree Request", 491], ["Root/Sewer/Sidewalk Condition", 414], ["Damaged Tree", 372], ["Overgrown Tree/Branches", 309], ["Smoking", 253], ["Street Condition", 214], ["Literature Request", 132], ["Dead/Dying Tree", 116], ["GENERAL CONSTRUCTION", 102]], "11205": [["Street Light Condition", 797], ["New Tree Request", 258], ["Rodent", 177], ["Food Establishment", 106], ["Damaged Tree", 102], ["Window Guard", 81], ["Non-Residential Heat", 72], ["Street Condition", 72], ["Food Poisoning", 67], ["PLUMBING", 62]], "11206": [["Street Light Condition", 1133], ["Smoking", 378], ["New Tree Request", 275], ["Rodent", 226], ["GENERAL CONSTRUCTION", 179], ["Graffiti", 156], ["Street Condition", 150], ["Food Establishment", 115], ["Window Guard", 113], ["PLUMBING", 107]], "11207": [["Street Light Condition", 1860], ["GENERAL CONSTRUCTION", 578], ["PAINT - PLASTER", 418], ["Rodent", 399], ["PLUMBING", 394], ["Overgrown Tree/Branches", 360], ["NONCONST", 350], ["Street Condition", 294], ["Root/Sewer/Sidewalk Condition", 258], ["Damaged Tree", 235]], "11208": [["Street Light Condition", 1335], ["Street Condition", 354], ["Overgrown Tree/Branches", 325], ["PLUMBING", 294], ["GENERAL CONSTRUCTION", 288], ["Rodent", 259], ["Root/Sewer/Sidewalk Condition", 247], ["Damaged Tree", 208], ["NONCONST", 193], ["PAINT - PLASTER", 180]], "11209": [["Street Light Condition", 650], ["Damaged Tree", 421], ["Overgrown Tree/Branches", 341], ["New Tree Request", 340], ["Root/Sewer/Sidewalk Condition", 328], ["Food Establishment", 194], ["Smoking", 188], ["Street Condition", 177], ["Dead/Dying Tree", 138], ["GENERAL CONSTRUCTION", 117]], "11210": [["Overgrown Tree/Branches", 492], ["Root/Sewer/Sidewalk Condition", 485], ["New Tree Request", 422], ["Damaged Tree", 413], ["GENERAL CONSTRUCTION", 378], ["Street Light Condition", 360], ["PLUMBING", 322], ["PAINT - PLASTER", 263], ["NONCONST", 231], ["Rodent", 219]], "11211": [["Street Light Condition", 660], ["New Tree Request", 394], ["Rodent", 284], ["Food Establishment", 219], ["Damaged Tree", 190], ["Smoking", 189], ["GENERAL CONSTRUCTION", 186], ["Graffiti", 173], ["PLUMBING", 167], ["Dead/Dying Tree", 136]], "11212": [["Street Light Condition", 1045], ["GENERAL CONSTRUCTION", 462], ["PAINT - PLASTER", 383], ["PLUMBING", 375], ["Overgrown Tree/Branches", 352], ["Root/Sewer/Sidewalk Condition", 337], ["NONCONST", 310], ["Rodent", 259], ["Damaged Tree", 237], ["New Tree Request", 199]], "11213": [["Street Light Condition", 898], ["GENERAL CONSTRUCTION", 455], ["Overgrown Tree/Branches", 379], ["PLUMBING", 360], ["PAINT - PLASTER", 313], ["Root/Sewer/Sidewalk Condition", 302], ["NONCONST", 271], ["Rodent", 244], ["Damaged Tree", 228], ["New Tree Request", 219]], "11214": [["Street Light Condition", 860], ["Root/Sewer/Sidewalk Condition", 478], ["New Tree Request", 460], ["Damaged Tree", 395], ["Overgrown Tree/Branches", 381], ["Smoking", 245], ["Street Condition", 235], ["Literature Request", 170], ["Dead/Dying Tree", 132], ["Food Establishment", 112]], "11215": [["Street Light Condition", 711], ["New Tree Request", 503], ["Rodent", 437], ["Damaged Tree", 422], ["Overgrown Tree/Branches", 402], ["GENERAL CONSTRUCTION", 383], ["PLUMBING", 331], ["Dead/Dying Tree", 271], ["Food Establishment", 270], ["PAINT - PLASTER", 253]], "11216": [["Street Light Condition", 977], ["GENERAL CONSTRUCTION", 475], ["PLUMBING", 416], ["PAINT - PLASTER", 376], ["Rodent", 333], ["Overgrown Tree/Branches", 294], ["New Tree Request", 282], ["NONCONST", 265], ["Damaged Tree", 218], ["Root/Sewer/Sidewalk Condition", 215]], "11217": [["Street Light Condition", 533], ["New Tree Request", 311], ["Rodent", 253], ["GENERAL CONSTRUCTION", 251], ["Food Establishment", 212], ["Damaged Tree", 196], ["PLUMBING", 188], ["Overgrown Tree/Branches", 181], ["Dead/Dying Tree", 155], ["PAINT - PLASTER", 148]], "11218": [["Street Light Condition", 772], ["Root/Sewer/Sidewalk Condition", 489], ["New Tree Request", 470], ["Damaged Tree", 436], ["Overgrown Tree/Branches", 417], ["Smoking", 254], ["Literature Request", 165], ["Street Condition", 163], ["Dead/Dying Tree", 136], ["GENERAL CONSTRUCTION", 134]], "11219": [["Street Light Condition", 646], ["Root/Sewer/Sidewalk Condition", 450], ["New Tree Request", 407], ["Damaged Tree", 327], ["Overgrown Tree/Branches", 303], ["Smoking", 264], ["Street Condition", 178], ["Literature Request", 131], ["Dead/Dying Tree", 108], ["Food Establishment", 102]], "11220": [["Street Light Condition", 1121], ["New Tree Request", 441], ["Root/Sewer/Sidewalk Condition", 387], ["Damaged Tree", 366], ["Overgrown Tree/Branches", 330], ["Smoking", 277], ["Street Condition", 244], ["Literature Request", 158], ["Dead/Dying Tree", 121], ["Food Establishment", 113]], "11221": [["Street Light Condition", 1322], ["GENERAL CONSTRUCTION", 576], ["PAINT - PLASTER", 490], ["PLUMBING", 469], ["Rodent", 393], ["NONCONST", 378], ["Overgrown Tree/Branches", 344], ["New Tree Request", 298], ["Root/Sewer/Sidewalk Condition", 268], ["Damaged Tree", 265]], "11222": [["Street Light Condition", 482], ["New Tree Request", 286], ["Rodent", 227], ["GENERAL CONSTRUCTION", 220], ["Damaged Tree", 197], ["PLUMBING", 194], ["Food Establishment", 173], ["Smoking", 165], ["PAINT - PLASTER", 150], ["Dead/Dying Tree", 127]], "11223": [["Street Light Condition", 862], ["Root/Sewer/Sidewalk Condition", 488], ["New Tree Request", 453], ["Damaged Tree", 406], ["Overgrown Tree/Branches", 352], ["Smoking", 284], ["Literature Request", 176], ["Street Condition", 171], ["Dead/Dying Tree", 116], ["Food Establishment", 112]], "11224": [["Street Light Condition", 336], ["Overgrown Tree/Branches", 118], ["Root/Sewer/Sidewalk Condition", 116], ["Street Condition", 105], ["New Tree Request", 90], ["Damaged Tree", 88], ["Literature Request", 79], ["Smoking", 79], ["Dead/Dying Tree", 58], ["Food Establishment", 54]], "11225": [["Street Light Condition", 822], ["GENERAL CONSTRUCTION", 414], ["PLUMBING", 393], ["PAINT - PLASTER", 336], ["Rodent", 313], ["NONCONST", 278], ["Overgrown Tree/Branches", 249], ["New Tree Request", 248], ["Root/Sewer/Sidewalk Condition", 228], ["Damaged Tree", 222]], "11226": [["Street Light Condition", 1276], ["GENERAL CONSTRUCTION", 674], ["PLUMBING", 621], ["PAINT - PLASTER", 548], ["Rodent", 451], ["NONCONST", 400], ["Overgrown Tree/Branches", 362], ["New Tree Request", 311], ["Root/Sewer/Sidewalk Condition", 286], ["Damaged Tree", 280]], "11228": [["Street Light Condition", 497], ["Root/Sewer/Sidewalk Condition", 267], ["New Tree Request", 261], ["Damaged Tree", 258], ["Overgrown Tree/Branches", 250], ["Smoking", 179], ["Literature Request", 130], ["Street Condition", 128], ["Dead/Dying Tree", 87], ["Food Establishment", 86]], "11229": [["Street Light Condition", 1285], ["Root/Sewer/Sidewalk Condition", 649], ["New Tree Request", 632], ["Damaged Tree", 617], ["Overgrown Tree/Branches", 579], ["Smoking", 462], ["Literature Request", 262], ["Street Condition", 262], ["Dead/Dying Tree", 213], ["Food Establishment", 191]], "11230": [["Street Light Condition", 1091], ["Root/Sewer/Sidewalk Condition", 596], ["New Tree Request", 546], ["Damaged Tree", 506], ["Overgrown Tree/Branches", 440], ["Smoking", 359], ["Street Condition", 231], ["Literature Request", 181], ["Dead/Dying Tree", 152], ["Food Establishment", 140]], "11231": [["Street Light Condition", 501], ["New Tree Request", 329], ["Rodent", 241], ["Food Establishment", 211], ["Damaged Tree", 196], ["GENERAL CONSTRUCTION", 183], ["Overgrown Tree/Branches", 165], ["PLUMBING", 163], ["Dead/Dying Tree", 149], ["Smoking", 143]], "11232": [["Street Light Condition", 473], ["GENERAL CONSTRUCTION", 222], ["PLUMBING", 194], ["New Tree Request", 193], ["Rodent", 178], ["PAINT - PLASTER", 165], ["Overgrown Tree/Branches", 151], ["Damaged Tree", 144], ["NONCONST", 134], ["Root/Sewer/Sidewalk Condition", 100]], "11233": [["Street Light Condition", 1044], ["GENERAL CONSTRUCTION", 490], ["PLUMBING", 446], ["PAINT - PLASTER", 396], ["Overgrown Tree/Branches", 356], ["NONCONST", 327], ["Rodent", 314], ["Root/Sewer/Sidewalk Condition", 265], ["Damaged Tree", 250], ["New Tree Request", 245]], "11234": [["Street Light Condition", 1569], ["Root/Sewer/Sidewalk Condition", 716], ["New Tree Request", 688], ["Damaged Tree", 657], ["Overgrown Tree/Branches", 612], ["Smoking", 449], ["Literature Request", 289], ["Street Condition", 287], ["Dead/Dying Tree", 237], ["Food Establishment", 200]], "11235": [["Street Light Condition", 1307], ["Root/Sewer/Sidewalk Condition", 604], ["New Tree Request", 580], ["Damaged Tree", 554], ["Overgrown Tree/Branches", 466], ["Smoking", 392], ["Street Condition", 278], ["Literature Request", 233], ["Dead/Dying Tree", 207], ["Food Establishment", 196]], "11236": [["Street Light Condition", 904], ["Root/Sewer/Sidewalk Condition", 460], ["New Tree Request", 441], ["Damaged Tree", 427], ["Overgrown Tree/Branches", 390], ["Smoking", 295], ["Street Condition", 214], ["Literature Request", 165], ["Dead/Dying Tree", 142], ["Food Establishment", 126]], "11237": [["Street Light Condition", 682], ["GENERAL CONSTRUCTION", 337], ["PLUMBING", 302], ["PAINT - PLASTER", 265], ["Rodent", 240], ["New Tree Request", 216], ["NONCONST", 202], ["Damaged Tree", 181], ["Overgrown Tree/Branches", 165], ["Root/Sewer/Sidewalk Condition", 141]], "11238": [["Street Light Condition", 753], ["New Tree Request", 411], ["Rodent", 330], ["Damaged Tree", 314], ["GENERAL CONSTRUCTION", 290], ["Food Establishment", 246], ["PLUMBING", 241], ["Overgrown Tree/Branches", 226], ["Dead/Dying Tree", 193], ["PAINT - PLASTER", 185]], "11101": [["Street Light Condition", 916], ["Non-Residential Heat", 241], ["Food Establishment", 186], ["Smoking", 177], ["Street Condition", 173], ["New Tree Request", 167], ["Rodent", 98], ["Dead/Dying Tree", 86], ["Graffiti", 85], ["Damaged Tree", 85]], "11102": [["Street Light Condition", 315], ["Damaged Tree", 119], ["New Tree Request", 103], ["Smoking", 89], ["GENERAL CONSTRUCTION", 69], ["PLUMBING", 69], ["Literature Request", 59], ["Dead/Dying Tree", 57], ["Food Establishment", 55], ["PAINT - PLASTER", 53]], "11103": [["Street Light Condition", 322], ["New Tree Request", 238], ["Damaged Tree", 165], ["Dead/Dying Tree", 145], ["Smoking", 141], ["Food Establishment", 136], ["Literature Request", 90], ["Rodent", 82], ["Illegal Tree Damage", 73], ["GENERAL CONSTRUCTION", 71]], "11104": [["Street Light Condition", 272], ["Damaged Tree", 141], ["New Tree Request", 118], ["Dead/Dying Tree", 61], ["PAINT - PLASTER", 56], ["PLUMBING", 54], ["Food Establishment", 51], ["Smoking", 50], ["Literature Request", 48], ["GENERAL CONSTRUCTION", 48]], "11105": [["Street Light Condition", 590], ["Damaged Tree", 239], ["New Tree Request", 217], ["Dead/Dying Tree", 131], ["Literature Request", 110], ["Overgrown Tree/Branches", 97], ["GENERAL CONSTRUCTION", 97], ["Smoking", 96], ["Food Establishment", 92], ["Dead Tree", 68]], "11106": [["Smoking", 399], ["Street Light Condition", 382], ["New Tree Request", 149], ["Damaged Tree", 122], ["Food Establishment", 95], ["Non-Residential Heat", 77], ["Graffiti", 72], ["Dead/Dying Tree", 63], ["Food Poisoning", 57], ["Rodent", 54]], "11354": [["Street Light Condition", 476], ["New Tree Request", 320], ["Damaged Tree", 264], ["Dead/Dying Tree", 209], ["Overgrown Tree/Branches", 186], ["Smoking", 155], ["Root/Sewer/Sidewalk Condition", 116], ["Literature Request", 103], ["Food Establishment", 98], ["Dead Tree", 74]], "11355": [["Street Light Condition", 486], ["New Tree Request", 310], ["Damaged Tree", 263], ["Dead/Dying Tree", 220], ["Overgrown Tree/Branches", 200], ["Smoking", 163], ["Literature Request", 109], ["Root/Sewer/Sidewalk Condition", 107], ["Food Establishment", 93], ["Dead Tree", 74]], "11357": [["Street Light Condition", 569], ["Damaged Tree", 488], ["New Tree Request", 350], ["Overgrown Tree/Branches", 298], ["Dead/Dying Tree", 215], ["Root/Sewer/Sidewalk Condition", 180], ["Dead Tree", 155], ["Literature Request", 108], ["Street Condition", 100], ["Food Establishment", 82]], "11358": [["Street Light Condition", 588], ["Damaged Tree", 468], ["New Tree Request", 389], ["Overgrown Tree/Branches", 299], ["Dead/Dying Tree", 228], ["Root/Sewer/Sidewalk Condition", 193], ["Dead Tree", 159], ["Literature Request", 116], ["Food Establishment", 102], ["Street Condition", 86]], "11360": [["Street Light Condition", 180], ["Damaged Tree", 178], ["New Tree Request", 138], ["Overgrown Tree/Branches", 113], ["Dead/Dying Tree", 80], ["Root/Sewer/Sidewalk Condition", 75], ["Dead Tree", 64], ["Literature Request", 56], ["Food Establishment", 48], ["Street Condition", 46]], "11361": [["Street Light Condition", 439], ["Damaged Tree", 362], ["New Tree Request", 303], ["Overgrown Tree/Branches", 241], ["Dead/Dying Tree", 198], ["Root/Sewer/Sidewalk Condition", 155], ["Dead Tree", 117], ["Literature Request", 88], ["Food Establishment", 83], ["Street Condition", 80]], "11362": [["Street Light Condition", 348], ["Damaged Tree", 268], ["New Tree Request", 221], ["Overgrown Tree/Branches", 174], ["Root/Sewer/Sidewalk Condition", 158], ["Dead/Dying Tree", 147], ["Dead Tree", 97], ["Literature Request", 84], ["Street Condition", 64], ["Food Establishment", 62]], "11363": [["Street Light Condition", 175], ["Damaged Tree", 161], ["Overgrown Tree/Branches", 118], ["New Tree Request", 109], ["Dead/Dying Tree", 89], ["Root/Sewer/Sidewalk Condition", 74], ["Dead Tree", 60], ["Literature Request", 51], ["Food Establishment", 48], ["Street Condition", 43]], "11364": [["Street Light Condition", 559], ["Damaged Tree", 411], ["New Tree Request", 340], ["Overgrown Tree/Branches", 268], ["Dead/Dying Tree", 212], ["Root/Sewer/Sidewalk Condition", 185], ["Dead Tree", 131], ["Literature Request", 114], ["Food Establishment", 104], ["Street Condition", 97]], "11365": [["Street Light Condition", 519], ["Damaged Tree", 381], ["New Tree Request", 318], ["Overgrown Tree/Branches", 256], ["Dead/Dying Tree", 210], ["Root/Sewer/Sidewalk Condition", 168], ["Dead Tree", 125], ["Literature Request", 102], ["Food Establishment", 93], ["Street Condition", 84]], "11366": [["Street Light Condition", 293], ["Damaged Tree", 215], ["New Tree Request", 181], ["Overgrown Tree/Branches", 148], ["Dead/Dying Tree", 112], ["Root/Sewer/Sidewalk Condition", 95], ["Dead Tree", 71], ["Literature Request", 57], ["Food Establishment", 52], ["Street Condition", 48]], "11367": [["Street Light Condition", 477], ["Damaged Tree", 345], ["New Tree Request", 263], ["Overgrown Tree/Branches", 211], ["Dead/Dying Tree", 186], ["Root/Sewer/Sidewalk Condition", 157], ["Dead Tree", 112], ["Smoking", 101], ["Literature Request", 100], ["Food Establishment", 94]], "11368": [["Street Light Condition", 780], ["GENERAL CONSTRUCTION", 285], ["PLUMBING", 253], ["PAINT - PLASTER", 204], ["New Tree Request", 188], ["Rodent", 179], ["Damaged Tree", 163], ["NONCONST", 149], ["Smoking", 143], ["Street Condition", 133]], "11369": [["Street Light Condition", 417], ["New Tree Request", 174], ["Damaged Tree", 155], ["GENERAL CONSTRUCTION", 138], ["PLUMBING", 120], ["PAINT - PLASTER", 100], ["Smoking", 97], ["Rodent", 87], ["NONCONST", 80], ["Dead/Dying Tree", 72]], "11370": [["Street Light Condition", 309], ["New Tree Request", 183], ["Damaged Tree", 163], ["Dead/Dying Tree", 102], ["Smoking", 96], ["Overgrown Tree/Branches", 90], ["GENERAL CONSTRUCTION", 80], ["PLUMBING", 74], ["Literature Request", 69], ["Food Establishment", 67]], "11372": [["Street Light Condition", 567], ["GENERAL CONSTRUCTION", 239], ["New Tree Request", 222], ["Damaged Tree", 195], ["PLUMBING", 187], ["Dead/Dying Tree", 151], ["Smoking", 141], ["PAINT - PLASTER", 138], ["Rodent", 131], ["Literature Request", 100]], "11373": [["Street Light Condition", 549], ["GENERAL CONSTRUCTION", 259], ["New Tree Request", 235], ["Damaged Tree", 207], ["PLUMBING", 202], ["Dead/Dying Tree", 157], ["Smoking", 145], ["PAINT - PLASTER", 140], ["Rodent", 135], ["NONCONST", 113]], "11374": [["Street Light Condition", 368], ["GENERAL CONSTRUCTION", 183], ["New Tree Request", 167], ["Damaged Tree", 152], ["PLUMBING", 145], ["Dead/Dying Tree", 114], ["Smoking", 105], ["PAINT - PLASTER", 101], ["Rodent", 93], ["Literature Request", 82]], "11375": [["Street Light Condition", 713], ["New Tree Request", 394], ["Damaged Tree", 355], ["Overgrown Tree/Branches", 270], ["Dead/Dying Tree", 244], ["Root/Sewer/Sidewalk Condition", 217], ["Dead Tree", 155], ["Literature Request", 136], ["Food Establishment", 116], ["Street Condition", 108]], "11377": [["Street Light Condition", 765], ["GENERAL CONSTRUCTION", 315], ["New Tree Request", 284], ["Damaged Tree", 249], ["PLUMBING", 234], ["Dead/Dying Tree", 176], ["Smoking", 165], ["PAINT - PLASTER", 155], ["Rodent", 147], ["Literature Request", 131]], "11378": [["Street Light Condition", 518], ["GENERAL CONSTRUCTION", 211], ["New Tree Request", 193], ["Damaged Tree", 176], ["PLUMBING", 165], ["Dead/Dying Tree", 120], ["Smoking", 113], ["PAINT - PLASTER", 103], ["Rodent", 96], ["NONCONST", 90]], "11379": [["Street Light Condition", 532], ["GENERAL CONSTRUCTION", 237], ["New Tree Request", 204], ["Damaged Tree", 185], ["PLUMBING", 175], ["Dead/Dying Tree", 131], ["Smoking", 122], ["PAINT - PLASTER", 114], ["Rodent", 103], ["NONCONST", 96]], "11385": [["Street Light Condition", 1425], ["GENERAL CONSTRUCTION", 523], ["PLUMBING", 459], ["PAINT - PLASTER", 395], ["Rodent", 335], ["New Tree Request", 303], ["NONCONST", 295], ["Damaged Tree", 259], ["Overgrown Tree/Branches", 212], ["Root/Sewer/Sidewalk Condition", 203]], "11411": [["Street Light Condition", 244], ["Damaged Tree", 201], ["New Tree Request", 157], ["Overgrown Tree/Branches", 141], ["Dead/Dying Tree", 122], ["Root/Sewer/Sidewalk Condition", 99], ["Dead Tree", 75], ["Literature Request", 67], ["Food Establishment", 57], ["Street Condition", 53]], "11412": [["Street Light Condition", 486], ["Damaged Tree", 249], ["New Tree Request", 205], ["Overgrown Tree/Branches", 183], ["Dead/Dying Tree", 161], ["Root/Sewer/Sidewalk Condition", 130], ["Dead Tree", 96], ["Literature Request", 80], ["Food Establishment", 72], ["Street Condition", 68]], "11413": [["Street Light Condition", 515], ["Damaged Tree", 280], ["New Tree Request", 231], ["Overgrown Tree/Branches", 197], ["Dead/Dying Tree", 163], ["Root/Sewer/Sidewalk Condition", 131], ["Dead Tree", 96], ["Literature Request", 84], ["Street Condition", 75], ["Food Establishment", 72]], "11414": [["Street Light Condition", 613], ["Damaged Tree", 355], ["New Tree Request", 295], ["Overgrown Tree/Branches", 239], ["Dead/Dying Tree", 190], ["Root/Sewer/Sidewalk Condition", 161], ["Dead Tree", 119], ["Literature Request", 99], ["Food Establishment", 89], ["Street Condition", 83]], "11415": [["Street Light Condition", 194], ["Damaged Tree", 139], ["New Tree Request", 115], ["Overgrown Tree/Branches", 93], ["Dead/Dying Tree", 75], ["Root/Sewer/Sidewalk Condition", 60], ["Dead Tree", 46], ["Literature Request", 43], ["Food Establishment", 40], ["Street Condition", 37]], "11416": [["Street Light Condition", 286], ["Damaged Tree", 175], ["New Tree Request", 142], ["Overgrown Tree/Branches", 117], ["Dead/Dying Tree", 90], ["Root/Sewer/Sidewalk Condition", 75], ["Dead Tree", 56], ["Smoking", 53], ["Food Establishment", 50], ["Literature Request", 47]], "11417": [["Street Light Condition", 447], ["Damaged Tree", 247], ["New Tree Request", 194], ["Overgrown Tree/Branches", 163], ["Dead/Dying Tree", 127], ["Root/Sewer/Sidewalk Condition", 103], ["Dead Tree", 77], ["Smoking", 74], ["Literature Request", 67], ["Food Establishment", 60]], "11418": [["Street Light Condition", 487], ["Damaged Tree", 246], ["New Tree Request", 205], ["Overgrown Tree/Branches", 183], ["Dead/Dying Tree", 147], ["Root/Sewer/Sidewalk Condition", 118], ["Dead Tree", 87], ["Smoking", 81], ["Literature Request", 71], ["Food Establishment", 65]], "11419": [["Street Light Condition", 440], ["Damaged Tree", 228], ["New Tree Request", 189], ["Overgrown Tree/Branches", 170], ["Dead/Dying Tree", 135], ["Root/Sewer/Sidewalk Condition", 109], ["Dead Tree", 80], ["Smoking", 76], ["Literature Request", 65], ["Food Establishment", 59]], "11420": [["Street Light Condition", 633], ["Damaged Tree", 330], ["New Tree Request", 268], ["Overgrown Tree/Branches", 225], ["Dead/Dying Tree", 178], ["Root/Sewer/Sidewalk Condition", 148], ["Dead Tree", 110], ["Smoking", 104], ["Literature Request", 90], ["Food Establishment", 80]], "11421": [["Street Light Condition", 396], ["Damaged Tree", 213], ["New Tree Request", 177], ["Overgrown Tree/Branches", 150], ["Dead/Dying Tree", 118], ["Root/Sewer/Sidewalk Condition", 95], ["Dead Tree", 70], ["Smoking", 66], ["Literature Request", 56], ["Food Establishment", 51]], "11422": [["Street Light Condition", 353], ["Damaged Tree", 200], ["New Tree Request", 162], ["Overgrown Tree/Branches", 134], ["Dead/Dying Tree", 106], ["Root/Sewer/Sidewalk Condition", 86], ["Dead Tree", 63], ["Literature Request", 50], ["Street Condition", 46], ["Food Establishment", 44]], "11423": [["Street Light Condition", 381], ["Damaged Tree", 215], ["New Tree Request", 173], ["Overgrown Tree/Branches", 145], ["Dead/Dying Tree", 113], ["Root/Sewer/Sidewalk Condition", 91], ["Dead Tree", 68], ["Smoking", 63], ["Literature Request", 55], ["Food Establishment", 50]], "11426": [["Street Light Condition", 330], ["Damaged Tree", 194], ["New Tree Request", 153], ["Overgrown Tree/Branches", 129], ["Dead/Dying Tree", 103], ["Root/Sewer/Sidewalk Condition", 83], ["Dead Tree", 61], ["Literature Request", 48], ["Street Condition", 44], ["Food Establishment", 42]], "11427": [["Street Light Condition", 316], ["Damaged Tree", 191], ["New Tree Request", 147], ["Overgrown Tree/Branches", 124], ["Dead/Dying Tree", 98], ["Root/Sewer/Sidewalk Condition", 79], ["Dead Tree", 58], ["Literature Request", 46], ["Street Condition", 42], ["Food Establishment", 40]], "11428": [["Street Light Condition", 290], ["Damaged Tree", 170], ["New Tree Request", 136], ["Overgrown Tree/Branches", 114], ["Dead/Dying Tree", 91], ["Root/Sewer/Sidewalk Condition", 73], ["Dead Tree", 54], ["Literature Request", 43], ["Street Condition", 39], ["Food Establishment", 38]], "11429": [["Street Light Condition", 309], ["Damaged Tree", 183], ["New Tree Request", 145], ["Overgrown Tree/Branches", 122], ["Dead/Dying Tree", 97], ["Root/Sewer/Sidewalk Condition", 78], ["Dead Tree", 58], ["Literature Request", 46], ["Street Condition", 41], ["Food Establishment", 39]], "11432": [["Street Light Condition", 661], ["GENERAL CONSTRUCTION", 291], ["New Tree Request", 261], ["PLUMBING", 234], ["Damaged Tree", 210], ["PAINT - PLASTER", 190], ["Dead/Dying Tree", 152], ["Smoking", 142], ["NONCONST", 132], ["Rodent", 122]], "11433": [["Street Light Condition", 447], ["GENERAL CONSTRUCTION", 201], ["New Tree Request", 181], ["PLUMBING", 163], ["Damaged Tree", 148], ["PAINT - PLASTER", 133], ["Dead/Dying Tree", 107], ["Smoking", 99], ["NONCONST", 92], ["Rodent", 86]], "11434": [["Street Light Condition", 869], ["Damaged Tree", 446], ["New Tree Request", 376], ["Overgrown Tree/Branches", 308], ["Root/Sewer/Sidewalk Condition", 252], ["Dead/Dying Tree", 211], ["Dead Tree", 155], ["Literature Request", 128], ["Street Condition", 120], ["Food Establishment", 98]], "11435": [["Street Light Condition", 547], ["GENERAL CONSTRUCTION", 240], ["New Tree Request", 225], ["PLUMBING", 202], ["Damaged Tree", 181], ["PAINT - PLASTER", 166], ["Dead/Dying Tree", 131], ["Smoking", 121], ["NONCONST", 106], ["Rodent", 100]], "11436": [["Street Light Condition", 255], ["Damaged Tree", 143], ["New Tree Request", 117], ["Overgrown Tree/Branches", 98], ["Dead/Dying Tree", 78], ["Root/Sewer/Sidewalk Condition", 63], ["Dead Tree", 47], ["Smoking", 44], ["Literature Request", 34], ["Food Establishment", 32]], "11691": [["Street Light Condition", 630], ["Damaged Tree", 325], ["Overgrown Tree/Branches", 259], ["New Tree Request", 219], ["Dead/Dying Tree", 176], ["Root/Sewer/Sidewalk Condition", 145], ["Dead Tree", 103], ["Street Condition", 101], ["Literature Request", 80], ["Food Establishment", 73]], "11692": [["Street Light Condition", 239], ["Damaged Tree", 124], ["Overgrown Tree/Branches", 101], ["New Tree Request", 85], ["Dead/Dying Tree", 67], ["Root/Sewer/Sidewalk Condition", 55], ["Dead Tree", 39], ["Street Condition", 38], ["Literature Request", 31], ["Food Establishment", 28]], "11693": [["Street Light Condition", 156], ["Damaged Tree", 82], ["Overgrown Tree/Branches", 67], ["New Tree Request", 56], ["Dead/Dying Tree", 44], ["Root/Sewer/Sidewalk Condition", 36], ["Dead Tree", 26], ["Street Condition", 25], ["Literature Request", 20], ["Food Establishment", 18]], "11694": [["Street Light Condition", 490], ["Damaged Tree", 265], ["Overgrown Tree/Branches", 212], ["New Tree Request", 179], ["Dead/Dying Tree", 142], ["Root/Sewer/Sidewalk Condition", 116], ["Dead Tree", 82], ["Street Condition", 81], ["Literature Request", 64], ["Food Establishment", 58]], "10301": [["Street Light Condition", 1354], ["Damaged Tree", 891], ["Overgrown Tree/Branches", 431], ["Street Condition", 288], ["Dead Tree", 229], ["New Tree Request", 157], ["Root/Sewer/Sidewalk Condition", 146], ["Smoking", 125], ["GENERAL CONSTRUCTION", 116], ["Rodent", 101]], "10302": [["Street Light Condition", 414], ["Damaged Tree", 343], ["Overgrown Tree/Branches", 233], ["Street Condition", 90], ["Root/Sewer/Sidewalk Condition", 82], ["New Tree Request", 75], ["GENERAL CONSTRUCTION", 73], ["Dead Tree", 72], ["Rodent", 66], ["Literature Request", 50]], "10303": [["Street Light Condition", 415], ["Damaged Tree", 197], ["Overgrown Tree/Branches", 170], ["Street Condition", 144], ["New Tree Request", 81], ["Rodent", 77], ["Dead Tree", 67], ["Standing Water", 57], ["GENERAL CONSTRUCTION", 55], ["Unleashed Dog", 44]], "10304": [["Street Light Condition", 1040], ["Damaged Tree", 743], ["Overgrown Tree/Branches", 443], ["Street Condition", 238], ["New Tree Request", 179], ["Dead Tree", 155], ["Root/Sewer/Sidewalk Condition", 154], ["Rodent", 123], ["GENERAL CONSTRUCTION", 90], ["Unleashed Dog", 84]], "10305": [["Street Light Condition", 946], ["Damaged Tree", 577], ["Overgrown Tree/Branches", 553], ["New Tree Request", 284], ["Root/Sewer/Sidewalk Condition", 257], ["Street Condition", 251], ["Dead Tree", 212], ["Rodent", 113], ["Dead/Dying Tree", 102], ["Literature Request", 101]], "10306": [["Street Light Condition", 1578], ["Damaged Tree", 1557], ["Overgrown Tree/Branches", 1127], ["Dead Tree", 668], ["New Tree Request", 514], ["Root/Sewer/Sidewalk Condition", 465], ["Street Condition", 441], ["Dead/Dying Tree", 229], ["Rodent", 224], ["Literature Request", 177]], "10307": [["Damaged Tree", 458], ["Street Light Condition", 283], ["Overgrown Tree/Branches", 225], ["Root/Sewer/Sidewalk Condition", 96], ["Dead Tree", 83], ["Street Condition", 65], ["New Tree Request", 63], ["Dead/Dying Tree", 59], ["Literature Request", 43], ["Rodent", 35]], "10308": [["Street Light Condition", 778], ["Damaged Tree", 737], ["Overgrown Tree/Branches", 589], ["Root/Sewer/Sidewalk Condition", 383], ["Dead Tree", 285], ["New Tree Request", 210], ["Street Condition", 179], ["Dead/Dying Tree", 133], ["Literature Request", 97], ["Standing Water", 59]], "10309": [["Street Light Condition", 1070], ["Damaged Tree", 936], ["Overgrown Tree/Branches", 501], ["Street Condition", 313], ["Dead Tree", 212], ["Root/Sewer/Sidewalk Condition", 168], ["New Tree Request", 130], ["Dead/Dying Tree", 121], ["Literature Request", 89], ["Illegal Tree Damage", 54]], "10310": [["Street Light Condition", 574], ["Damaged Tree", 469], ["Overgrown Tree/Branches", 308], ["Street Condition", 166], ["Root/Sewer/Sidewalk Condition", 116], ["Dead Tree", 107], ["Literature Request", 82], ["New Tree Request", 70], ["Missed Collection (All Materials)", 63], ["Dead/Dying Tree", 62]], "10312": [["Damaged Tree", 1935], ["Street Light Condition", 1466], ["Overgrown Tree/Branches", 1193], ["Dead Tree", 657], ["Root/Sewer/Sidewalk Condition", 599], ["Street Condition", 520], ["New Tree Request", 481], ["Dead/Dying Tree", 347], ["Literature Request", 175], ["Rodent", 124]], "10314": [["Damaged Tree", 2031], ["Street Light Condition", 1880], ["Overgrown Tree/Branches", 1393], ["Root/Sewer/Sidewalk Condition", 683], ["Dead Tree", 556], ["Street Condition", 547], ["New Tree Request", 376], ["Dead/Dying Tree", 327], ["Literature Request", 242], ["Rodent", 173]]};
+const NYC_FIPS = {'36005':'BRONX','36047':'BROOKLYN','36061':'MANHATTAN','36081':'QUEENS','36085':'STATEN ISLAND'};
+const TC = ['#f7c948','#4d9fff','#3ddc97','#ff8c42','#9b72ff','#69c3ff','#ff5c5c','#b8ff8c'];
 
-/* ─────────────── NYC BOROUGH OUTLINES (simplified polygons in WGS84) ─────────────── */
-// These are hand-simplified border coordinates for the 5 boroughs
-const NYC_BOROUGHS = {
-  type:"FeatureCollection",
-  features:[
-    // Manhattan: narrow island running SW to NE, ~13 miles long, 2.3 miles wide
-    {type:"Feature",properties:{name:"Manhattan"},geometry:{type:"Polygon",coordinates:[[
-      [-74.0197,40.6981],[-74.0166,40.7057],[-74.0107,40.7100],[-73.9981,40.7055],
-      [-73.9735,40.7190],[-73.9718,40.7315],[-73.9597,40.7410],[-73.9549,40.7554],
-      [-73.9699,40.7640],[-73.9680,40.7760],[-73.9557,40.7840],[-73.9530,40.7900],
-      [-73.9372,40.8510],[-73.9330,40.8595],[-73.9252,40.8610],[-73.9135,40.8780],
-      [-73.9070,40.8795],[-73.9200,40.8690],[-73.9240,40.8535],[-73.9362,40.8470],
-      [-73.9430,40.8200],[-73.9400,40.7950],[-73.9530,40.7860],[-73.9685,40.7775],
-      [-73.9710,40.7650],[-73.9570,40.7520],[-73.9620,40.7380],[-73.9730,40.7270],
-      [-73.9760,40.7130],[-73.9990,40.7080],[-74.0120,40.7125],[-74.0197,40.6981]
-    ]]}},
-    // Brooklyn: Kings County, southwestern tip of Long Island
-    {type:"Feature",properties:{name:"Brooklyn"},geometry:{type:"Polygon",coordinates:[[
-      [-74.0420,40.5700],[-74.0350,40.5870],[-74.0100,40.5760],[-73.9800,40.5770],
-      [-73.9520,40.5810],[-73.9310,40.5890],[-73.9020,40.5930],[-73.8870,40.5990],
-      [-73.8600,40.6130],[-73.8330,40.6310],[-73.8200,40.6450],[-73.8530,40.6580],
-      [-73.8760,40.6640],[-73.9020,40.6740],[-73.9280,40.6870],[-73.9450,40.6880],
-      [-73.9550,40.6970],[-73.9730,40.7060],[-73.9990,40.7080],[-74.0120,40.7125],
-      [-74.0197,40.6981],[-74.0430,40.6460],[-74.0480,40.6120],[-74.0420,40.5700]
-    ]]}},
-    // Queens: largest borough by area, NE of Brooklyn, E of Manhattan/Bronx
-    {type:"Feature",properties:{name:"Queens"},geometry:{type:"Polygon",coordinates:[[
-      [-73.9530,40.7900],[-73.9440,40.7920],[-73.9300,40.7910],[-73.9150,40.7880],
-      [-73.8950,40.7950],[-73.8700,40.8020],[-73.8330,40.7960],[-73.8080,40.8020],
-      [-73.7880,40.8260],[-73.7600,40.8480],[-73.7500,40.8650],[-73.7620,40.8810],
-      [-73.7000,40.7780],[-73.7000,40.7560],[-73.6960,40.7350],[-73.7100,40.7100],
-      [-73.7300,40.6920],[-73.7550,40.6660],[-73.7620,40.6520],[-73.8200,40.6450],
-      [-73.8330,40.6310],[-73.8530,40.6580],[-73.8760,40.6640],[-73.9020,40.6740],
-      [-73.9280,40.6870],[-73.9450,40.6880],[-73.9550,40.6970],[-73.9730,40.7060],
-      [-73.9730,40.7270],[-73.9620,40.7380],[-73.9570,40.7520],[-73.9710,40.7650],
-      [-73.9685,40.7775],[-73.9530,40.7860],[-73.9530,40.7900]
-    ]]}},
-    // Bronx: only mainland borough, north of Manhattan and Queens
-    {type:"Feature",properties:{name:"Bronx"},geometry:{type:"Polygon",coordinates:[[
-      [-73.9330,40.8595],[-73.9252,40.8610],[-73.9135,40.8780],[-73.9070,40.8795],
-      [-73.8960,40.9060],[-73.8770,40.9200],[-73.8650,40.9250],[-73.8380,40.9160],
-      [-73.8110,40.9030],[-73.7900,40.8870],[-73.7640,40.8820],[-73.7500,40.8650],
-      [-73.7600,40.8480],[-73.7880,40.8260],[-73.8080,40.8020],[-73.8330,40.7960],
-      [-73.8700,40.8020],[-73.8950,40.7950],[-73.9150,40.7880],[-73.9300,40.7910],
-      [-73.9440,40.7920],[-73.9530,40.7900],[-73.9530,40.7860],[-73.9400,40.7950],
-      [-73.9430,40.8200],[-73.9362,40.8470],[-73.9240,40.8535],[-73.9330,40.8595]
-    ]]}},
-    // Staten Island: separate island SW of Manhattan, across NY Harbor
-    {type:"Feature",properties:{name:"Staten Island"},geometry:{type:"Polygon",coordinates:[[
-      [-74.2590,40.4960],[-74.2320,40.4830],[-74.1870,40.4830],[-74.1410,40.5010],
-      [-74.0980,40.5160],[-74.0520,40.5430],[-74.0340,40.5640],[-74.0340,40.5900],
-      [-74.0420,40.6150],[-74.0430,40.6460],[-74.0810,40.6500],[-74.1190,40.6480],
-      [-74.1600,40.6280],[-74.2000,40.5930],[-74.2320,40.5560],[-74.2590,40.4960]
-    ]]}}
-  ]
-};
+let map, mks={}, geojsonLayer=null, labelLayers=[], boro='ALL', selZip=null;
 
-// True DB totals (includes records with blank ZIPs, sourced directly from Snowflake)
-const TRUE_BOROUGH_TOTALS={
-  'BRONX':149468,'BROOKLYN':190997,'MANHATTAN':121247,'QUEENS':165721,'STATEN ISLAND':55789
-};
-const TRUE_GRAND_TOTAL=683222;
+const fmt = n => n==null?'—':n>=1000?(n/1000).toFixed(1)+'k':n.toLocaleString();
+const fmtD = d => (d==null||isNaN(d))?'—':Math.round(d)+'d';
+const fmtDec = d => (d==null||isNaN(d))?'—':d.toFixed(1)+'d';
 
-const BC={"BRONX":"#e85d3a","BROOKLYN":"#f0a832","MANHATTAN":"#4ea8de","QUEENS":"#52c46c","STATEN ISLAND":"#b57bee"};
-const BNAMES={"BRONX":"Bronx","BROOKLYN":"Brooklyn","MANHATTAN":"Manhattan","QUEENS":"Queens","STATEN ISLAND":"Staten Island"};
-
-let activeBorough='ALL', activeZip=null;
-let zdChart=null, bChart=null;
-
-/* ─────────────── PROJECTION ─────────────── */
-function makeProj(W,H){
-  return d3.geoMercator().center([-73.97,40.693]).scale(W*48).translate([W/2,H/2]);
+function getSz(n) {
+  const mn=12,mx=52,mi=10,ma=4000;
+  n=Math.max(mi,Math.min(ma,n));
+  return mn+(mx-mn)*Math.pow((n-mi)/(ma-mi),.42);
 }
 
-/* ─────────────── SIDE PANEL ─────────────── */
-function updateSide(){
-  const filtered = ZIP_DATA.filter(d=>activeBorough==='ALL'||d[0]===activeBorough);
-  const sorted = [...filtered].sort((a,b)=>b[2]-a[2]);
-  const total = activeBorough==='ALL' ? TRUE_GRAND_TOTAL : TRUE_BOROUGH_TOTALS[activeBorough];
-  const top = sorted[0];
-  const color = activeBorough==='ALL'?'#e85d3a':BC[activeBorough];
-
-  document.getElementById('side-title').textContent = activeBorough==='ALL'?'All Boroughs':BNAMES[activeBorough];
-  document.getElementById('s-total').textContent = total.toLocaleString();
-  document.getElementById('s-total').style.color = color;
-  document.getElementById('s-sub').textContent = activeBorough==='ALL'?'across all boroughs':`in ${BNAMES[activeBorough]}`;
-  if(top){
-    document.getElementById('s-topzip').textContent = top[1];
-    document.getElementById('s-topzip').style.color = BC[top[0]];
-    document.getElementById('s-topcount').textContent = top[2].toLocaleString()+' complaints';
-  }
-  document.getElementById('zip-count-label').textContent = sorted.length+' zips';
-
-  const max = sorted[0]?sorted[0][2]:1;
-  document.getElementById('zipList').innerHTML = sorted.map((d,i)=>{
-    const pct=Math.round((d[2]/max)*100), c=BC[d[0]];
-    const isActive = d[1]===activeZip;
-    return `<li class="zip-row${isActive?' active':''}" onclick="selectZip('${d[1]}','${d[0]}',${d[2]})">
-      <div class="zr-num">${i+1}</div>
-      <div><div class="zr-zip">${d[1]}</div><div style="font-size:0.58rem;color:var(--muted)">${d[0]}</div></div>
-      <div style="text-align:right">
-        <div class="zr-count" style="color:${c}">${d[2].toLocaleString()}</div>
-        <div class="zr-bar-bg"><div class="zr-bar" style="width:${pct}%;background:${c}"></div></div>
-      </div>
-    </li>`;
-  }).join('');
+function getOpacity(n, maxN) {
+  return 0.15 + 0.55 * Math.pow(n/maxN, 0.5);
 }
 
-function updateBoroughChart(){
-  const boros=['BRONX','BROOKLYN','MANHATTAN','QUEENS','STATEN ISLAND'];
-  const ctx=document.getElementById('boroughChart').getContext('2d');
-  if(bChart)bChart.destroy();
-  bChart=new Chart(ctx,{type:'bar',
-    data:{labels:['Bronx','Bklyn','Mnhtn','Queens','SI'],
-      datasets:[{data:boros.map(b=>TRUE_BOROUGH_TOTALS[b]),
-        backgroundColor:boros.map(b=>activeBorough===b||activeBorough==='ALL'?BC[b]:BC[b]+'44'),
-        borderRadius:3,borderSkipped:false}]},
-    options:{responsive:true,maintainAspectRatio:false,
-      plugins:{legend:{display:false},tooltip:{callbacks:{label:c=>c.parsed.y.toLocaleString()},backgroundColor:'#1a1e27',titleColor:'#eeecea',bodyColor:'#6b7180',borderColor:'rgba(255,255,255,0.06)',borderWidth:1}},
-      scales:{x:{ticks:{color:'#6b7180',font:{family:'DM Mono',size:9}},grid:{display:false},border:{display:false}},
-        y:{ticks:{color:'#6b7180',font:{family:'DM Mono',size:9},callback:v=>(v/1000)+'k'},grid:{color:'rgba(255,255,255,0.04)'},border:{display:false}}}}});
+async function loadBoundaries() {
+  showStatus('Loading boundaries...');
+  try {
+    const res = await fetch('https://cdn.jsdelivr.net/npm/us-atlas@3/counties-10m.json');
+    const us = await res.json();
+    const counties = topojson.feature(us, us.objects.counties);
+    const nycFeatures = counties.features.filter(f => NYC_FIPS[f.id]);
+    nycFeatures.forEach(f => f.properties.borough = NYC_FIPS[f.id]);
+    drawBoundaries(nycFeatures);
+    showStatus(null);
+  } catch(e) { showStatus(null); }
 }
 
-/* ─────────────── ZIP DRAWER ─────────────── */
-function selectZip(zip,boro,total){
-  activeZip=zip;
-  const color=BC[boro];
-  document.getElementById('zd-zip').textContent=zip;
-  document.getElementById('zd-zip').style.color=color;
-  document.getElementById('zd-boro').textContent=boro;
-  document.getElementById('zd-total').textContent=total.toLocaleString();
-  document.getElementById('zd-total').style.color=color;
-
-  const complaints=COMPLAINTS[zip]||[];
-  const maxC=complaints[0]?complaints[0][1]:1;
-  document.getElementById('zd-bars').innerHTML=complaints.map(([t,c],i)=>{
-    const pct=Math.round((c/maxC)*100);
-    return `<div class="cbar-item">
-      <div class="cbar-rank">${i+1}</div>
-      <div class="cbar-label" title="${t}">${t}</div>
-      <div class="cbar-count">${c.toLocaleString()}</div>
-    </div>
-    <div class="cbar-track"><div class="cbar-fill" style="width:${pct}%;background:${color}"></div></div>`;
-  }).join('');
-
-  setTimeout(()=>{
-    const ctx=document.getElementById('zdChart').getContext('2d');
-    if(zdChart)zdChart.destroy();
-    const top6=complaints.slice(0,6);
-    zdChart=new Chart(ctx,{type:'bar',
-      data:{labels:top6.map(([t])=>t.length>18?t.slice(0,18)+'…':t),
-        datasets:[{data:top6.map(([,c])=>c),backgroundColor:color+'cc',borderRadius:3,borderSkipped:false}]},
-      options:{indexAxis:'y',responsive:true,maintainAspectRatio:false,
-        plugins:{legend:{display:false},tooltip:{callbacks:{label:c=>c.parsed.x.toLocaleString()+' complaints'},backgroundColor:'#1a1e27',titleColor:'#eeecea',bodyColor:'#6b7180',borderColor:'rgba(255,255,255,0.06)',borderWidth:1}},
-        scales:{x:{ticks:{color:'#6b7180',font:{family:'DM Mono',size:8}},grid:{color:'rgba(255,255,255,0.04)'},border:{display:false}},
-          y:{ticks:{color:'#eeecea',font:{family:'DM Mono',size:8}},grid:{display:false},border:{display:false}}}}});
-  },60);
-
-  document.getElementById('zipDrawer').classList.add('open');
-  updateSide();
-  highlightDot(zip);
-}
-
-function closeDrawer(){
-  activeZip=null;
-  document.getElementById('zipDrawer').classList.remove('open');
-  updateSide();
-  d3.selectAll('.zip-dot').attr('stroke-width',0.5).attr('r',d=>getR(d[2])).attr('opacity',0.82);
-}
-
-function highlightDot(zip){
-  d3.selectAll('.zip-dot')
-    .attr('stroke-width',d=>d[1]===zip?2.5:0.5)
-    .attr('r',d=>d[1]===zip?getR(d[2])*1.6:getR(d[2]))
-    .attr('opacity',d=>d[1]===zip?1:0.5);
-}
-
-/* ─────────────── MAP ─────────────── */
-function getR(c){return Math.sqrt(c/9639)*11+2.5;}
-
-function renderMap(){
-  const wrap=document.getElementById('mapWrap');
-  const mapH=window.innerHeight-52;
-  wrap.style.height=mapH+'px';
-  const W=wrap.offsetWidth||window.innerWidth-380;
-  const H=mapH;
-  d3.select('#map-svg').attr('width',W).attr('height',H);
-  const svg=d3.select('#map-svg');
-  svg.selectAll('*').remove();
-
-  const proj=makeProj(W,H);
-  const path=d3.geoPath(proj);
-
-  // dark ocean bg
-  svg.append('rect').attr('width',W).attr('height',H).attr('fill','#0a0c10');
-
-  // ── BOROUGH OUTLINES ──
-  const gBoro=svg.append('g').attr('class','boroughs');
-  gBoro.selectAll('.boro-fill')
-    .data(NYC_BOROUGHS.features)
-    .join('path')
-    .attr('class','boro-fill')
-    .attr('d',path)
-    .attr('fill',d=>{
-      const bKey=Object.keys(BC).find(k=>BNAMES[k]===d.properties.name)||d.properties.name.toUpperCase();
-      const isActive=activeBorough===bKey||activeBorough==='ALL';
-      return isActive?(BC[bKey]||'#4ea8de')+'14':'rgba(255,255,255,0.03)';
-    })
-    .attr('stroke',d=>{
-      const bKey=Object.keys(BC).find(k=>BNAMES[k]===d.properties.name)||d.properties.name.toUpperCase();
-      const isActive=activeBorough===bKey||activeBorough==='ALL';
-      return isActive?(BC[bKey]||'#4ea8de'):'rgba(255,255,255,0.12)';
-    })
-    .attr('stroke-width',2)
-    .attr('stroke-linejoin','round')
-    .style('cursor','pointer')
-    .on('click',function(event,d){
-      const bKey=Object.keys(BC).find(k=>BNAMES[k]===d.properties.name)||d.properties.name.toUpperCase();
-      if(activeBorough===bKey){setBorough('ALL');}else{setBorough(bKey);}
+function drawBoundaries(features) {
+  if(geojsonLayer) map.removeLayer(geojsonLayer);
+  labelLayers.forEach(l=>map.removeLayer(l));
+  labelLayers=[];
+  const active = boro==='ALL' ? Object.values(NYC_FIPS) : [boro];
+  geojsonLayer = L.geoJSON(features, {
+    style: f => {
+      const b=f.properties.borough, isA=active.includes(b);
+      return {color:'#f7c948',weight:isA?1.5:0.5,opacity:isA?0.5:0.12,fillColor:'#f7c948',fillOpacity:isA?0.03:0.005,interactive:false};
+    }
+  }).addTo(map);
+  Object.entries(BORO_LABELS).forEach(([name, center]) => {
+    const bMap={'The Bronx':'BRONX','Brooklyn':'BROOKLYN','Manhattan':'MANHATTAN','Queens':'QUEENS','Staten Island':'STATEN ISLAND'};
+    const bKey=bMap[name];
+    const isA=boro==='ALL'||boro===bKey;
+    const icon=L.divIcon({
+      className:'boro-label',
+      html:`<div style="font-family:'Syne',sans-serif;font-weight:700;font-size:11px;letter-spacing:.14em;text-transform:uppercase;color:rgba(247,201,72,${isA?0.55:0.15});text-shadow:0 1px 5px #000,0 0 12px #000;white-space:nowrap">${name}</div>`,
+      iconAnchor:[40,8],iconSize:[80,16]
     });
-
-  // borough name labels on outline
-  // ── ZIP DOTS drawn here, labels appended after ──
-
-  // ── ZIP DOTS ──
-  const filtered=ZIP_DATA.filter(d=>(activeBorough==='ALL'||d[0]===activeBorough)&&d[3]&&d[4]);
-  const tip=document.getElementById('mTip');
-
-  // ── ZIP DOTS ──
-  svg.append('g').selectAll('.zip-dot')
-    .data([...filtered].sort((a,b)=>a[2]-b[2]))
-    .join('circle')
-    .attr('class','zip-dot')
-    .attr('cx',d=>{const p=proj([d[4],d[3]]);return p?p[0]:-999;})
-    .attr('cy',d=>{const p=proj([d[4],d[3]]);return p?p[1]:-999;})
-    .attr('r',d=>getR(d[2]))
-    .attr('fill',d=>d3.interpolateRgb('#1a2030',BC[d[0]])(d[2]/9639))
-    .attr('stroke',d=>BC[d[0]])
-    .attr('stroke-width',d=>d[1]===activeZip?2.5:0.5)
-    .attr('opacity',d=>activeZip?( d[1]===activeZip?1:0.5 ):0.82)
-    .style('cursor','pointer')
-    .on('mouseover',function(event,d){
-      if(d[1]!==activeZip) d3.select(this).raise().attr('r',getR(d[2])*1.4).attr('opacity',1);
-      const topC=(COMPLAINTS[d[1]]||[])[0];
-      tip.style.opacity='1';
-      tip.innerHTML=`<div class="mt-boro">${d[0]}</div><div class="mt-zip">${d[1]}</div><div class="mt-count">${d[2].toLocaleString()} unsolved</div>${topC?`<div class="mt-top">Top: ${topC[0]}</div>`:''}`;
-    })
-    .on('mousemove',function(event){
-      const r=wrap.getBoundingClientRect();
-      let x=event.clientX-r.left+14,y=event.clientY-r.top-12;
-      if(x+175>W)x=event.clientX-r.left-185;
-      tip.style.left=x+'px';tip.style.top=y+'px';
-    })
-    .on('mouseout',function(event,d){
-      if(d[1]!==activeZip) d3.select(this).attr('r',getR(d[2])).attr('opacity',activeZip?0.5:0.82);
-      tip.style.opacity='0';
-    })
-    .on('click',(event,d)=>{
-      event.stopPropagation();
-      if(activeZip===d[1]){closeDrawer();}else{selectZip(d[1],d[0],d[2]);}
-    });
-
-  // ── BOROUGH LABELS — drawn last so always on top of everything ──
-  // Use hardcoded lat/lon centers for each borough for reliable placement
-  const BORO_LABEL_CENTERS = [
-    {name:'BRONX',         lon:-73.865, lat:40.855, rot:0,   fs:15, key:'BRONX'},
-    {name:'MANHATTAN',     lon:-73.962, lat:40.780, rot:-55, fs:11, key:'MANHATTAN'},
-    {name:'BROOKLYN',      lon:-73.955, lat:40.635, rot:0,   fs:14, key:'BROOKLYN'},
-    {name:'QUEENS',        lon:-73.820, lat:40.740, rot:0,   fs:14, key:'QUEENS'},
-    {name:'STATEN ISLAND', lon:-74.145, lat:40.570, rot:-30, fs:11, key:'STATEN ISLAND'}
-  ];
-
-  const labelG = svg.append('g').style('pointer-events','none');
-  BORO_LABEL_CENTERS.forEach(d=>{
-    const pt = proj([d.lon, d.lat]);
-    if(!pt) return;
-    const isActive = activeBorough===d.key || activeBorough==='ALL';
-    const color = isActive ? BC[d.key] : 'rgba(255,255,255,0.15)';
-    const lines = [d.name];
-    const transform = `translate(${pt[0]},${pt[1]}) rotate(${d.rot})`;
-
-    lines.forEach((line, i) => {
-      const dy = (i - (lines.length-1)/2) * (d.fs * 1.3);
-      // dark shadow
-      labelG.append('text')
-        .attr('transform', transform)
-        .attr('text-anchor','middle')
-        .attr('dy', dy + 'px')
-        .attr('font-family','Syne,sans-serif')
-        .attr('font-size', d.fs+'px')
-        .attr('font-weight','800')
-        .attr('fill','none')
-        .attr('stroke','#0a0c10')
-        .attr('stroke-width','6')
-        .attr('stroke-linejoin','round')
-        .attr('letter-spacing','0.1em')
-        .attr('paint-order','stroke')
-        .text(line);
-      // colored text
-      labelG.append('text')
-        .attr('transform', transform)
-        .attr('text-anchor','middle')
-        .attr('dy', dy + 'px')
-        .attr('font-family','Syne,sans-serif')
-        .attr('font-size', d.fs+'px')
-        .attr('font-weight','800')
-        .attr('fill', color)
-        .attr('letter-spacing','0.1em')
-        .text(line);
-    });
+    labelLayers.push(L.marker(center,{icon,interactive:false,zIndexOffset:-2000}).addTo(map));
   });
 }
 
-/* ─────────────── PILLS ─────────────── */
-function renderPills(){
-  const boros=['ALL','BRONX','BROOKLYN','MANHATTAN','QUEENS','STATEN ISLAND'];
-  const names=['All','Bronx','Brooklyn','Manhattan','Queens','S.Island'];
-  document.getElementById('bpills').innerHTML=boros.map((b,i)=>{
-    const color=b==='ALL'?'#e85d3a':BC[b];
-    const active=activeBorough===b;
-    return `<button class="bpill${active?' active':''}" 
-      style="${active?`background:${color};border-color:${color};`:`border-color:${color}44;`}"
-      onclick="setBorough('${b}')">${names[i]}</button>`;
-  }).join('');
+function showStatus(msg) {
+  const el=document.getElementById('map-status');
+  el.style.display=msg?'block':'none';
+  if(msg) el.textContent=msg;
 }
 
-function setBorough(b){
-  activeBorough=b;
-  activeZip=null;
-  document.getElementById('zipDrawer').classList.remove('open');
-  renderPills();
-  renderMap();
-  updateSide();
-  updateBoroughChart();
+function initMap() {
+  map=L.map('map',{center:[40.68,-73.94],zoom:11,zoomControl:true,attributionControl:false});
+  L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png',{maxZoom:19,subdomains:'abcd'}).addTo(map);
+  loadBoundaries();
+  render();
 }
 
-/* ─────────────── INIT ─────────────── */
-function init(){
-  const mapH=window.innerHeight-52;
-  document.getElementById('mapWrap').style.height=mapH+'px';
-  document.querySelector('.side').style.height=mapH+'px';
-  document.querySelector('.zip-list-wrap').style.maxHeight=(mapH-200)+'px';
-  renderPills();
-  updateSide();
-  updateBoroughChart();
-  requestAnimationFrame(()=>requestAnimationFrame(()=>renderMap()));
+function render() {
+  Object.values(mks).forEach(m=>map.removeLayer(m));
+  mks={};
+  const data = ZIP_DATA.filter(d=>boro==='ALL'||d.b===boro);
+  const maxUnres = Math.max(...data.map(d=>d.unres));
+  data.forEach(d=>{
+    if(!d.lat||!d.lon||!d.unres) return;
+    const sz=getSz(d.unres);
+    const op=getOpacity(d.unres, maxUnres);
+    const sel=selZip===d.z;
+    const col=sel?'#f7c948':'#ff5c5c';
+    const div=document.createElement('div');
+    div.style.cssText=`width:${sz}px;height:${sz}px;border-radius:50%;background:rgba(255,92,92,${op*0.35});border:2px solid rgba(255,92,92,${op+(sel?0.3:0)});${sel?'box-shadow:0 0 0 3px rgba(247,201,72,0.4);border-color:rgba(247,201,72,0.9);':''}cursor:pointer;display:flex;align-items:center;justify-content:center;transition:transform .12s`;
+    if(sz>28){
+      const lbl=document.createElement('div');
+      lbl.style.cssText='font-size:8px;color:rgba(255,255,255,.8);font-family:DM Mono,monospace;pointer-events:none;text-align:center';
+      lbl.textContent=d.z;
+      div.appendChild(lbl);
+    }
+    div.onmouseenter=()=>{if(!sel)div.style.transform='scale(1.12)'};
+    div.onmouseleave=()=>{if(!sel)div.style.transform=''};
+    const icon=L.divIcon({className:'',html:div.outerHTML,iconSize:[sz,sz],iconAnchor:[sz/2,sz/2]});
+    const mk=L.marker([d.lat,d.lon],{icon}).addTo(map);
+    mk.on('click',()=>showDetail(d));
+    mks[d.z]=mk;
+  });
+  updateMetrics(data);
 }
-if(document.readyState==='complete'){setTimeout(init,0);}
-else{window.addEventListener('load',()=>setTimeout(init,0));}
-window.addEventListener('resize',()=>{renderMap();});
-window.setBorough=setBorough;
-window.selectZip=selectZip;
-window.closeDrawer=closeDrawer;
+
+function updateMetrics(data) {
+  const unres=data.reduce((s,d)=>s+d.unres,0);
+  const res=data.reduce((s,d)=>s+d.res,0);
+  const tot=unres+res;
+  const rate=tot>0?(unres/tot*100).toFixed(1):0;
+  const opens=data.filter(d=>d.ao!=null).map(d=>d.ao);
+  const closes=data.filter(d=>d.ac!=null).map(d=>d.ac);
+  const ao=opens.length?opens.reduce((a,b)=>a+b)/opens.length:null;
+  const ac=closes.length?closes.reduce((a,b)=>a+b)/closes.length:null;
+  document.getElementById('hunres').textContent=fmt(unres);
+  document.getElementById('hrate').textContent=rate+'%';
+  document.getElementById('hopen').textContent=fmtD(ao);
+  document.getElementById('hclose').textContent=fmtD(ac);
+  document.getElementById('munres').textContent=fmt(unres);
+  document.getElementById('mres').textContent=fmt(res);
+  document.getElementById('mopen').textContent=fmtD(ao);
+  document.getElementById('mclose').textContent=fmtD(ac);
+}
+
+function showDetail(d) {
+  selZip=d.z;
+  document.getElementById('nomsg').style.display='none';
+  document.getElementById('zd').classList.add('show');
+  document.getElementById('dzip').textContent=d.z;
+  document.getElementById('dboro').textContent=d.b;
+  document.getElementById('d-unres').textContent=fmt(d.unres);
+  document.getElementById('d-res').textContent=fmt(d.res);
+  document.getElementById('d-open').textContent='avg open: '+fmtD(d.ao);
+  document.getElementById('d-close').textContent='avg close: '+fmtD(d.ac);
+  const tot=d.unres+d.res;
+  const unresPct=tot>0?Math.round(d.unres/tot*100):0;
+  document.getElementById('d-pct').textContent=unresPct+'% unresolved';
+  document.getElementById('d-bar').style.width=unresPct+'%';
+
+  // Build type breakdown table
+  const tl=document.getElementById('dtypes');
+  tl.innerHTML='';
+  const entries=Object.entries(d.types||{}).sort((a,b)=>b[1]-a[1]);
+  if(!entries.length){tl.innerHTML='<div style="color:var(--muted);font-size:10px;padding:8px 0">No type data available</div>';return;}
+
+  // Calculate actual unresolved count per type from percentage
+  document.getElementById('d-total-types').textContent=entries.length+' types';
+
+  entries.forEach(([type,val],i) => {
+    const td = typeof val === 'object' ? val : {pct: val, cnt: Math.round(d.unres * val / 100)};
+    const pct = td.pct; const unresCnt = td.cnt;
+    const col = TC[i % TC.length];
+    const item = document.createElement('div');
+    item.innerHTML = `
+      <div class="titem">
+        <div class="tname-wrap">
+          <div class="tdot" style="background:${col}"></div>
+          <div class="tname" title="${type}">${type}</div>
+        </div>
+        <div class="tnum" style="color:${col}">${unresCnt.toLocaleString()}</div>
+        <div class="tpct">${pct}%</div>
+        <div class="tclose" style="color:var(--green)">—</div>
+      </div>
+      <div class="tbar-wrap"><div class="tbar-fill" style="width:${Math.min(100,pct)}%;background:${col}55"></div></div>`;
+    tl.appendChild(item);
+  });
+  render();
+}
+
+function closeDetail() {
+  selZip=null;
+  document.getElementById('zd').classList.remove('show');
+  document.getElementById('nomsg').style.display='flex';
+  render();
+}
+
+document.getElementById('closebtn').onclick=closeDetail;
+
+document.querySelectorAll('.pill').forEach(p=>p.addEventListener('click',()=>{
+  document.querySelectorAll('.pill').forEach(x=>x.classList.remove('on'));
+  p.classList.add('on');
+  boro=p.dataset.b;
+  closeDetail();
+  if(geojsonLayer){ map.removeLayer(geojsonLayer); geojsonLayer=null; }
+  labelLayers.forEach(l=>map.removeLayer(l)); labelLayers=[];
+  loadBoundaries();
+  render();
+  if(boro!=='ALL') {
+    const pts=ZIP_DATA.filter(d=>d.b===boro&&d.lat&&d.lon);
+    if(pts.length) map.fitBounds([pts.map(d=>[d.lat,d.lon])],{padding:[50,50]});
+  } else { map.setView([40.68,-73.94],11); }
+}));
+
+window.addEventListener('load',initMap);
 </script>
 </body>
 </html>
+
