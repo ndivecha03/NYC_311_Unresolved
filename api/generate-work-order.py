@@ -159,8 +159,25 @@ def _call_anthropic(api_key: str, user_msg: str, model: str) -> dict:
             "anthropic-version": "2023-06-01",
         },
     )
-    with urllib.request.urlopen(req, timeout=45) as resp:
-        raw = resp.read().decode("utf-8")
+
+    # Retry on transient Anthropic errors: 429 (rate), 502/503/504 (gateway),
+    # 529 (overloaded). Exponential backoff: 1s, 3s, 7s.
+    last_err = None
+    raw = None
+    for attempt, backoff in enumerate([1, 3, 7, 0]):
+        try:
+            with urllib.request.urlopen(req, timeout=45) as resp:
+                raw = resp.read().decode("utf-8")
+            break
+        except urllib.error.HTTPError as e:
+            last_err = e
+            if e.code in (429, 502, 503, 504, 529) and backoff:
+                time.sleep(backoff)
+                continue
+            raise
+    if raw is None and last_err is not None:
+        raise last_err
+
     data = json.loads(raw)
     text = data.get("content", [{}])[0].get("text", "").strip()
 
@@ -238,6 +255,16 @@ class handler(BaseHTTPRequestHandler):
             work_order = _call_anthropic(api_key, user_msg, DEFAULT_MODEL)
         except urllib.error.HTTPError as e:
             detail = e.read().decode("utf-8", errors="replace")[:400]
+            if e.code == 529:
+                return self._reply(503, {
+                    "error": "Claude is temporarily overloaded. Please try again in a moment.",
+                    "detail": detail,
+                })
+            if e.code == 401:
+                return self._reply(500, {
+                    "error": "Invalid ANTHROPIC_API_KEY on the server.",
+                    "detail": detail,
+                })
             return self._reply(502, {"error": f"Anthropic API error {e.code}", "detail": detail})
         except urllib.error.URLError as e:
             return self._reply(504, {"error": f"Anthropic API unreachable: {e.reason}"})

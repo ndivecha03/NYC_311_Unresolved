@@ -389,14 +389,6 @@ body.results-active .header,body.results-active .page{{display:none!important;}}
     </select>
   </div>
 
-  <!-- ZIP Code (options populated dynamically from borough) -->
-  <div class="field-group">
-    <label class="field-label" for="zipSelect">ZIP Code</label>
-    <select class="zip-select" id="zipSelect" onchange="onZipChange()" disabled>
-      <option value="">&#8212; Select borough first &#8212;</option>
-    </select>
-  </div>
-
   <button class="continue-btn" id="continueBtn" onclick="continueToStep2()">Continue &#8594;</button>
 </div>
 
@@ -527,26 +519,12 @@ function initPlacesAutocomplete() {
     if (detectedBoro) {
       document.getElementById('boroughSelect').value = detectedBoro;
       selectedBorough = detectedBoro;
-      populateZipOptions(detectedBoro);
     }
     if (zipComp && zipComp.long_name) {
-      const zipSel = document.getElementById('zipSelect');
-      // Only set if ZIP is in the populated list for the borough
-      if (Array.from(zipSel.options).some(o => o.value === zipComp.long_name)) {
-        zipSel.value = zipComp.long_name;
-        selectedZip = zipComp.long_name;
-      }
+      selectedZip = zipComp.long_name;
     }
     setGeoStatus('ok', '&#10003; Address confirmed: ' + place.formatted_address);
   });
-}
-
-function populateZipOptions(borough){
-  const zipSel = document.getElementById('zipSelect');
-  const zips = boroughZips[borough] || [];
-  zipSel.innerHTML = '<option value="">&#8212; Select ZIP &#8212;</option>' +
-    zips.map(z => `<option value="${z}">${z}</option>`).join('');
-  zipSel.disabled = zips.length === 0;
 }
 
 // ================================================================
@@ -715,37 +693,52 @@ function setGeoStatus(type,msg){
 function onBoroughChange(){
   const borough=document.getElementById('boroughSelect').value;
   selectedBorough=borough||null;
-  selectedZip=null;
-  if(!borough){
-    const zipSel=document.getElementById('zipSelect');
-    zipSel.innerHTML='<option value="">&#8212; Select borough first &#8212;</option>';
-    zipSel.disabled=true;
+}
+
+async function continueToStep2(){
+  const boroVal = document.getElementById('boroughSelect').value;
+  const addrVal = (document.getElementById('addrInput').value||'').trim();
+  if(!addrVal){
+    setGeoStatus('err','&#x26A0; Please enter an address before continuing.');
+    document.getElementById('addrInput').focus();
     return;
   }
-  populateZipOptions(borough);
-}
-
-function onZipChange(){
-  const v=document.getElementById('zipSelect').value;
-  selectedZip=v||null;
-}
-
-function continueToStep2(){
-  // Always read the current select values — don't rely on onchange having fired
-  const boroVal = document.getElementById('boroughSelect').value;
-  const zipVal  = document.getElementById('zipSelect').value;
   if(!boroVal){
     setGeoStatus('err','&#x26A0; Please select a borough before continuing.');
     document.getElementById('boroughSelect').focus();
     return;
   }
   selectedBorough = boroVal;
-  if(!zipVal){
-    setGeoStatus('err','&#x26A0; Please select a ZIP code before continuing.');
-    document.getElementById('zipSelect').focus();
-    return;
+
+  // If autocomplete didn't already capture a ZIP, try to geocode the address
+  // to extract it. This is best-effort; we continue regardless.
+  if(!selectedZip){
+    try{
+      await waitForMaps();
+      const geocoder = new google.maps.Geocoder();
+      const zipFromGeo = await new Promise((resolve)=>{
+        geocoder.geocode(
+          {address: addrVal + ', ' + boroVal + ', NY'},
+          (results, status)=>{
+            if(status==='OK' && results && results[0]){
+              const zc=(results[0].address_components||[])
+                .find(c=>c.types.includes('postal_code'));
+              if(!complaintLatLng){
+                complaintLatLng={
+                  lat: results[0].geometry.location.lat(),
+                  lng: results[0].geometry.location.lng(),
+                  display: results[0].formatted_address,
+                };
+              }
+              resolve(zc ? zc.long_name : null);
+            } else resolve(null);
+          }
+        );
+      });
+      if(zipFromGeo) selectedZip = zipFromGeo;
+    }catch(_){ /* non-fatal */ }
   }
-  selectedZip = zipVal;
+
   setGeoStatus('','');
   document.getElementById('step2').classList.remove('locked');
   document.getElementById('step2').classList.add('active');
@@ -772,14 +765,9 @@ async function useCurrentLocation(){
         if(boro){
           document.getElementById('boroughSelect').value=boro;
           selectedBorough=boro;
-          populateZipOptions(boro);
         }
         if(zipC&&zipC.long_name){
-          const zipSel=document.getElementById('zipSelect');
-          if(Array.from(zipSel.options).some(o=>o.value===zipC.long_name)){
-            zipSel.value=zipC.long_name;
-            selectedZip=zipC.long_name;
-          }
+          selectedZip=zipC.long_name;
         }
         setGeoStatus('ok','&#10003; Location found: '+results[0].formatted_address);
       }else{
@@ -1165,17 +1153,28 @@ async function openWorkOrderModal(){
     <div style="font-size:0.76rem">Using ${lastAssessment.similar_past_orders.length} similar past complaints as examples...</div>
   </div>`;
   try {
-    const resp = await fetch('/api/generate-work-order', {
-      method: 'POST',
-      headers: {'Content-Type': 'application/json'},
-      body: JSON.stringify(lastAssessment),
-    });
+    let resp, attempt = 0;
+    while (true) {
+      resp = await fetch('/api/generate-work-order', {
+        method: 'POST',
+        headers: {'Content-Type': 'application/json'},
+        body: JSON.stringify(lastAssessment),
+      });
+      if (resp.status !== 503 || attempt >= 1) break;
+      attempt++;
+      body.innerHTML = `<div class="wo-loading">
+        <div class="wo-spinner"></div>
+        <div style="font-size:0.88rem;color:#c8d8e8;margin-bottom:6px">Claude is briefly overloaded &mdash; retrying...</div>
+      </div>`;
+      await new Promise(r=>setTimeout(r, 2500));
+    }
     if (resp.status === 429) {
       throw new Error('Rate limit reached. Please wait a few minutes before generating another work order.');
     }
     if (!resp.ok) {
-      const txt = await resp.text();
-      throw new Error('Server returned ' + resp.status + ': ' + txt.slice(0,200));
+      let msg = 'Server returned ' + resp.status;
+      try { const j = await resp.json(); if(j && j.error) msg = j.error; } catch(_){}
+      throw new Error(msg);
     }
     const wo = await resp.json();
     lastWorkOrder = wo;
@@ -1244,9 +1243,6 @@ function resetForm(){
   selectedType=null; selectedZip=null; selectedBorough=null; complaintLatLng=null;
   lastAssessment=null; lastWorkOrder=null;
   document.getElementById('woModal').classList.remove('show');
-  const zipSel=document.getElementById('zipSelect');
-  zipSel.innerHTML='<option value="">&#8212; Select borough first &#8212;</option>';
-  zipSel.disabled=true;
   document.getElementById('boroughSelect').value='';
   document.getElementById('addrInput').value='';
   document.getElementById('detailsInput').value='';
