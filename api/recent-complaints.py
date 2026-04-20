@@ -22,10 +22,11 @@ import json
 import os
 import time
 import urllib.parse
-import urllib.request
 import urllib.error
 from datetime import date
 from http.server import BaseHTTPRequestHandler
+
+import requests   # from requirements.txt — avoids urllib DNS race in Vercel sandbox
 
 # ----------------------------------------------------------------------
 # Config
@@ -93,16 +94,25 @@ def _fetch(zip_code: str, borough: str, limit: int):
             "latitude,longitude"
         ),
     }
-    url = SOCRATA_URL + "?" + urllib.parse.urlencode(params)
 
     headers = {"Accept": "application/json", "User-Agent": "NYC-Street-Lights-Dashboard/1.0"}
     token = os.environ.get("NYC_OPENDATA_APP_TOKEN")
     if token:
         headers["X-App-Token"] = token
 
-    req = urllib.request.Request(url, headers=headers)
-    with urllib.request.urlopen(req, timeout=HTTP_TIMEOUT_SEC) as resp:
-        return json.loads(resp.read().decode("utf-8"))
+    # Retry 2x on transient network hiccups in Vercel's Python sandbox.
+    last_exc = None
+    for attempt in range(3):
+        try:
+            r = requests.get(SOCRATA_URL, params=params, headers=headers, timeout=HTTP_TIMEOUT_SEC)
+            r.raise_for_status()
+            return r.json()
+        except requests.exceptions.RequestException as e:
+            last_exc = e
+            if attempt < 2:
+                time.sleep(0.5 * (attempt + 1))
+                continue
+            raise
 
 
 def _to_float(x):
@@ -191,14 +201,13 @@ class handler(BaseHTTPRequestHandler):
             _cache[cache_key] = (now, data)
             return self._send(200, {"records": data, "cached": False})
 
-        except urllib.error.HTTPError as e:
-            detail = ""
-            try:
-                detail = e.read().decode("utf-8", errors="replace")[:200]
-            except Exception:
-                pass
-            return self._send(502, {"error": "OpenData error " + str(e.code), "detail": detail, "records": []})
-        except urllib.error.URLError as e:
-            return self._send(504, {"error": "OpenData unreachable: " + str(e.reason), "records": []})
+        except requests.exceptions.HTTPError as e:
+            status = getattr(e.response, "status_code", 502)
+            detail = getattr(e.response, "text", "")[:200]
+            return self._send(502, {"error": "OpenData HTTP " + str(status), "detail": detail, "records": []})
+        except requests.exceptions.ConnectionError as e:
+            return self._send(504, {"error": "OpenData unreachable: " + str(e), "records": []})
+        except requests.exceptions.Timeout:
+            return self._send(504, {"error": "OpenData timeout", "records": []})
         except Exception as e:
             return self._send(500, {"error": type(e).__name__ + ": " + str(e), "records": []})

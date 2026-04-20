@@ -1,6 +1,1 @@
-# Vercel's Python runtime auto-installs these for /api/*.py functions.
-# generate-work-order.py only uses stdlib (json, os, urllib, http.server, time),
-# so no external deps are strictly required.
-#
-# Listed for future use:
-# requests>=2.31.0
+requests>=2.31.0
