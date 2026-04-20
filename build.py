@@ -319,8 +319,8 @@ body.results-active .header,body.results-active .page{{display:none!important;}}
 .wo-cta:hover:not(:disabled){{transform:translateY(-1px);box-shadow:0 8px 22px rgba(0,180,216,.35);}}
 .wo-cta:disabled{{background:#334455;color:#8899aa;cursor:not-allowed;transform:none;box-shadow:none;}}
 .wo-sub{{font-size:0.68rem;color:#8899aa;text-align:center;margin-top:6px;line-height:1.4;}}
-.modal-backdrop{{display:none;position:fixed;inset:0;background:rgba(0,0,0,.65);backdrop-filter:blur(4px);z-index:200;align-items:center;justify-content:center;padding:30px;}}
-.modal-backdrop.show{{display:flex;}}
+.modal-backdrop{{display:none;position:fixed;top:0;left:0;right:0;bottom:0;width:100vw;height:100vh;background:rgba(0,0,0,.75);backdrop-filter:blur(4px);z-index:99999;align-items:center;justify-content:center;padding:30px;}}
+.modal-backdrop.show{{display:flex!important;}}
 .modal{{background:#0d1623;border:1px solid #223344;border-radius:14px;max-width:720px;width:100%;max-height:85vh;display:flex;flex-direction:column;overflow:hidden;box-shadow:0 30px 80px rgba(0,0,0,.6);}}
 .modal-head{{display:flex;justify-content:space-between;align-items:center;padding:16px 22px;border-bottom:1px solid #223344;background:linear-gradient(135deg,rgba(0,180,216,.08),transparent);}}
 .modal-title{{font-size:0.95rem;font-weight:700;color:#00b4d8;display:flex;align-items:center;gap:8px;}}
@@ -1136,6 +1136,7 @@ async function submitComplaint(){
 // WORK ORDER GENERATION (Claude via /api/generate-work-order)
 // ================================================================
 async function openWorkOrderModal(){
+  console.log('[WO] openWorkOrderModal clicked, lastAssessment=', !!lastAssessment);
   if(!lastAssessment){
     alert('Submit a complaint first.');
     return;
@@ -1144,7 +1145,15 @@ async function openWorkOrderModal(){
   const body  = document.getElementById('woModalBody');
   const foot  = document.getElementById('woModalFoot');
   const title = document.getElementById('woModalTitle');
+  // Make sure modal is attached to <body> so no ancestor transform/filter
+  // breaks position:fixed. Safe to re-append even if already there.
+  if (modal.parentNode !== document.body) document.body.appendChild(modal);
   modal.classList.add('show');
+  modal.style.display = 'flex';
+  // Force a repaint so the modal becomes visible even if some GPU layer
+  // was stale (was the bug where it only appeared after F12 resize).
+  void modal.offsetHeight;
+  console.log('[WO] modal.show applied. computed display=', getComputedStyle(modal).display, 'z=', getComputedStyle(modal).zIndex);
   foot.style.display = 'none';
   title.textContent = 'Generating Work Order...';
   body.innerHTML = `<div class="wo-loading">
