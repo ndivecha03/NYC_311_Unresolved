@@ -750,7 +750,7 @@ async function fetchLiveRecords(zip, borough){
   try {
     const ctrl = new AbortController();
     const t = setTimeout(()=>ctrl.abort(), 5000);
-    const resp = await fetch(url, {signal: ctrl.signal, headers: {'Accept':'application/json'}});
+    const resp = await fetch(url, {signal: ctrl.signal, headers: {'Accept':'application/json'} });
     clearTimeout(t);
     if (!resp.ok) { console.warn('[live] Socrata returned', resp.status); return []; }
     const rows = await resp.json();
