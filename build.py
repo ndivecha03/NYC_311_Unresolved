@@ -439,7 +439,7 @@ body.results-active .header,body.results-active .page{{display:none!important;}}
     </div>
     <div class="card accent-class"><div class="card-title">&#x1F3F7;&#xFE0F; Classification</div><div id="classBody"></div></div>
     <div class="card accent-vendor"><div class="card-title">&#x1F3E2; Recommended Vendor</div><div id="vendorBody"></div></div>
-    <div class="card accent-similar"><div class="card-title">&#x1F50D; Similar Past Complaints</div><div id="similarBody"></div></div>
+    <div class="card accent-similar"><div class="card-title">&#x1F50D; Similar Past Complaints <span id="liveCount" style="margin-left:8px;font-size:0.7rem;font-weight:600"></span></div><div id="similarBody"></div></div>
     <div class="card accent-cost"><div class="card-title">&#x1F4B0; Estimated Repair Cost</div><div id="costBody"></div></div>
     <button id="createWoBtn" class="wo-cta" onclick="openWorkOrderModal()">
       <span>&#x1F4DD;</span><span>Create Work Order with AI</span>
@@ -742,7 +742,7 @@ async function fetchLiveRecords(zip, borough){
   else if (borough) where.push("borough='" + borough.toUpperCase() + "'");
   const params = new URLSearchParams({
     '$where':  where.join(' AND '),
-    '$limit':  '50',
+    '$limit':  '200',
     '$order':  'created_date DESC',
     '$select': 'unique_key,created_date,closed_date,complaint_type,descriptor,status,incident_address,street_name,incident_zip,borough,latitude,longitude',
   });
@@ -796,8 +796,20 @@ async function fetchLiveRecords(zip, borough){
 function findSimilar(type,zip,borough,n=5){
   const qp=determinePriority(type,"").priority;
   const qv=featureVec({type,zip,borough,priority:qp,status:"Open",month:0,resolution:null});
-  const pool = calls.concat(callsLive);
-  return pool.filter(c=>c.lat&&c.lng).map(c=>({...c,sim:cosineSim(qv,featureVec(c))})).sort((a,b)=>b.sim-a.sim).slice(0,n);
+  // Score baked + live separately so fresh NYC OpenData records aren't drowned
+  // out by the 10K-row baked corpus. Tie-break by date DESC (most recent wins).
+  const scored = arr => arr.filter(c=>c.lat&&c.lng)
+    .map(c=>({...c, sim: cosineSim(qv, featureVec(c))}))
+    .sort((a,b) => (b.sim - a.sim) || ((+b.date||0) - (+a.date||0)));
+  const liveRanked  = scored(callsLive);
+  const bakedRanked = scored(calls);
+  // Reserve up to half the slots for live records when they exist. This
+  // guarantees recent 311 activity surfaces even when the baked corpus has
+  // thousands of equally-similar 2018/2019 entries.
+  const liveQuota = Math.min(liveRanked.length, Math.ceil(n/2));
+  const picked = liveRanked.slice(0, liveQuota)
+               .concat(bakedRanked.slice(0, n - liveQuota));
+  return picked.sort((a,b) => (b.sim - a.sim) || ((+b.date||0) - (+a.date||0)));
 }
 
 // ================================================================
@@ -1176,6 +1188,17 @@ async function submitComplaint(){
   callsLive = await fetchLiveRecords(selectedZip, selectedBorough);
 
   const similar = findSimilar(selectedType, selectedZip, selectedBorough, 5);
+  // Small badge next to the "Similar Past Complaints" header so the user
+  // can see that the NYC OpenData feed actually fired and how many fresh
+  // records were merged.
+  const liveCountEl = document.getElementById('liveCount');
+  if (liveCountEl) {
+    if (callsLive.length > 0) {
+      liveCountEl.innerHTML = '<span class="live-pill">&#x1F7E2; ' + callsLive.length + ' LIVE PULLED</span>';
+    } else {
+      liveCountEl.innerHTML = '<span style="color:#8899aa;font-size:0.7rem">(no new live records for this ZIP)</span>';
+    }
+  }
 
   // Stash context for the "Create Work Order" button
   lastAssessment = {
