@@ -320,6 +320,7 @@ body.results-active .header,body.results-active .page{{display:none!important;}}
 .wo-cta:disabled{{background:#334455;color:#8899aa;cursor:not-allowed;transform:none;box-shadow:none;}}
 .wo-sub{{font-size:0.68rem;color:#8899aa;text-align:center;margin-top:6px;line-height:1.4;}}
 .marker-days-badge{{background:rgba(13,27,42,.92);color:#fff!important;padding:3px 8px;border-radius:10px;border:1px solid rgba(255,255,255,.25);white-space:nowrap;letter-spacing:.02em;text-shadow:0 1px 2px rgba(0,0,0,.6);}}
+.live-pill{{display:inline-block;margin-left:8px;padding:1px 7px;border-radius:8px;background:rgba(46,196,182,.18);color:#2ec4b6;border:1px solid rgba(46,196,182,.45);font-size:0.62rem;font-weight:800;letter-spacing:.08em;vertical-align:middle;}}
 .modal-backdrop{{display:none;position:fixed;top:0;left:0;right:0;bottom:0;width:100vw;height:100vh;background:rgba(0,0,0,.75);backdrop-filter:blur(4px);z-index:99999;align-items:center;justify-content:center;padding:30px;}}
 .modal-backdrop.show{{display:flex!important;}}
 .modal{{background:#0d1623;border:1px solid #223344;border-radius:14px;max-width:720px;width:100%;max-height:85vh;display:flex;flex-direction:column;overflow:hidden;box-shadow:0 30px 80px rgba(0,0,0,.6);}}
@@ -673,10 +674,61 @@ function featureVec(c){
          (c.month||0)/11,c.resolution?Math.min(1,c.resolution/30):0.5];
 }
 function cosineSim(a,b){let d=0,mA=0,mB=0;for(let i=0;i<a.length;i++){d+=a[i]*b[i];mA+=a[i]*a[i];mB+=b[i]*b[i];}return mA&&mB?d/(Math.sqrt(mA)*Math.sqrt(mB)):0;}
+
+// Records fetched live from NYC OpenData before each similarity search.
+let callsLive = [];
+
+function normalizeLiveRecord(r){
+  const tpls = descTpl[r.type] || ["Street lamp issue at {addr}."];
+  const loc  = (r.address && r.address!=='Unknown') ? r.address
+             : (r.street && r.street!=='Unknown')   ? r.street
+             : 'this location';
+  const desc = tpls[0].replace(/{addr}/g, loc).replace(/{street}/g, r.street||'this street');
+  const d    = new Date((r.date||'2020-01-01') + 'T00:00:00');
+  const pfx  = BORO_PREFIX[r.borough] || 'NYC';
+  return {
+    ...r,
+    id: pfx + '-' + r.id,
+    rawId: r.id,
+    date: d,
+    dateStr: d.toLocaleDateString('en-US'),
+    month: d.getMonth(),
+    year: d.getFullYear(),
+    description: desc,
+    priority: 'Medium',
+    address: (r.address && r.address!=='Unknown') ? r.address
+           : (r.street  && r.street!=='Unknown')  ? r.street
+           : 'Address not recorded',
+    live: true,
+  };
+}
+
+async function fetchLiveRecords(zip, borough){
+  if(!zip && !borough) return [];
+  try{
+    const url = '/api/recent-complaints?zip=' + encodeURIComponent(zip||'')
+              + '&borough=' + encodeURIComponent(borough||'') + '&limit=50';
+    const ctrl = new AbortController();
+    const t = setTimeout(()=>ctrl.abort(), 4500);
+    const resp = await fetch(url, {signal: ctrl.signal});
+    clearTimeout(t);
+    if(!resp.ok) return [];
+    const json = await resp.json();
+    const rows = (json.records || []).map(normalizeLiveRecord);
+    // Dedupe against the baked corpus by rawId
+    const bakedIds = new Set(calls.map(c => c.rawId));
+    return rows.filter(r => !bakedIds.has(r.rawId));
+  } catch(e){
+    console.warn('[live] OpenData fetch failed:', e.message);
+    return [];
+  }
+}
+
 function findSimilar(type,zip,borough,n=5){
   const qp=determinePriority(type,"").priority;
   const qv=featureVec({type,zip,borough,priority:qp,status:"Open",month:0,resolution:null});
-  return calls.filter(c=>c.lat&&c.lng).map(c=>({...c,sim:cosineSim(qv,featureVec(c))})).sort((a,b)=>b.sim-a.sim).slice(0,n);
+  const pool = calls.concat(callsLive);
+  return pool.filter(c=>c.lat&&c.lng).map(c=>({...c,sim:cosineSim(qv,featureVec(c))})).sort((a,b)=>b.sim-a.sim).slice(0,n);
 }
 
 // ================================================================
@@ -1047,6 +1099,13 @@ async function submitComplaint(){
   const ranked = getRankedVendors(selectedZip, selectedBorough, originLL);
   const topVendor = ranked[0] || {name:'No vendor available',phone:'',address:'',zip:'',borough:'',lat:originLL.lat,lng:originLL.lng,license:''};
   const moreVendors = ranked.slice(1, 4);
+
+  // Pull the latest 311 records for this ZIP from NYC OpenData and
+  // merge them into the similarity corpus. Bounded by a short timeout
+  // so a slow/failing upstream can't block submission.
+  btn.textContent = 'Pulling live 311 data...';
+  callsLive = await fetchLiveRecords(selectedZip, selectedBorough);
+
   const similar = findSimilar(selectedType, selectedZip, selectedBorough, 5);
 
   // Stash context for the "Create Work Order" button
@@ -1150,8 +1209,9 @@ async function submitComplaint(){
     else if (c.status==='Pending')           res = `<span class="pill pill-medium">Pending</span>`;
     else                                     res = `<span class="pill pill-high">Still Open</span>`;
     const simPct = Math.round(c.sim*100);
+    const livePill = c.live ? '<span class="live-pill">&#x1F7E2; LIVE</span>' : '';
     return `<div class="sim-row">
-      <div class="sim-row-head"><span>${c.id} &bull; ${c.dateStr}</span>${res}</div>
+      <div class="sim-row-head"><span>${c.id} &bull; ${c.dateStr} ${livePill}</span>${res}</div>
       <div class="sim-row-tags"><span class="tag tag-type">${c.type}</span><span class="tag" style="background:rgba(136,153,170,.15);color:#c8d8e8">${c.borough}</span></div>
       <div class="sim-row-addr">&#x1F4CD; ${c.address}${c.zip?', '+c.zip:''}</div>
       <div class="sim-row-foot">
