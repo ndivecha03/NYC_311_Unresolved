@@ -1277,12 +1277,12 @@ function resetForm(){
 </body>
 </html>"""
 
-# Unescape Python format-string double-braces FIRST (iterate until stable),
-# then inject JSON data (which contains single braces that must not be collapsed).
-while "{{" in html:
-    html = html.replace("{{", "{")
-while "}}" in html:
-    html = html.replace("}}", "}")
+# Unescape Python format-string double-braces in a SINGLE pass.
+# Using a while-loop here is wrong: it over-collapses runs of closing braces
+# (e.g. `}}}}` should become `}}`, but a while loop reduces it to `}`),
+# which silently drops the closing brace of @media blocks and breaks every
+# CSS rule downstream until the next valid close.
+html = html.replace("{{", "{").replace("}}", "}")
 
 html = html.replace("__GOOGLE_KEY__", GOOGLE_KEY)
 html = html.replace("__VENDORS_JS__", vendors_js)
