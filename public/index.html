@@ -553,23 +553,92 @@ function normalizeLiveRecord(r){
   };
 }
 
+// Maps Socrata `descriptor` values to our 7 canonical complaint types.
+const DESCRIPTOR_TO_TYPE = {
+  'street light out':          'Street Light Out',
+  'multiple streetlights out': 'Multiple Lights Out',
+  'multiple lights out':       'Multiple Lights Out',
+  'street light dayburning':   'Street Light Dayburning',
+  'street light cycling':      'Street Light Cycling',
+  'dim street light':          'Dim Lamp',
+  'street light dim':          'Dim Lamp',
+  'dim lamp':                  'Dim Lamp',
+  'damaged luminaire':         'Fixture/Glassware Issue',
+  'missing luminaire':         'Fixture/Glassware Issue',
+  'broken globe':              'Fixture/Glassware Issue',
+  'fixture/glassware issue':   'Fixture/Glassware Issue',
+  'damaged pole':              'Lamppost Damage',
+  'knocked down pole':         'Lamppost Damage',
+  'missing pole':              'Lamppost Damage',
+  'lamppost damage':           'Lamppost Damage',
+};
+function canonicalType(descriptor){
+  if(!descriptor) return 'Street Light Out';
+  const k = descriptor.trim().toLowerCase();
+  if(DESCRIPTOR_TO_TYPE[k]) return DESCRIPTOR_TO_TYPE[k];
+  for(const key in DESCRIPTOR_TO_TYPE){
+    if(k.indexOf(key) !== -1) return DESCRIPTOR_TO_TYPE[key];
+  }
+  return 'Street Light Out';
+}
+
+// Browser-direct call to NYC OpenData Socrata (public, CORS-enabled, no key
+// needed for low volume). Bypasses Vercel's Python sandbox which can't
+// resolve data.cityofnewyork.gov reliably.
 async function fetchLiveRecords(zip, borough){
   if(!zip && !borough) return [];
-  try{
-    const url = '/api/recent-complaints?zip=' + encodeURIComponent(zip||'')
-              + '&borough=' + encodeURIComponent(borough||'') + '&limit=50';
+  const where = ["complaint_type='Street Light Condition'"];
+  if (zip)          where.push("incident_zip='" + zip + "'");
+  else if (borough) where.push("borough='" + borough.toUpperCase() + "'");
+  const params = new URLSearchParams({
+    '$where':  where.join(' AND '),
+    '$limit':  '50',
+    '$order':  'created_date DESC',
+    '$select': 'unique_key,created_date,closed_date,complaint_type,descriptor,status,incident_address,street_name,incident_zip,borough,latitude,longitude',
+  });
+  const url = 'https://data.cityofnewyork.gov/resource/erm2-nwe9.json?' + params.toString();
+  try {
     const ctrl = new AbortController();
-    const t = setTimeout(()=>ctrl.abort(), 4500);
-    const resp = await fetch(url, {signal: ctrl.signal});
+    const t = setTimeout(()=>ctrl.abort(), 5000);
+    const resp = await fetch(url, {signal: ctrl.signal, headers: {'Accept':'application/json'});
     clearTimeout(t);
-    if(!resp.ok) return [];
-    const json = await resp.json();
-    const rows = (json.records || []).map(normalizeLiveRecord);
-    // Dedupe against the baked corpus by rawId
+    if (!resp.ok) { console.warn('[live] Socrata returned', resp.status); return []; }
+    const rows = await resp.json();
     const bakedIds = new Set(calls.map(c => c.rawId));
-    return rows.filter(r => !bakedIds.has(r.rawId));
-  } catch(e){
-    console.warn('[live] OpenData fetch failed:', e.message);
+    const out = [];
+    for (const r of rows) {
+      const lat = parseFloat(r.latitude), lng = parseFloat(r.longitude);
+      if (!lat || !lng) continue;
+      const created = (r.created_date||'').slice(0,10);
+      const closed  = (r.closed_date ||'').slice(0,10);
+      const status  = (r.status||'Open').trim();
+      let resolution = null;
+      if (status.toLowerCase()==='closed' && created && closed) {
+        resolution = Math.max(0, Math.floor((new Date(closed) - new Date(created))/86400000));
+      }
+      const rec = {
+        id: r.unique_key || '',
+        rawId: r.unique_key || '',
+        date: created,
+        type: canonicalType(r.descriptor),
+        raw_type: r.descriptor || '',
+        status: status,
+        resolution: resolution,
+        address: (r.incident_address || r.street_name || 'Unknown').trim(),
+        street: (r.street_name || '').trim(),
+        zip: (r.incident_zip || '').trim(),
+        borough: (r.borough || '').replace(/\w/g, ch => ch.toUpperCase()),
+        lat: +lat.toFixed(6),
+        lng: +lng.toFixed(6),
+        live: true,
+      };
+      if (bakedIds.has(rec.rawId)) continue;
+      out.push(normalizeLiveRecord(rec));
+    }
+    console.log('[live] merged', out.length, 'fresh 311 records for', zip || borough);
+    return out;
+  } catch(e) {
+    console.warn('[live] NYC OpenData fetch failed:', e.message);
     return [];
   }
 }
