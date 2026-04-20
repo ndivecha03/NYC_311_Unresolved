@@ -850,15 +850,15 @@ function makeEmojiIcon(emoji, borderColor='#ffffff', size=42){
 
 // Complaint type -> emoji
 const TYPE_EMOJI = {
-  'Street Light Out':          '\u{1F4A1}',   // 💡
-  'Street Light Cycling':      '\u{1F501}',   // 🔁
-  'Street Light Dayburning':   '\u{2600}\u{FE0F}',  // ☀️
-  'Multiple Lights Out':       '\u{1F526}',   // 🔦
-  'Dim Lamp':                  '\u{1F319}',   // 🌙
-  'Fixture/Glassware Issue':   '\u{1F527}',   // 🔧
-  'Lamppost Damage':           '\u{26A0}\u{FE0F}', // ⚠️
+  'Street Light Out':          '💡',
+  'Street Light Cycling':      '🔁',
+  'Street Light Dayburning':   '☀️',
+  'Multiple Lights Out':       '🔦',
+  'Dim Lamp':                  '🌙',
+  'Fixture/Glassware Issue':   '🔧',
+  'Lamppost Damage':           '⚠️',
 };
-function emojiForType(t){ return TYPE_EMOJI[t] || '\u{1F4A1}'; }
+function emojiForType(t){ return TYPE_EMOJI[t] || '💡'; }
 
 // Days between a YYYY-MM-DD (or Date) and today, >=0.
 function daysSince(d){
@@ -902,7 +902,7 @@ async function buildMap(ll, similar, vendor){
   similar.forEach(c => {
     if (!c.lat || !c.lng) return;
     const isClosed = c.status === 'Closed' && c.resolution;
-    const emoji    = isClosed ? '\u{1FA79}' : '\u{1FAAB}';  // 🩹 vs 🪫
+    const emoji    = isClosed ? '🩹' : '🪫';
     const border   = isClosed ? '#2ec4b6'   : '#e63946';
     const daysVal  = isClosed ? c.resolution : daysSince(c.date);
     const daysText = daysVal==null ? '' : (daysVal + 'd ' + (isClosed ? 'closed' : 'open'));
@@ -933,7 +933,7 @@ async function buildMap(ll, similar, vendor){
   // Vendor marker — electrician
   const vendorMarker = new google.maps.Marker({
     position: {lat: vendor.lat, lng: vendor.lng}, map: gMap,
-    icon: makeEmojiIcon('\u{26A1}', '#2ec4b6', 46),  // ⚡
+    icon: makeEmojiIcon('⚡', '#2ec4b6', 46),
     title: vendor.name, zIndex: 2,
   });
   const licenseLine = vendor.license ? ('License #' + vendor.license) : 'Licensed NYC electrician';
