@@ -1221,7 +1221,9 @@ function renderWorkOrder(wo){
 }
 
 function closeWorkOrderModal(){
-  document.getElementById('woModal').classList.remove('show');
+  const m = document.getElementById('woModal');
+  m.classList.remove('show');
+  m.style.display = '';  // clear the inline style set in openWorkOrderModal
 }
 
 async function copyWorkOrderJson(){
@@ -1251,7 +1253,9 @@ function downloadWorkOrderJson(){
 function resetForm(){
   selectedType=null; selectedZip=null; selectedBorough=null; complaintLatLng=null;
   lastAssessment=null; lastWorkOrder=null;
-  document.getElementById('woModal').classList.remove('show');
+  const wm = document.getElementById('woModal');
+  wm.classList.remove('show');
+  wm.style.display = '';
   document.getElementById('boroughSelect').value='';
   document.getElementById('addrInput').value='';
   document.getElementById('detailsInput').value='';
