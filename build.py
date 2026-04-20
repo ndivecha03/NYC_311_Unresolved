@@ -319,6 +319,7 @@ body.results-active .header,body.results-active .page{{display:none!important;}}
 .wo-cta:hover:not(:disabled){{transform:translateY(-1px);box-shadow:0 8px 22px rgba(0,180,216,.35);}}
 .wo-cta:disabled{{background:#334455;color:#8899aa;cursor:not-allowed;transform:none;box-shadow:none;}}
 .wo-sub{{font-size:0.68rem;color:#8899aa;text-align:center;margin-top:6px;line-height:1.4;}}
+.marker-days-badge{{background:rgba(13,27,42,.92);color:#fff!important;padding:3px 8px;border-radius:10px;border:1px solid rgba(255,255,255,.25);white-space:nowrap;letter-spacing:.02em;text-shadow:0 1px 2px rgba(0,0,0,.6);}}
 .modal-backdrop{{display:none;position:fixed;top:0;left:0;right:0;bottom:0;width:100vw;height:100vh;background:rgba(0,0,0,.75);backdrop-filter:blur(4px);z-index:99999;align-items:center;justify-content:center;padding:30px;}}
 .modal-backdrop.show{{display:flex!important;}}
 .modal{{background:#0d1623;border:1px solid #223344;border-radius:14px;max-width:720px;width:100%;max-height:85vh;display:flex;flex-direction:column;overflow:hidden;box-shadow:0 30px 80px rgba(0,0,0,.6);}}
@@ -831,6 +832,42 @@ function makeMarkerIcon(color, scale=10){
   };
 }
 
+// Emoji-in-a-circle marker. labelOrigin is placed above the icon so
+// marker.label (the days-count badge for similar complaints) renders above.
+function makeEmojiIcon(emoji, borderColor='#ffffff', size=42){
+  const svg =
+    "<svg xmlns='http://www.w3.org/2000/svg' width='" + size + "' height='" + size + "'>" +
+      "<circle cx='" + (size/2) + "' cy='" + (size/2) + "' r='" + (size/2-2) + "' fill='#0d1b2a' stroke='" + borderColor + "' stroke-width='2.5'/>" +
+      "<text x='50%' y='52%' dominant-baseline='central' text-anchor='middle' font-size='" + Math.round(size*0.52) + "'>" + emoji + "</text>" +
+    "</svg>";
+  return {
+    url: 'data:image/svg+xml;charset=UTF-8,' + encodeURIComponent(svg),
+    scaledSize: new google.maps.Size(size, size),
+    anchor: new google.maps.Point(size/2, size/2),
+    labelOrigin: new google.maps.Point(size/2, -12),  // badge floats above
+  };
+}
+
+// Complaint type -> emoji
+const TYPE_EMOJI = {
+  'Street Light Out':          '\u{1F4A1}',   // 💡
+  'Street Light Cycling':      '\u{1F501}',   // 🔁
+  'Street Light Dayburning':   '\u{2600}\u{FE0F}',  // ☀️
+  'Multiple Lights Out':       '\u{1F526}',   // 🔦
+  'Dim Lamp':                  '\u{1F319}',   // 🌙
+  'Fixture/Glassware Issue':   '\u{1F527}',   // 🔧
+  'Lamppost Damage':           '\u{26A0}\u{FE0F}', // ⚠️
+};
+function emojiForType(t){ return TYPE_EMOJI[t] || '\u{1F4A1}'; }
+
+// Days between a YYYY-MM-DD (or Date) and today, >=0.
+function daysSince(d){
+  if(!d) return null;
+  const then = (d instanceof Date) ? d : new Date(d);
+  if(isNaN(then)) return null;
+  return Math.max(0, Math.floor((Date.now() - then.getTime()) / 86400000));
+}
+
 function makeInfoContent(title, lines, accentColor='#00b4d8'){
   const rows = lines.map(l=>`<div style="margin:2px 0;font-size:12px;color:#c8d8e8">${l}</div>`).join('');
   return `<div style="background:#0d1b2a;padding:10px 14px;border-radius:8px;min-width:180px;font-family:'Segoe UI',sans-serif">
@@ -859,28 +896,45 @@ async function buildMap(ll, similar, vendor){
 
   const infoWindow = new google.maps.InfoWindow({disableAutoPan: false});
 
-  // Similar complaint markers (blue)
+  // Similar complaint markers — bandage if closed (days-to-close),
+  // low-battery if still open (days-open). Days render as a small
+  // badge above the emoji via the marker's native label.
   similar.forEach(c => {
     if (!c.lat || !c.lng) return;
+    const isClosed = c.status === 'Closed' && c.resolution;
+    const emoji    = isClosed ? '\u{1FA79}' : '\u{1FAAB}';  // 🩹 vs 🪫
+    const border   = isClosed ? '#2ec4b6'   : '#e63946';
+    const daysVal  = isClosed ? c.resolution : daysSince(c.date);
+    const daysText = daysVal==null ? '' : (daysVal + 'd ' + (isClosed ? 'closed' : 'open'));
     const marker = new google.maps.Marker({
       position: {lat: c.lat, lng: c.lng}, map: gMap,
-      icon: makeMarkerIcon('#00b4d8', 9), title: c.id, zIndex: 1,
+      icon: makeEmojiIcon(emoji, border, 40),
+      title: c.id + ' — ' + (isClosed ? ('closed in ' + c.resolution + 'd') : (daysVal + 'd open')),
+      zIndex: 1,
+      label: {
+        text: daysText,
+        color: '#ffffff',
+        fontSize: '11px',
+        fontWeight: '700',
+        className: 'marker-days-badge',
+      },
     });
-    const resLine = c.status==='Closed' && c.resolution
+    const resLine = isClosed
       ? `<span style="color:#2ec4b6">Closed in ${c.resolution} day${c.resolution!==1?'s':''}</span>`
-      : `<span style="color:#e63946">Still Open</span>`;
+      : `<span style="color:#e63946">Still open (${daysVal}d)</span>`;
     marker.addListener('click', () => {
       infoWindow.setContent(makeInfoContent(c.id + ' &mdash; Similar Complaint', [
         c.type, c.address + ', ' + c.zip, c.dateStr, resLine,
-      ], '#00b4d8'));
+      ], border));
       infoWindow.open(gMap, marker);
     });
   });
 
-  // Vendor marker (teal)
+  // Vendor marker — electrician
   const vendorMarker = new google.maps.Marker({
     position: {lat: vendor.lat, lng: vendor.lng}, map: gMap,
-    icon: makeMarkerIcon('#2ec4b6', 11), title: vendor.name, zIndex: 2,
+    icon: makeEmojiIcon('\u{26A1}', '#2ec4b6', 46),  // ⚡
+    title: vendor.name, zIndex: 2,
   });
   const licenseLine = vendor.license ? ('License #' + vendor.license) : 'Licensed NYC electrician';
   vendorMarker.addListener('click', () => {
@@ -890,10 +944,11 @@ async function buildMap(ll, similar, vendor){
     infoWindow.open(gMap, vendorMarker);
   });
 
-  // Complaint marker (red) — open info immediately
+  // Complaint marker — emoji matches the complaint type the user selected
   const complaintMarker = new google.maps.Marker({
     position: {lat: ll.lat, lng: ll.lng}, map: gMap,
-    icon: makeMarkerIcon('#e63946', 12), title: 'Your Complaint', zIndex: 3,
+    icon: makeEmojiIcon(emojiForType(selectedType), '#e63946', 50),
+    title: 'Your Complaint', zIndex: 3,
   });
   complaintMarker.addListener('click', () => {
     infoWindow.setContent(makeInfoContent('&#x1F6A8; Your Complaint', [
