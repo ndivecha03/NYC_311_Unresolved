@@ -118,9 +118,31 @@ for r in rows:
 borough_zips_map = {b: sorted(zs) for b, zs in borough_zips.items()}
 
 # ── Load vendors (NYC-wide) ─────────────────────────────────────
+# The source list is NYC DOB's master electrician license roster, which
+# includes institutions holding a license only for in-house maintenance
+# (universities, hospitals, city agencies, NYCHA, building management cos.).
+# None of these would bid on a 311 street-light repair — filter them out.
+import re as _re
+NON_CONTRACTOR_PATTERNS = _re.compile(
+    # Partial tokens (no trailing \b so UNIVERSITY/HOSPITALS/DEPT./TRANSP.
+    # still match) plus full-word tokens where a boundary is safe.
+    r'(?:\b(?:UNIVERSIT|UNIV\b|COLLEGE|SCHOOL|ACADEM|HOSPITAL|MEDICAL CENTER|MEDICAL CTR|'
+    r'MED CTR|MED\.? CENTER|CLINIC|CHURCH|SYNAGOGUE|MOSQUE|TEMPLE|'
+    r'CONDOMINIUM|COOPERATIVE|CO-OP|HOUSING|AUTHORITY|AGENC|'
+    r'\bDEPT\b|\bDEPT\.|DEPARTMENT|HOTEL|RESORT|MUSEUM|GALLER|LIBRAR|'
+    r'PROPERTIES|REALTY|REAL ESTATE|MANAGEMENT|TRANSIT|AIRPORT|PORT AUTHORITY|'
+    r'SUPERMARKET|RESTAURANT|\bBANK\b|RESEARCH|FOUNDATION|INSTITUTE|THEATER|THEATRE|'
+    r'POLICE|SANIT|TRANSP))',
+    _re.IGNORECASE,
+)
 vendor_rows = []
+_filtered_institutions = []
 with open(os.path.join(BASE, 'vendors_final.csv'), encoding='utf-8') as f:
     for v in csv.DictReader(f):
+        name = v['business_name'].strip()
+        if NON_CONTRACTOR_PATTERNS.search(name):
+            _filtered_institutions.append(name)
+            continue
         try:
             vlat = round(float(v['lat']),  6) if v['lat'].strip()  else None
             vlng = round(float(v['long']), 6) if v['long'].strip() else None
@@ -142,7 +164,9 @@ with open(os.path.join(BASE, 'vendors_final.csv'), encoding='utf-8') as f:
             'lat': vlat, 'lng': vlng,
         })
 
-print(f'Loaded {len(vendor_rows)} vendors.')
+print(f'Loaded {len(vendor_rows)} vendors (filtered out {len(_filtered_institutions)} non-contractor institutions).')
+if _filtered_institutions:
+    print('  Excluded:', ', '.join(sorted(set(_filtered_institutions))))
 
 raw = json.dumps(rows, separators=(',', ':'))
 vendors_js = json.dumps(vendor_rows, separators=(',', ':'))
