@@ -187,6 +187,37 @@ body{{font-family:'Segoe UI',Tahoma,Geneva,Verdana,sans-serif;background:#0f1923
 .header h1{{font-size:1.5rem;color:#00b4d8;}}.header .sub{{font-size:0.82rem;color:#8899aa;margin-top:4px;}}
 .badge{{background:#00b4d8;color:#0f1923;padding:5px 14px;border-radius:20px;font-weight:700;font-size:0.75rem;}}
 .page{{max-width:880px;margin:0 auto;padding:36px 24px 60px;}}
+.about-section{{background:linear-gradient(180deg,#16253a 0%,#0f1923 100%);border:1px solid #1f3350;border-radius:18px;padding:40px 42px 32px;margin-bottom:28px;position:relative;overflow:hidden;}}
+.about-section::before{{content:"";position:absolute;top:-40%;right:-10%;width:280px;height:280px;background:radial-gradient(circle,rgba(0,180,216,.18) 0%,transparent 70%);pointer-events:none;}}
+.about-hero h2{{font-size:1.7rem;color:#ffffff;margin-bottom:18px;font-weight:700;line-height:1.25;position:relative;z-index:1;}}
+.about-hero h2 .accent{{color:#00b4d8;}}
+.about-intro{{font-size:0.95rem;color:#c8d8e8;line-height:1.72;margin-bottom:28px;position:relative;z-index:1;}}
+.about-intro strong{{color:#ffffff;font-weight:700;}}
+.about-intro .hl-teal{{color:#00b4d8;font-weight:700;}}
+.about-intro .hl-red{{color:#ff6b76;font-weight:700;}}
+.about-callout{{display:flex;align-items:center;gap:24px;background:rgba(230,57,70,.08);border:1px solid rgba(230,57,70,.35);border-radius:14px;padding:22px 28px;margin:10px 0 30px;position:relative;z-index:1;}}
+.callout-big{{font-size:3.2rem;font-weight:800;color:#ff6b76;line-height:1;flex-shrink:0;letter-spacing:-.02em;}}
+.callout-text{{flex:1;}}
+.callout-text .callout-main{{font-size:0.98rem;color:#ffffff;font-weight:600;margin-bottom:4px;}}
+.callout-text .callout-sub{{font-size:0.78rem;color:#8899aa;line-height:1.5;}}
+.about-graphics{{display:grid;grid-template-columns:repeat(auto-fit,minmax(340px,1fr));gap:20px;margin-top:8px;position:relative;z-index:1;}}
+.about-graphic{{background:#0d1b2a;border:1px solid #223344;border-radius:12px;padding:16px;display:flex;flex-direction:column;}}
+.about-graphic img{{width:100%;height:auto;border-radius:8px;background:#f4f4f4;padding:8px;}}
+.about-graphic figcaption{{font-size:0.8rem;color:#8899aa;margin-top:10px;line-height:1.5;text-align:center;}}
+.about-disclaimer{{font-size:0.7rem;color:#667788;margin-top:10px;line-height:1.5;font-style:italic;padding:8px 10px;background:rgba(136,153,170,.06);border-left:2px solid #334455;border-radius:4px;}}
+.about-disclaimer a{{color:#00b4d8;text-decoration:none;}}
+.about-disclaimer a:hover{{text-decoration:underline;}}
+.about-cta{{display:flex;align-items:center;justify-content:space-between;gap:16px;margin-top:28px;padding-top:22px;border-top:1px solid #223344;position:relative;z-index:1;flex-wrap:wrap;}}
+.about-cta-primary{{background:#00b4d8;color:#0f1923;border:none;padding:12px 26px;border-radius:10px;font-weight:700;font-size:0.9rem;cursor:pointer;transition:all .2s;}}
+.about-cta-primary:hover{{background:#48bfe3;transform:translateY(-1px);}}
+.about-cta-link{{color:#8899aa;font-size:0.82rem;text-decoration:none;transition:color .2s;}}
+.about-cta-link:hover{{color:#00b4d8;}}
+@media (max-width:640px){{
+  .about-section{{padding:28px 22px;}}
+  .about-callout{{flex-direction:column;text-align:center;gap:12px;padding:20px;}}
+  .callout-big{{font-size:2.6rem;}}
+  .about-hero h2{{font-size:1.4rem;}}
+}}
 .step-card{{background:#1a2a3a;border:1px solid #223344;border-radius:14px;padding:28px 32px;margin-bottom:20px;transition:border-color .3s,opacity .3s;}}
 .step-card.locked{{opacity:.38;pointer-events:none;}}.step-card.active{{border-color:#00b4d8;}}
 .step-header{{display:flex;align-items:center;gap:14px;margin-bottom:22px;}}
@@ -384,6 +415,61 @@ body.results-active .header,body.results-active .page{{display:none!important;}}
 </div>
 
 <div class="page">
+
+<!-- ABOUT SECTION -->
+<section class="about-section" id="aboutSection">
+  <div class="about-hero">
+    <h2>Illuminating the city that never sleeps <span class="accent">&mdash; faster.</span></h2>
+    <p class="about-intro">
+      Every dark streetlight in New York is a quiet safety gap &mdash; and in 2024 alone, more than
+      <span class="hl-teal">30,000 outages</span> were reported to 311 across the five boroughs.
+      Citywide, nearly <strong>one in four complaints</strong> still sits unresolved a month after it's filed; in Manhattan,
+      the rate climbs to <span class="hl-red">one in three</span>. We built this platform to close that loop.
+      Residents report an outage in under 60 seconds, our system classifies the fault, prioritizes it by urgency,
+      and geo-matches it to a vetted local licensed electrician &mdash; who receives an AI-drafted, municipally-formatted
+      work order already aligned with NYC DOT standards, ready for same-day approval. The mission is twofold: keep
+      the city that never sleeps lit, and put an estimated
+      <span class="hl-teal">$6&ndash;$15M in annual repair revenue</span>
+      back into the hands of the neighborhood small businesses best positioned to do the work.
+      Faster fixes, stronger local economies, a brighter city &mdash; one block at a time.
+    </p>
+  </div>
+
+  <div class="about-callout">
+    <div class="callout-big">1 in 3</div>
+    <div class="callout-text">
+      <div class="callout-main">Manhattan street-light complaints still unresolved 30 days after being filed.</div>
+      <div class="callout-sub">32.6% of Manhattan's 2024 complaints remain open, pending, or take longer than a month to close &mdash; the worst rate of any borough. <em>Source: NYC OpenData erm2-nwe9, 2024.</em></div>
+    </div>
+  </div>
+
+  <div class="about-graphics">
+    <figure class="about-graphic">
+      <img src="/img/about/g1-volume.svg" alt="NYC Street Light Complaints 2024 by borough: Brooklyn 8,639, Queens 8,571, Bronx 6,184, Manhattan 4,962, Staten Island 2,318" loading="lazy">
+      <figcaption>30,881 complaints filed to NYC 311 in 2024 across the five boroughs.</figcaption>
+    </figure>
+
+    <figure class="about-graphic">
+      <img src="/img/about/g2-closure.svg" alt="Speed of Resolution by Borough 2024: Brooklyn and Staten Island 80.4%, Bronx 78.3%, Queens 76.3%, Manhattan 67.4%" loading="lazy">
+      <figcaption>Manhattan is second-fastest on same-week closures but worst on 30-day resolution &mdash; its problem is the long tail.</figcaption>
+    </figure>
+
+    <figure class="about-graphic" style="grid-column:1/-1">
+      <img src="/img/about/g3-revenue.svg" alt="Local Vendor Revenue Opportunity Annualized: total $6.18M to $15.44M across all boroughs depending on per-repair rate" loading="lazy">
+      <figcaption>$6.2M &ndash; $15.4M annual local-vendor revenue opportunity across the five boroughs.</figcaption>
+      <p class="about-disclaimer">
+        <em>Revenue estimates are derived from published NYC electrical service-call market rates and 2024 311 complaint volumes.
+        They are <strong>not</strong> NYC DOT contract data and do not represent actual payments made to any current contractor.
+        See <a href="/sources.html">Sources &amp; Methodology</a> for full data provenance.</em>
+      </p>
+    </figure>
+  </div>
+
+  <div class="about-cta">
+    <button class="about-cta-primary" onclick="document.getElementById('step1').scrollIntoView({behavior:'smooth',block:'start'});">Report a complaint &rarr;</button>
+    <a class="about-cta-link" href="/sources.html" target="_blank" rel="noopener">View full sources &amp; methodology &rarr;</a>
+  </div>
+</section>
 
 <!-- STEP 1 -->
 <div class="step-card active" id="step1">
