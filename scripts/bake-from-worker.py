@@ -40,7 +40,14 @@ BOROUGHS = ["Manhattan", "Brooklyn", "Queens", "Bronx", "Staten Island"]
 def soda(query, timeout=20):
     """GET against the Worker proxy. Returns parsed JSON. Raises on error."""
     url = WORKER_URL + "/?" + urllib.parse.urlencode(query)
-    req = urllib.request.Request(url, headers={"Accept": "application/json"})
+    # Cloudflare's bot protection rejects Python-urllib/* User-Agents with
+    # 403. Spoof a browser UA so the Worker (which is fronted by CF) accepts.
+    req = urllib.request.Request(url, headers={
+        "Accept": "application/json",
+        "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) "
+                      "AppleWebKit/537.36 (KHTML, like Gecko) "
+                      "Chrome/120.0.0.0 Safari/537.36 nyc-streetlights-bake",
+    })
     with urllib.request.urlopen(req, timeout=timeout) as r:
         return json.loads(r.read().decode("utf-8"))
 
