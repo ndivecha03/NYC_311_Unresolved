@@ -1,89 +1,24 @@
-// Vercel serverless function (Node.js runtime): GET /api/socrata-proxy
+// Vercel serverless function (Node.js): GET /api/socrata-proxy
 //
-// Proxies NYC OpenData Socrata queries through this same-origin endpoint
-// so users behind firewalls / DNS filters / corporate proxies that block
-// data.cityofnewyork.gov can still see live data — their browser only
-// ever talks to *.vercel.app.
+// Why this exists:
+//   data.cityofnewyork.gov is unreachable from many networks (corporate
+//   firewalls, certain ISPs, AND Vercel's own serverless DNS sandbox —
+//   confirmed via DoH lookup returning NODATA from Vercel's network).
+//   So we proxy through corsproxy.io, which does the DNS + fetch from its
+//   own infrastructure and returns the result. The browser only ever
+//   talks to *.vercel.app, and Vercel only ever talks to corsproxy.io.
 //
-// Runs on Node.js 20 default runtime. The Python runtime cannot resolve
-// data.cityofnewyork.gov in its DNS sandbox, and Edge Runtime had
-// outbound-fetch restrictions for this host. Plain Node works.
-//
-// Optional: set SOCRATA_APP_TOKEN env var in Vercel project settings to
-// lift the unauthenticated rate limit. Token never reaches the browser.
+// Optional: SOCRATA_APP_TOKEN env var to lift unauthenticated rate limit.
 
-// Vercel's serverless DNS sandbox returns ENOTFOUND for
-// data.cityofnewyork.gov. Workaround: use DNS-over-HTTPS to Cloudflare
-// 1.1.1.1, get the real IP, then fetch directly to that IP with proper
-// SNI/Host headers. This bypasses Vercel's DNS resolver entirely while
-// keeping the original hostname for TLS cert validation.
+const DEFAULT_DATASET   = 'erm2-nwe9';
+const SOCRATA_DIRECT    = 'https://data.cityofnewyork.gov';
+// Public CORS proxies, tried in order until one works
+const PROXY_PROVIDERS = [
+  url => `https://corsproxy.io/?url=${encodeURIComponent(url)}`,
+  url => `https://api.allorigins.win/raw?url=${encodeURIComponent(url)}`,
+  url => `https://api.codetabs.com/v1/proxy?quest=${encodeURIComponent(url)}`,
+];
 
-import https from 'node:https';
-
-const DEFAULT_DATASET = 'erm2-nwe9';
-const SOCRATA_HOST    = 'https://data.cityofnewyork.gov';
-const SOCRATA_HOSTNAME = 'data.cityofnewyork.gov';
-
-// Tiny in-memory cache so we don't DoH-lookup on every request
-let _cachedIp = null, _cachedAt = 0;
-const IP_TTL_MS = 5 * 60 * 1000;
-
-async function resolveIp(hostname) {
-  if (_cachedIp && Date.now() - _cachedAt < IP_TTL_MS) return _cachedIp;
-  // Try Google's DoH first (better at following CNAME chains), then Cloudflare
-  const sources = [
-    `https://dns.google/resolve?name=${hostname}&type=A`,
-    `https://1.1.1.1/dns-query?name=${hostname}&type=A`,
-    `https://cloudflare-dns.com/dns-query?name=${hostname}&type=A`,
-  ];
-  let lastBody = null;
-  for (const url of sources) {
-    try {
-      const r = await fetch(url, { headers: { 'accept': 'application/dns-json' } });
-      const j = await r.json();
-      lastBody = j;
-      // Find any A record (type 1) in the answer — the CNAME chain may
-      // produce multiple entries; the final one will be the IP we need.
-      const aRecords = (j.Answer || []).filter(a => a.type === 1);
-      if (aRecords.length) {
-        _cachedIp = aRecords[aRecords.length - 1].data;
-        _cachedAt = Date.now();
-        return _cachedIp;
-      }
-    } catch (e) { /* try next */ }
-  }
-  const peek = JSON.stringify(lastBody || {}).slice(0, 200);
-  throw new Error(`DoH: no A record for ${hostname} (response: ${peek})`);
-}
-
-// Fetch by IP with explicit SNI hostname so TLS cert validation passes
-function httpsGetByIp(ip, hostname, path, extraHeaders = {}) {
-  return new Promise((resolve, reject) => {
-    const req = https.get({
-      host: ip,
-      port: 443,
-      path,
-      servername: hostname,    // SNI
-      headers: {
-        'Host': hostname,
-        'Accept': 'application/json',
-        'User-Agent': 'NYC-Street-Lights/1.0 (Vercel)',
-        ...extraHeaders,
-      },
-      timeout: 12000,
-    }, (res) => {
-      const chunks = [];
-      res.on('data', c => chunks.push(c));
-      res.on('end', () => resolve({
-        status: res.statusCode,
-        body: Buffer.concat(chunks).toString('utf-8'),
-        headers: res.headers,
-      }));
-    });
-    req.on('error', reject);
-    req.on('timeout', () => req.destroy(new Error('Request timed out')));
-  });
-}
 const TIMEOUT_MS      = 12000;
 const MAX_QUERY_LEN   = 4096;
 const ALLOWED_PARAMS  = new Set([
@@ -102,66 +37,73 @@ function reply(res, status, body) {
   setCors(res);
   res.statusCode = status;
   res.setHeader('Content-Type', 'application/json');
-  if (status === 200) {
-    res.setHeader('Cache-Control', 'public, max-age=300, s-maxage=300');
-  } else {
-    res.setHeader('Cache-Control', 'no-store');
-  }
+  res.setHeader('Cache-Control', status === 200
+    ? 'public, max-age=300, s-maxage=300'
+    : 'no-store');
   res.end(typeof body === 'string' ? body : JSON.stringify(body));
 }
 
-export default async function handler(req, res) {
-  if (req.method === 'OPTIONS') {
-    setCors(res); res.statusCode = 204; res.end(); return;
+async function fetchWithTimeout(url, opts = {}) {
+  const ctrl = new AbortController();
+  const timer = setTimeout(() => ctrl.abort(), opts.timeout || TIMEOUT_MS);
+  try {
+    return await fetch(url, { ...opts, signal: ctrl.signal });
+  } finally {
+    clearTimeout(timer);
   }
-  if (req.method !== 'GET') {
-    return reply(res, 405, { error: 'Method not allowed' });
-  }
+}
 
-  // Parse the query string (req.url is path + query)
+async function fetchSocrata(directUrl, headers) {
+  const errors = [];
+  for (const wrap of PROXY_PROVIDERS) {
+    const proxyUrl = wrap(directUrl);
+    try {
+      const r = await fetchWithTimeout(proxyUrl, { headers });
+      const body = await r.text();
+      if (r.ok) return { status: r.status, body, via: proxyUrl.split('?')[0] };
+      errors.push(`${proxyUrl.split('?')[0]} → ${r.status}`);
+    } catch (e) {
+      errors.push(`${proxyUrl.split('?')[0]} → ${e.message}`);
+    }
+  }
+  throw new Error(`All proxies failed: ${errors.join('; ')}`);
+}
+
+export default async function handler(req, res) {
+  if (req.method === 'OPTIONS') { setCors(res); res.statusCode = 204; res.end(); return; }
+  if (req.method !== 'GET') return reply(res, 405, { error: 'Method not allowed' });
+
   const fullUrl = new URL(req.url, `http://${req.headers.host || 'x'}`);
   const sp = fullUrl.searchParams;
 
-  if (sp.toString().length > MAX_QUERY_LEN) {
-    return reply(res, 414, { error: 'Query too long.' });
-  }
-
-  for (const key of sp.keys()) {
-    if (!ALLOWED_PARAMS.has(key)) {
-      return reply(res, 400, { error: `Unsupported parameter: ${key}` });
-    }
+  if (sp.toString().length > MAX_QUERY_LEN) return reply(res, 414, { error: 'Query too long.' });
+  for (const k of sp.keys()) {
+    if (!ALLOWED_PARAMS.has(k)) return reply(res, 400, { error: `Unsupported parameter: ${k}` });
   }
 
   const dataset = (sp.get('_dataset') || DEFAULT_DATASET).trim();
-  if (!/^[a-z0-9-]{1,16}$/i.test(dataset)) {
-    return reply(res, 400, { error: 'Invalid dataset id.' });
-  }
+  if (!/^[a-z0-9-]{1,16}$/i.test(dataset)) return reply(res, 400, { error: 'Invalid dataset id.' });
   sp.delete('_dataset');
 
-  const path = `/resource/${dataset}.json?${sp.toString()}`;
-  const extra = {};
-  if (process.env.SOCRATA_APP_TOKEN) extra['X-App-Token'] = process.env.SOCRATA_APP_TOKEN;
+  const directUrl = `${SOCRATA_DIRECT}/resource/${dataset}.json?${sp.toString()}`;
+  const headers = {
+    'Accept':     'application/json',
+    'User-Agent': 'NYC-Street-Lights/1.0 (+via vercel)',
+  };
+  if (process.env.SOCRATA_APP_TOKEN) headers['X-App-Token'] = process.env.SOCRATA_APP_TOKEN;
 
   try {
-    const ip = await resolveIp(SOCRATA_HOSTNAME);
-    const result = await httpsGetByIp(ip, SOCRATA_HOSTNAME, path, extra);
-
-    if (result.status >= 400) {
-      return reply(res, result.status, {
-        error: `Socrata HTTP ${result.status}`,
-        detail: result.body.slice(0, 400),
-      });
-    }
+    const result = await fetchSocrata(directUrl, headers);
     setCors(res);
     res.statusCode = 200;
     res.setHeader('Content-Type', 'application/json');
     res.setHeader('Cache-Control', 'public, max-age=300, s-maxage=300');
+    res.setHeader('X-Proxy-Via', result.via);
     res.end(result.body);
   } catch (err) {
     return reply(res, 502, {
-      error: `Cannot reach Socrata: ${err.message || err.toString()}`,
-      cause: err.cause?.message || null,
-      ip: _cachedIp,
+      error: 'All upstream proxies failed',
+      detail: err.message,
     });
   }
 }
