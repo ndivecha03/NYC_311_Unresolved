@@ -30,16 +30,30 @@ const IP_TTL_MS = 5 * 60 * 1000;
 
 async function resolveIp(hostname) {
   if (_cachedIp && Date.now() - _cachedAt < IP_TTL_MS) return _cachedIp;
-  const r = await fetch(
+  // Try Google's DoH first (better at following CNAME chains), then Cloudflare
+  const sources = [
+    `https://dns.google/resolve?name=${hostname}&type=A`,
     `https://1.1.1.1/dns-query?name=${hostname}&type=A`,
-    { headers: { 'accept': 'application/dns-json' } }
-  );
-  const j = await r.json();
-  const ans = (j.Answer || []).find(a => a.type === 1);
-  if (!ans) throw new Error(`DoH: no A record for ${hostname}`);
-  _cachedIp = ans.data;
-  _cachedAt = Date.now();
-  return _cachedIp;
+    `https://cloudflare-dns.com/dns-query?name=${hostname}&type=A`,
+  ];
+  let lastBody = null;
+  for (const url of sources) {
+    try {
+      const r = await fetch(url, { headers: { 'accept': 'application/dns-json' } });
+      const j = await r.json();
+      lastBody = j;
+      // Find any A record (type 1) in the answer — the CNAME chain may
+      // produce multiple entries; the final one will be the IP we need.
+      const aRecords = (j.Answer || []).filter(a => a.type === 1);
+      if (aRecords.length) {
+        _cachedIp = aRecords[aRecords.length - 1].data;
+        _cachedAt = Date.now();
+        return _cachedIp;
+      }
+    } catch (e) { /* try next */ }
+  }
+  const peek = JSON.stringify(lastBody || {}).slice(0, 200);
+  throw new Error(`DoH: no A record for ${hostname} (response: ${peek})`);
 }
 
 // Fetch by IP with explicit SNI hostname so TLS cert validation passes

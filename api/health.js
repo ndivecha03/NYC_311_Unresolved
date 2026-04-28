@@ -16,14 +16,23 @@ function pickYear() {
 }
 
 async function resolveIp(hostname) {
-  const r = await fetch(
+  const sources = [
+    `https://dns.google/resolve?name=${hostname}&type=A`,
     `https://1.1.1.1/dns-query?name=${hostname}&type=A`,
-    { headers: { 'accept': 'application/dns-json' } }
-  );
-  const j = await r.json();
-  const ans = (j.Answer || []).find(a => a.type === 1);
-  if (!ans) throw new Error(`DoH: no A record for ${hostname}`);
-  return ans.data;
+    `https://cloudflare-dns.com/dns-query?name=${hostname}&type=A`,
+  ];
+  let lastBody = null;
+  for (const url of sources) {
+    try {
+      const r = await fetch(url, { headers: { 'accept': 'application/dns-json' } });
+      const j = await r.json();
+      lastBody = j;
+      const aRecords = (j.Answer || []).filter(a => a.type === 1);
+      if (aRecords.length) return aRecords[aRecords.length - 1].data;
+    } catch (e) { /* try next */ }
+  }
+  const peek = JSON.stringify(lastBody || {}).slice(0, 200);
+  throw new Error(`DoH: no A record for ${hostname} (response: ${peek})`);
 }
 
 function httpsGetByIp(ip, hostname, path, extraHeaders = {}) {
