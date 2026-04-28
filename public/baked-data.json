@@ -1,0 +1,147 @@
+{
+  "_meta": {
+    "purpose": "Static dataset bundled with the dashboard. The page loads this first as a baseline, then overlays live Socrata results when the user's network can reach data.cityofnewyork.gov. The browser also writes successful live fetches back to localStorage, so subsequent visits use the freshest available snapshot.",
+    "year": 2025,
+    "snapshot_at": "2026-01-15T00:00:00Z",
+    "dataset": "erm2-nwe9 (NYC 311 Service Requests)",
+    "source": "Projected from 2024 verified totals + standard NYC 311 trend (~3% volume growth, +1pp closure rate). NOT measured. Replace with real 2025 snapshot by running: python scripts/snapshot-data.py 2025",
+    "filter": "complaint_type = 'Street Light Condition'",
+    "regenerate_with": "python scripts/snapshot-data.py 2025"
+  },
+  "city": {
+    "totalVolume": 31580,
+    "medianDays": 13
+  },
+  "boroughs": {
+    "Manhattan": {
+      "volume": 5111,
+      "medianDays": 18,
+      "closure7": 62.0,
+      "closure30": 68.5,
+      "closure90": 88.6,
+      "duplicates": 10.7,
+      "seasonality": [319, 350, 433, 482, 527, 616, 659, 630, 564, 505, 414, 612],
+      "descriptor": {
+        "Street Light Out": 1875,
+        "Cycling": 556,
+        "Glassware/Fixture": 906,
+        "Pole/Lamppost Damage": 628,
+        "Base Cover": 443,
+        "Other": 703
+      },
+      "histogram": [
+        {"label":"0-3","count":124},
+        {"label":"4-7","count":494},
+        {"label":"8-14","count":1143},
+        {"label":"15-21","count":948},
+        {"label":"22-30","count":742},
+        {"label":"31-60","count":1215},
+        {"label":"61+","count":445}
+      ]
+    },
+    "Brooklyn": {
+      "volume": 8898,
+      "medianDays": 8,
+      "closure7": 64.0,
+      "closure30": 81.4,
+      "closure90": 94.5,
+      "duplicates": 6.2,
+      "seasonality": [556, 608, 742, 834, 906, 1051, 1128, 1082, 968, 870, 721, 432],
+      "descriptor": {
+        "Street Light Out": 3348,
+        "Cycling": 1009,
+        "Glassware/Fixture": 1524,
+        "Pole/Lamppost Damage": 1051,
+        "Base Cover": 762,
+        "Other": 1204
+      },
+      "histogram": [
+        {"label":"0-3","count":422},
+        {"label":"4-7","count":1360},
+        {"label":"8-14","count":2482},
+        {"label":"15-21","count":1741},
+        {"label":"22-30","count":1169},
+        {"label":"31-60","count":1215},
+        {"label":"61+","count":509}
+      ]
+    },
+    "Queens": {
+      "volume": 8828,
+      "medianDays": 10,
+      "closure7": 54.5,
+      "closure30": 77.4,
+      "closure90": 92.3,
+      "duplicates": 7.4,
+      "seasonality": [554, 603, 736, 829, 896, 1040, 1118, 1071, 963, 863, 716, 439],
+      "descriptor": {
+        "Street Light Out": 3317,
+        "Cycling": 999,
+        "Glassware/Fixture": 1504,
+        "Pole/Lamppost Damage": 1040,
+        "Base Cover": 752,
+        "Other": 1216
+      },
+      "histogram": [
+        {"label":"0-3","count":350},
+        {"label":"4-7","count":1246},
+        {"label":"8-14","count":2379},
+        {"label":"15-21","count":1751},
+        {"label":"22-30","count":1215},
+        {"label":"31-60","count":1360},
+        {"label":"61+","count":527}
+      ]
+    },
+    "Bronx": {
+      "volume": 6370,
+      "medianDays": 9,
+      "closure7": 57.6,
+      "closure30": 79.4,
+      "closure90": 93.0,
+      "duplicates": 7.8,
+      "seasonality": [400, 435, 530, 597, 647, 750, 807, 773, 695, 623, 517, 596],
+      "descriptor": {
+        "Street Light Out": 2400,
+        "Cycling": 721,
+        "Glassware/Fixture": 1081,
+        "Pole/Lamppost Damage": 752,
+        "Base Cover": 546,
+        "Other": 870
+      },
+      "histogram": [
+        {"label":"0-3","count":299},
+        {"label":"4-7","count":948},
+        {"label":"8-14","count":1741},
+        {"label":"15-21","count":1267},
+        {"label":"22-30","count":865},
+        {"label":"31-60","count":906},
+        {"label":"61+","count":344}
+      ]
+    },
+    "Staten Island": {
+      "volume": 2387,
+      "medianDays": 11,
+      "closure7": 48.0,
+      "closure30": 81.4,
+      "closure90": 95.0,
+      "duplicates": 5.1,
+      "seasonality": [149, 163, 199, 224, 242, 281, 302, 289, 260, 233, 194, 51],
+      "descriptor": {
+        "Street Light Out": 901,
+        "Cycling": 268,
+        "Glassware/Fixture": 407,
+        "Pole/Lamppost Damage": 283,
+        "Base Cover": 204,
+        "Other": 324
+      },
+      "histogram": [
+        {"label":"0-3","count":122},
+        {"label":"4-7","count":373},
+        {"label":"8-14","count":659},
+        {"label":"15-21","count":476},
+        {"label":"22-30","count":325},
+        {"label":"31-60","count":304},
+        {"label":"61+","count":128}
+      ]
+    }
+  }
+}

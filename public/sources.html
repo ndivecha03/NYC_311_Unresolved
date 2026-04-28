@@ -196,7 +196,67 @@ GROUP BY borough
   <li style="margin-bottom:8px;"><strong>To refresh the graphics:</strong> regenerate at <a href="https://napkin.ai" target="_blank" rel="noopener">napkin.ai</a> using the brief in <code>docs/NAPKIN_BRIEF.md</code>, export as SVG, and drop the files into <code>public/img/about/</code>.</li>
 </ol>
 
-<div class="footer">
+<h2 style="margin-top:48px;border-top:1px solid #223344;padding-top:32px">Per-metric methodology</h2>
+<p style="color:#8899aa">Each chart on the dashboard links here. Every metric is one of three kinds:
+  <span style="background:#0d1b2a;border:1px solid #2ec4b6;color:#2ec4b6;padding:2px 8px;border-radius:4px;font-size:11px">VERIFIED</span>
+  measured directly from NYC OpenData;
+  <span style="background:#0d1b2a;border:1px solid #ffb703;color:#ffb703;padding:2px 8px;border-radius:4px;font-size:11px">FORECAST</span>
+  predicted from historical distribution;
+  <span style="background:#0d1b2a;border:1px solid #8899aa;color:#8899aa;padding:2px 8px;border-radius:4px;font-size:11px">HEURISTIC</span>
+  modeled, not measured.</p>
+
+<h3 id="forecast">Forecast close date</h3>
+<p>Forecast &mdash; derived from the borough's median + 90th-percentile close-time. Range shows expected &plusmn; confidence band.</p>
+<pre>median(date_diff_d(closed_date, created_date))
+percentile(date_diff_d(closed_date, created_date), 90)</pre>
+
+<h3 id="seasonality">12-month submission trend</h3>
+<p>Verified &mdash; monthly bucket counts grouped by <code>date_trunc_ym</code>.</p>
+<pre>SELECT date_trunc_ym(created_date) AS month, count(*)
+  WHERE complaint_type='Street Light Condition' AND incident_zip='&lt;ZIP&gt;'
+  GROUP BY month ORDER BY month</pre>
+
+<h3 id="descriptor">Descriptor mix</h3>
+<p>Verified &mdash; top 20 descriptors for the borough.</p>
+<pre>SELECT descriptor, count(*) WHERE ...borough=...
+  GROUP BY descriptor ORDER BY count(*) DESC LIMIT 20</pre>
+
+<h3 id="median">Median days to close</h3>
+<p>Verified &mdash; three queries: zip, borough, citywide.</p>
+<pre>SELECT median(date_diff_d(closed_date, created_date))
+  WHERE ...closed_date IS NOT NULL</pre>
+
+<h3 id="closure">% closed within 7 / 30 / 90 days</h3>
+<p>Verified &mdash; three count queries with date-diff filters, divided by total closed.</p>
+
+<h3 id="choropleth">Borough closure choropleth</h3>
+<p>Verified &mdash; closure rate per borough, rendered as a 5-borough schematic.</p>
+
+<h3 id="rank">Borough rank by speed</h3>
+<p>Verified &mdash; boroughs sorted by 30-day closure rate.</p>
+
+<h3 id="histogram">Distribution of close times</h3>
+<p>Verified &mdash; CASE-WHEN bucketing on <code>date_diff_d</code> grouped into 7 buckets.</p>
+
+<h3 id="hotspot">Hotspot density</h3>
+<p>Verified+lookup &mdash; zip complaint count divided by zip area in sq mi (Census Gazetteer 2020).</p>
+
+<h3 id="reporting">Reporting per 1,000 residents</h3>
+<p>Verified+lookup &mdash; zip count / zip population (ACS 2022 B01003) &times; 1,000.</p>
+
+<h3 id="income">Closure rate &middot; low-income tract</h3>
+<p>Verified+lookup &mdash; closure rate filtered to zips with median household income &lt; $50k (ACS B19013).</p>
+
+<h3 id="duplicates">Duplicates / admin-merged</h3>
+<p>Verified &mdash; count where <code>resolution_description</code> contains "duplicate" or "merged".</p>
+
+<h3 id="dispatch">Estimated dispatch time</h3>
+<p>Heuristic &mdash; modeled from current borough complaint load and median close time. Not measured.</p>
+
+<h3 id="repeat">Repeat at this address</h3>
+<p>Verified &mdash; fuzzy match on normalized <code>incident_address</code>.</p>
+
+<div class="footer" style="margin-top:48px">
   NYC Street Lights &middot; <a href="/" style="color:#00b4d8;text-decoration:none;">Return to dashboard</a>
 </div>
 

@@ -1,0 +1,432 @@
+/* NYC Street Lights — hand-rolled SVG chart primitives
+   Every chart is one function: render(el, data, opts) → injects SVG into `el`.
+   Zero dependencies. Brand-palette pinned. Responsive via viewBox.
+
+   Public API:
+     Charts.kpiTile(el, {label, value, delta, deltaTone})
+     Charts.barChart(el, {bars:[{label, value, color?, highlight?}], unit?, max?})
+     Charts.donut(el, {slices:[{label, value, color?}], centerLabel?, centerValue?})
+     Charts.sparkline(el, {series:[{name, color, points:[{x,y}]}], yMax?, xLabels?})
+     Charts.gauge(el, {value, max, label, color?})
+     Charts.histogram(el, {bins:[{label, count}], highlightIdx?, color?})
+     Charts.choropleth(el, {boroughs:{Manhattan:n, Brooklyn:n, ...}, format?})
+     Charts.rankStrip(el, {items:[{label, value}], highlightIdx, format?})
+     Charts.forecastBand(el, {expectedDate, lowDate, highDate, todayDate?})
+*/
+
+(function(global){
+  const PALETTE = {
+    teal:      '#00b4d8',
+    tealDeep:  '#0077b6',
+    tealLight: '#48bfe3',
+    tealSoft:  '#e6f7fb',
+    green:     '#2ec4b6',
+    amber:     '#ffb703',
+    red:       '#e63946',
+    coral:     '#ff6b76',
+    sky:       '#8ab4f8',
+    ink:       '#0a1f3d',
+    inkSoft:   '#3a4a63',
+    inkMute:   '#6b7a8f',
+    line:      '#e6e3da',
+    bg:        '#fafaf7',
+  };
+  const FONT = "Inter, system-ui, sans-serif";
+
+  // ── helpers ──────────────────────────────────────────────────────
+  function svg(w, h, attrs){
+    attrs = attrs || {};
+    const a = Object.entries(attrs).map(([k,v])=>`${k}="${v}"`).join(' ');
+    return `<svg viewBox="0 0 ${w} ${h}" preserveAspectRatio="xMidYMid meet" xmlns="http://www.w3.org/2000/svg" ${a}>`;
+  }
+  function text(x,y,str,opts){
+    opts = opts || {};
+    const size = opts.size || 12;
+    const weight = opts.weight || 500;
+    const color = opts.color || PALETTE.inkSoft;
+    const anchor = opts.anchor || 'start';
+    const baseline = opts.baseline || 'middle';
+    return `<text x="${x}" y="${y}" font-family="${FONT}" font-size="${size}" font-weight="${weight}" fill="${color}" text-anchor="${anchor}" dominant-baseline="${baseline}">${str}</text>`;
+  }
+  function fmtInt(n){ return Math.round(n).toLocaleString('en-US'); }
+  function fmtPct(n, dp){ dp = dp==null?0:dp; return n.toFixed(dp)+'%'; }
+
+  // ── 1. KPI tile (not technically a chart, but lives here for consistency)
+  function kpiTile(el, d){
+    const tone = d.deltaTone || '';
+    el.innerHTML = `
+      <div class="lbl">${d.label||''}</div>
+      <div class="val${(d.value+'').length>6?' small':''}">${d.value||''}</div>
+      <div class="delta ${tone}">${d.delta||''}</div>`;
+  }
+
+  // ── 2. Bar chart (vertical bars with value labels)
+  function barChart(el, d){
+    const bars = d.bars || [];
+    if(!bars.length){ el.innerHTML = empty('No data'); return; }
+    const W=400, H=240, padL=40, padR=20, padT=24, padB=44;
+    const max = d.max || Math.max(...bars.map(b=>b.value)) * 1.15;
+    const bw = (W - padL - padR) / bars.length * 0.65;
+    const gap = (W - padL - padR) / bars.length * 0.35;
+    let s = svg(W,H);
+    // y-axis baseline
+    s += `<line x1="${padL}" y1="${H-padB}" x2="${W-padR}" y2="${H-padB}" stroke="${PALETTE.line}" stroke-width="1"/>`;
+    // bars
+    bars.forEach((b,i)=>{
+      const x = padL + i*((W-padL-padR)/bars.length) + gap/2;
+      const h = ((b.value/max) * (H-padT-padB));
+      const y = H - padB - h;
+      const color = b.color || (b.highlight ? PALETTE.teal : PALETTE.tealLight);
+      s += `<rect x="${x}" y="${y}" width="${bw}" height="${h}" fill="${color}" rx="3"/>`;
+      // value label above bar
+      s += text(x + bw/2, y - 8, fmtInt(b.value), {size:12, weight:700, color:PALETTE.ink, anchor:'middle', baseline:'auto'});
+      // x-label
+      s += text(x + bw/2, H-padB+18, b.label, {size:11, color:PALETTE.inkMute, anchor:'middle'});
+    });
+    s += '</svg>';
+    el.innerHTML = s;
+  }
+
+  // ── 3. Donut chart
+  function donut(el, d){
+    const slices = d.slices || [];
+    if(!slices.length){ el.innerHTML = empty('No data'); return; }
+    const total = slices.reduce((a,s)=>a+s.value,0);
+    const W=240, H=240, cx=W/2, cy=H/2, r=90, ir=58;
+    const colors = [PALETTE.teal, PALETTE.green, PALETTE.amber, PALETTE.coral, PALETTE.sky, PALETTE.tealDeep];
+    let s = svg(W,H);
+    let acc = -Math.PI/2;
+    slices.forEach((sl,i)=>{
+      const frac = sl.value/total;
+      const a0 = acc, a1 = acc + frac*Math.PI*2;
+      acc = a1;
+      const large = frac>0.5 ? 1 : 0;
+      const x0=cx+r*Math.cos(a0), y0=cy+r*Math.sin(a0);
+      const x1=cx+r*Math.cos(a1), y1=cy+r*Math.sin(a1);
+      const xi0=cx+ir*Math.cos(a1), yi0=cy+ir*Math.sin(a1);
+      const xi1=cx+ir*Math.cos(a0), yi1=cy+ir*Math.sin(a0);
+      const color = sl.color || colors[i%colors.length];
+      const path = `M ${x0} ${y0} A ${r} ${r} 0 ${large} 1 ${x1} ${y1} L ${xi0} ${yi0} A ${ir} ${ir} 0 ${large} 0 ${xi1} ${yi1} Z`;
+      s += `<path d="${path}" fill="${color}"/>`;
+    });
+    // center labels
+    if(d.centerValue){
+      s += text(cx, cy-6, d.centerValue, {size:24, weight:700, color:PALETTE.ink, anchor:'middle'});
+    }
+    if(d.centerLabel){
+      s += text(cx, cy+18, d.centerLabel, {size:11, color:PALETTE.inkMute, anchor:'middle'});
+    }
+    s += '</svg>';
+    // legend
+    const legend = slices.map((sl,i)=>{
+      const color = sl.color || colors[i%colors.length];
+      const pct = ((sl.value/total)*100).toFixed(0);
+      return `<span><span class="swatch" style="background:${color}"></span>${sl.label} · ${pct}%</span>`;
+    }).join('');
+    el.innerHTML = s + `<div class="legend">${legend}</div>`;
+  }
+
+  // ── 4. Sparkline (multi-series line)
+  function sparkline(el, d){
+    const series = d.series || [];
+    if(!series.length || !series[0].points.length){ el.innerHTML = empty('No data'); return; }
+    const W=400, H=200, padL=36, padR=12, padT=16, padB=32;
+    const allY = series.flatMap(s=>s.points.map(p=>p.y));
+    const yMax = d.yMax || Math.max(...allY) * 1.15;
+    const yMin = 0;
+    const xs = series[0].points.map(p=>p.x);
+    const xMin = Math.min(...xs), xMax = Math.max(...xs);
+    const sx = x => padL + ((x-xMin)/(xMax-xMin||1)) * (W-padL-padR);
+    const sy = y => H - padB - ((y-yMin)/(yMax-yMin||1)) * (H-padT-padB);
+    let s = svg(W,H);
+    // y-grid (3 lines)
+    for(let i=0;i<=3;i++){
+      const y = padT + i*((H-padT-padB)/3);
+      const v = yMax - i*(yMax/3);
+      s += `<line x1="${padL}" y1="${y}" x2="${W-padR}" y2="${y}" stroke="${PALETTE.line}" stroke-width="1" stroke-dasharray="2 4"/>`;
+      s += text(padL-6, y, fmtInt(v), {size:10, color:PALETTE.inkMute, anchor:'end'});
+    }
+    // x-labels (if provided)
+    if(d.xLabels){
+      d.xLabels.forEach((lbl,i)=>{
+        if(i%Math.ceil(d.xLabels.length/6)!==0 && i!==d.xLabels.length-1) return;
+        const x = sx(xs[i]);
+        s += text(x, H-padB+14, lbl, {size:10, color:PALETTE.inkMute, anchor:'middle'});
+      });
+    }
+    series.forEach((ser,si)=>{
+      const color = ser.color || [PALETTE.teal, PALETTE.amber, PALETTE.green][si%3];
+      const path = ser.points.map((p,i)=>(i?'L':'M')+sx(p.x)+' '+sy(p.y)).join(' ');
+      s += `<path d="${path}" fill="none" stroke="${color}" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/>`;
+      // dots on last point
+      const last = ser.points[ser.points.length-1];
+      s += `<circle cx="${sx(last.x)}" cy="${sy(last.y)}" r="4" fill="${color}"/>`;
+    });
+    s += '</svg>';
+    const legend = series.map((ser,si)=>{
+      const color = ser.color || [PALETTE.teal, PALETTE.amber, PALETTE.green][si%3];
+      return `<span><span class="swatch" style="background:${color}"></span>${ser.name}</span>`;
+    }).join('');
+    el.innerHTML = s + `<div class="legend">${legend}</div>`;
+  }
+
+  // ── 5. Gauge (semicircle with %)
+  function gauge(el, d){
+    const v = Math.max(0, Math.min(d.value, d.max));
+    const frac = v/d.max;
+    const W=200, H=130, cx=W/2, cy=104, r=72, sw=12;
+    const a = -Math.PI + frac*Math.PI;
+    const x0 = cx - r, y0 = cy;
+    const x1 = cx + r*Math.cos(a), y1 = cy + r*Math.sin(a);
+    const xe = cx + r, ye = cy;
+    const color = d.color || (frac>=0.75 ? PALETTE.green : frac>=0.5 ? PALETTE.amber : PALETTE.red);
+    let s = svg(W,H);
+    // background arc — butt caps, half-circle
+    s += `<path d="M ${x0} ${y0} A ${r} ${r} 0 0 1 ${xe} ${ye}" fill="none" stroke="${PALETTE.line}" stroke-width="${sw}" stroke-linecap="butt"/>`;
+    // foreground arc — large flag pinned to 0 (always ≤180°), butt caps
+    if(frac > 0.001){
+      s += `<path d="M ${x0} ${y0} A ${r} ${r} 0 0 1 ${x1} ${y1}" fill="none" stroke="${color}" stroke-width="${sw}" stroke-linecap="butt"/>`;
+    }
+    // value
+    s += text(cx, cy-14, fmtPct((v/d.max)*100, 0), {size:26, weight:700, color:PALETTE.ink, anchor:'middle'});
+    s += text(cx, cy+8, d.label||'', {size:11, color:PALETTE.inkMute, anchor:'middle'});
+    s += '</svg>';
+    el.innerHTML = s;
+  }
+
+  // ── 5b. Percentile bar (horizontal benchmark, 0-100)
+  // Used for "vs other NYC zips" and similar comparisons.
+  function percentileBar(el, d){
+    const W=240, H=72, padL=4, padR=4, padT=18, padB=18;
+    const v = Math.max(0, Math.min(d.value, 100));
+    const trackY = H/2 - 4;
+    const trackH = 8;
+    const trackW = W - padL - padR;
+    const markerX = padL + (v/100) * trackW;
+    let s = svg(W,H);
+    // track
+    s += `<rect x="${padL}" y="${trackY}" width="${trackW}" height="${trackH}" rx="4" fill="${PALETTE.line}"/>`;
+    // filled portion (shows percentile fill from left)
+    s += `<rect x="${padL}" y="${trackY}" width="${markerX-padL}" height="${trackH}" rx="4" fill="${PALETTE.teal}"/>`;
+    // marker
+    s += `<circle cx="${markerX}" cy="${trackY+trackH/2}" r="8" fill="${PALETTE.ink}" stroke="#fff" stroke-width="2"/>`;
+    // tick labels
+    s += text(padL, trackY+trackH+14, '0', {size:10, color:PALETTE.inkMute, anchor:'start'});
+    s += text(W-padR, trackY+trackH+14, '100', {size:10, color:PALETTE.inkMute, anchor:'end'});
+    s += text(markerX, trackY-8, v.toFixed(0), {size:11, weight:700, color:PALETTE.ink, anchor:'middle', baseline:'auto'});
+    s += '</svg>';
+    el.innerHTML = `<div style="font-size:13px;font-weight:600;color:${PALETTE.ink};margin-bottom:2px">${d.headline||''}</div>${s}<div style="font-size:11px;color:${PALETTE.inkMute};margin-top:-6px">${d.sub||''}</div>`;
+  }
+
+  // ── 6. Histogram (distribution with optional highlighted bin)
+  function histogram(el, d){
+    const bins = d.bins || [];
+    if(!bins.length){ el.innerHTML = empty('No data'); return; }
+    const W=400, H=200, padL=32, padR=12, padT=16, padB=36;
+    const max = Math.max(...bins.map(b=>b.count));
+    const bw = (W-padL-padR)/bins.length;
+    let s = svg(W,H);
+    s += `<line x1="${padL}" y1="${H-padB}" x2="${W-padR}" y2="${H-padB}" stroke="${PALETTE.line}" stroke-width="1"/>`;
+    bins.forEach((b,i)=>{
+      const x = padL + i*bw + 1;
+      const h = (b.count/max) * (H-padT-padB);
+      const y = H - padB - h;
+      const w = bw - 2;
+      const isHi = i===d.highlightIdx;
+      const color = isHi ? PALETTE.red : (d.color || PALETTE.teal);
+      s += `<rect x="${x}" y="${y}" width="${w}" height="${h}" fill="${color}" rx="2" opacity="${isHi?1:0.85}"/>`;
+      if(i%Math.ceil(bins.length/6)===0 || i===bins.length-1){
+        s += text(x+w/2, H-padB+14, b.label, {size:10, color:PALETTE.inkMute, anchor:'middle'});
+      }
+    });
+    s += '</svg>';
+    el.innerHTML = s;
+  }
+
+  // ── 7. Choropleth (5-borough simplified SVG)
+  // Hand-drawn schematic shapes — not geographic, but recognizable.
+  function choropleth(el, d){
+    const boroughs = d.boroughs || {};
+    const fmt = d.format || (v => fmtPct(v,0));
+    const values = Object.values(boroughs);
+    const min = Math.min(...values), max = Math.max(...values);
+    function color(v){
+      const t = (v-min)/(max-min||1);
+      // teal soft → teal deep gradient based on closure rate
+      const hi = [0,119,182], lo = [230,247,251];
+      const c = lo.map((cc,i)=>Math.round(cc + (hi[i]-cc)*t));
+      return `rgb(${c[0]},${c[1]},${c[2]})`;
+    }
+    // schematic borough shapes (rounded rectangles, positioned to vaguely match NYC)
+    const shapes = {
+      'Bronx':       {x:230, y:30,  w:150, h:90,  label:'Bronx'},
+      'Manhattan':   {x:170, y:90,  w:60,  h:160, label:'Manh.'},
+      'Queens':      {x:280, y:130, w:170, h:120, label:'Queens'},
+      'Brooklyn':    {x:200, y:240, w:170, h:90,  label:'Brooklyn'},
+      'Staten Island':{x:60, y:260, w:120, h:80,  label:'SI'},
+    };
+    const W=480, H=360;
+    let s = svg(W,H);
+    Object.entries(shapes).forEach(([name,sh])=>{
+      const v = boroughs[name];
+      const fill = v==null ? PALETTE.line : color(v);
+      s += `<rect x="${sh.x}" y="${sh.y}" width="${sh.w}" height="${sh.h}" rx="14" fill="${fill}" stroke="#fff" stroke-width="3"/>`;
+      const tc = v!=null && (v-min)/(max-min||1) > 0.55 ? '#fff' : PALETTE.ink;
+      s += text(sh.x+sh.w/2, sh.y+sh.h/2-8, sh.label, {size:13, weight:700, color:tc, anchor:'middle'});
+      if(v!=null) s += text(sh.x+sh.w/2, sh.y+sh.h/2+12, fmt(v), {size:14, weight:700, color:tc, anchor:'middle'});
+    });
+    s += '</svg>';
+    el.innerHTML = s;
+  }
+
+  // ── 8. Rank strip (5 dots/bars, one highlighted)
+  function rankStrip(el, d){
+    const items = d.items || [];
+    const fmt = d.format || (v=>v);
+    const W=400, H=140, padL=20, padR=20, padT=40, padB=40;
+    const sorted = [...items].sort((a,b)=>b.value-a.value);
+    const max = sorted[0].value, min = sorted[sorted.length-1].value;
+    const step = (W-padL-padR)/(items.length-1||1);
+    let s = svg(W,H);
+    // axis line
+    s += `<line x1="${padL}" y1="${H/2}" x2="${W-padR}" y2="${H/2}" stroke="${PALETTE.line}" stroke-width="2"/>`;
+    items.forEach((it,i)=>{
+      const x = padL + i*step;
+      const isHi = i === d.highlightIdx;
+      const r = isHi ? 12 : 7;
+      const fill = isHi ? PALETTE.red : PALETTE.teal;
+      s += `<circle cx="${x}" cy="${H/2}" r="${r}" fill="${fill}"/>`;
+      s += text(x, H/2 - r - 8, fmt(it.value), {size:isHi?13:11, weight:700, color:PALETTE.ink, anchor:'middle', baseline:'auto'});
+      s += text(x, H/2 + r + 16, it.label, {size:11, weight:isHi?700:500, color:isHi?PALETTE.ink:PALETTE.inkMute, anchor:'middle'});
+    });
+    s += '</svg>';
+    el.innerHTML = s;
+  }
+
+  // ── 9. Forecast band (date with confidence interval)
+  function forecastBand(el, d){
+    const W=400, H=200, padL=20, padR=20, padT=40, padB=60;
+    const today = new Date(d.todayDate || Date.now());
+    const lo = new Date(d.lowDate);
+    const hi = new Date(d.highDate);
+    const exp = new Date(d.expectedDate);
+    const startMs = today.getTime();
+    const endMs = hi.getTime() + (hi.getTime()-lo.getTime())*0.2; // padding
+    const sx = ms => padL + ((ms-startMs)/(endMs-startMs||1)) * (W-padL-padR);
+    let s = svg(W,H);
+    // axis
+    s += `<line x1="${padL}" y1="${H/2}" x2="${W-padR}" y2="${H/2}" stroke="${PALETTE.line}" stroke-width="2"/>`;
+    // confidence band
+    s += `<rect x="${sx(lo.getTime())}" y="${H/2-22}" width="${sx(hi.getTime())-sx(lo.getTime())}" height="44" fill="${PALETTE.tealSoft}" rx="8"/>`;
+    // expected marker
+    const ex = sx(exp.getTime());
+    s += `<line x1="${ex}" y1="${H/2-26}" x2="${ex}" y2="${H/2+26}" stroke="${PALETTE.tealDeep}" stroke-width="3"/>`;
+    s += `<circle cx="${ex}" cy="${H/2}" r="7" fill="${PALETTE.tealDeep}"/>`;
+    // today marker
+    const tx = sx(today.getTime());
+    s += `<circle cx="${tx}" cy="${H/2}" r="5" fill="${PALETTE.ink}"/>`;
+    // labels
+    const fmtDate = dt => dt.toLocaleDateString('en-US',{month:'short',day:'numeric'});
+    s += text(tx, H/2+30, 'today', {size:11, color:PALETTE.inkMute, anchor:'middle', baseline:'auto'});
+    s += text(tx, H/2+44, fmtDate(today), {size:10, color:PALETTE.inkMute, anchor:'middle', baseline:'auto'});
+    s += text(ex, H/2-32, fmtDate(exp), {size:14, weight:700, color:PALETTE.ink, anchor:'middle', baseline:'auto'});
+    s += text(ex, H/2-50, 'expected close', {size:10, color:PALETTE.tealDeep, weight:600, anchor:'middle', baseline:'auto'});
+    s += text(sx(lo.getTime()), H/2+44, fmtDate(lo), {size:10, color:PALETTE.inkMute, anchor:'middle', baseline:'auto'});
+    s += text(sx(hi.getTime()), H/2+44, fmtDate(hi), {size:10, color:PALETTE.inkMute, anchor:'middle', baseline:'auto'});
+    s += '</svg>';
+    el.innerHTML = s;
+  }
+
+  function empty(msg){
+    return `<div style="display:flex;align-items:center;justify-content:center;height:100%;color:${PALETTE.inkMute};font-size:13px">${msg}</div>`;
+  }
+
+  // ── 10. Horizontal bar chart (better for ranked lists like boroughs)
+  function hBarChart(el, d){
+    const bars = d.bars || [];
+    if(!bars.length){ el.innerHTML = empty('No data'); return; }
+    const W=560, H=Math.max(220, bars.length*48 + 40);
+    const padL=110, padR=80, padT=20, padB=20;
+    const max = d.max || Math.max(...bars.map(b=>b.value));
+    const rowH = (H - padT - padB) / bars.length;
+    const bh = rowH * 0.62;
+    let s = svg(W,H);
+    bars.forEach((b,i)=>{
+      const y = padT + i*rowH + (rowH-bh)/2;
+      const w = (b.value/max) * (W - padL - padR);
+      const color = b.color || (b.highlight ? PALETTE.red : PALETTE.teal);
+      s += `<rect x="${padL}" y="${y}" width="${w}" height="${bh}" fill="${color}" rx="6"/>`;
+      s += text(padL-12, y + bh/2, b.label, {size:14, weight:600, color:PALETTE.ink, anchor:'end'});
+      const valTxt = d.format ? d.format(b.value) : fmtInt(b.value);
+      s += text(padL + w + 8, y + bh/2, valTxt, {size:13, weight:700, color:PALETTE.ink, anchor:'start'});
+    });
+    s += '</svg>';
+    el.innerHTML = s;
+  }
+
+  // ── 11. Revenue range — horizontal stacked bars showing low→high revenue
+  function revenueRange(el, d){
+    const items = d.items || [];
+    if(!items.length){ el.innerHTML = empty('No data'); return; }
+    const W=720, H=Math.max(260, items.length*56 + 40);
+    const padL=140, padR=170, padT=24, padB=24;
+    const max = Math.max(...items.map(it=>it.high));
+    const rowH = (H - padT - padB) / items.length;
+    const bh = rowH * 0.55;
+    let s = svg(W,H);
+    items.forEach((it,i)=>{
+      const y = padT + i*rowH + (rowH-bh)/2;
+      const xLow  = padL + (it.low /max) * (W - padL - padR);
+      const xMid  = padL + (it.mid /max) * (W - padL - padR);
+      const xHigh = padL + (it.high/max) * (W - padL - padR);
+      const isTotal = it.label === 'NYC Total';
+      // Range bar (low → high) in light teal
+      s += `<rect x="${padL}" y="${y}" width="${xHigh-padL}" height="${bh}" fill="${isTotal?PALETTE.tealDeep:PALETTE.tealSoft}" rx="6"/>`;
+      // Mid marker (most likely)
+      s += `<rect x="${padL}" y="${y}" width="${xMid-padL}" height="${bh}" fill="${isTotal?PALETTE.ink:PALETTE.teal}" rx="6"/>`;
+      // Borough label
+      s += text(padL-12, y + bh/2, it.label, {size:isTotal?16:14, weight:isTotal?800:700, color:PALETTE.ink, anchor:'end'});
+      // Range value to the right
+      const fmt = v => '$'+(v/1e6).toFixed(2)+'M';
+      s += text(xHigh + 8, y + bh/2, `${fmt(it.low)} – ${fmt(it.high)}`, {size:12, weight:600, color:PALETTE.inkSoft, anchor:'start'});
+    });
+    s += '</svg>';
+    el.innerHTML = s;
+  }
+
+  // ── 12. Gauge cluster — multiple gauges in a row with consistent styling
+  function gaugeCluster(el, d){
+    const items = d.items || [];
+    if(!items.length){ el.innerHTML = empty('No data'); return; }
+    const cols = items.length;
+    const cellW = 140, cellH = 150;
+    const W = cols * cellW, H = cellH + 40;
+    let s = svg(W, H);
+    items.forEach((it, i) => {
+      const cx = i*cellW + cellW/2;
+      const cy = 90;
+      const r = 50, sw = 9;
+      const v = Math.max(0, Math.min(it.value || 0, 100));
+      const frac = v/100;
+      const a = -Math.PI + frac*Math.PI;
+      const x0 = cx - r, y0 = cy;
+      const x1 = cx + r*Math.cos(a), y1 = cy + r*Math.sin(a);
+      const xe = cx + r;
+      // background arc
+      s += `<path d="M ${x0} ${y0} A ${r} ${r} 0 0 1 ${xe} ${cy}" fill="none" stroke="${PALETTE.line}" stroke-width="${sw}" stroke-linecap="butt"/>`;
+      // foreground arc — single brand teal, varies by saturation
+      const color = it.color || PALETTE.teal;
+      if(frac > 0.001){
+        s += `<path d="M ${x0} ${y0} A ${r} ${r} 0 0 1 ${x1} ${y1}" fill="none" stroke="${color}" stroke-width="${sw}" stroke-linecap="butt"/>`;
+      }
+      // Value
+      s += text(cx, cy-10, fmtPct(v, 1), {size:18, weight:700, color:PALETTE.ink, anchor:'middle'});
+      // Label
+      s += text(cx, cy+18, it.label, {size:11, color:PALETTE.inkMute, anchor:'middle'});
+    });
+    s += '</svg>';
+    el.innerHTML = s;
+  }
+
+  global.Charts = { kpiTile, barChart, hBarChart, donut, sparkline, gauge, gaugeCluster, percentileBar, histogram, choropleth, rankStrip, forecastBand, revenueRange, PALETTE };
+})(window);
