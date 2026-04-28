@@ -232,6 +232,74 @@ section.alt{background:var(--bg-alt)}
 .map-list-item strong{color:var(--ink);font-weight:600}
 .map-list-item .meta{color:var(--ink-mute);white-space:nowrap;font-size:12px}
 
+/* Vendor selection cards */
+.vendor-prompt{font-size:13px;color:var(--ink-soft);background:var(--teal-soft);border-left:3px solid var(--teal);padding:10px 14px;border-radius:6px;margin-bottom:12px}
+.vendor-prompt strong{color:var(--ink)}
+.vendor-prompt .inline-link{color:var(--teal-deep);text-decoration:none;font-weight:600;margin-left:4px}
+.vendor-prompt .inline-link:hover{text-decoration:underline}
+.vendor-card{cursor:pointer;transition:background .15s, border-color .15s;padding:12px 8px;border-radius:8px;align-items:center}
+.vendor-card:hover{background:var(--bg-alt)}
+.vendor-card.selected{background:#fff7df;border-left:3px solid var(--amber);padding-left:8px}
+.vendor-card.selected .vendor-name strong{color:#0a1f3d}
+.vendor-info{flex:1;min-width:0}
+.vendor-name{display:flex;align-items:center;gap:6px}
+.vendor-name strong{font-size:13px}
+.vendor-link{display:inline-flex;align-items:center;justify-content:center;width:18px;height:18px;border-radius:50%;background:var(--bg-alt);color:var(--ink-soft);text-decoration:none;font-size:11px;font-weight:700;transition:background .15s, color .15s}
+.vendor-link:hover{background:var(--teal);color:#fff}
+.vendor-sub{font-size:11px;color:var(--ink-mute);margin-top:2px}
+.vendor-actions{display:flex;flex-direction:column;align-items:flex-end;gap:6px}
+.vendor-actions .meta{font-size:11px}
+.pill.small{padding:5px 12px;font-size:11px;letter-spacing:.04em}
+.vendor-card.selected .pill.small.teal{background:var(--amber);color:#0a1f3d}
+.vendor-card.selected .pill.small.teal::after{content:" ✓"}
+
+/* Day-to-close tags on similar complaints */
+.days-tag{font-size:11px;font-weight:700;padding:2px 8px;border-radius:4px;letter-spacing:.04em;white-space:nowrap}
+.days-tag.days-fast{background:var(--green-soft);color:#1a7d75}
+.days-tag.days-med{background:var(--amber-soft);color:#7a5800}
+.days-tag.days-slow{background:var(--red-soft);color:#a32b36}
+.days-tag.days-open{background:var(--bg-alt);color:var(--ink-mute)}
+
+/* Similar complaints legend */
+.similar-legend{display:flex;flex-wrap:wrap;gap:10px;font-size:11px;color:var(--ink-mute);margin:6px 0 12px;padding-bottom:8px;border-bottom:1px solid var(--line-soft)}
+.similar-legend span{display:inline-flex;align-items:center;gap:5px}
+.similar-legend .dot{display:inline-block;width:8px;height:8px;border-radius:50%}
+
+/* Vendor row — clickable button with external-link for the name */
+.vendor-row{padding:12px 0;border-top:1px solid var(--line-soft);display:flex;justify-content:space-between;gap:10px;align-items:center;transition:background .15s;border-radius:6px;margin:0 -8px;padding-left:8px;padding-right:8px}
+.vendor-row:first-of-type{border-top:none}
+.vendor-row:hover{background:var(--bg-alt)}
+.vendor-row.selected{background:var(--amber-soft);border-left:3px solid var(--amber);padding-left:5px}
+.vendor-row .vendor-info{flex:1;min-width:0}
+.vendor-row .vendor-name{display:inline-flex;align-items:center;gap:4px;color:var(--ink);font-weight:600;font-size:13px;text-decoration:none;line-height:1.2}
+.vendor-row .vendor-name:hover{color:var(--teal-deep);text-decoration:underline}
+.vendor-row .vendor-name .ext{font-size:11px;opacity:.55}
+.vendor-row .vendor-meta{color:var(--ink-mute);font-size:11px;margin-top:3px}
+.vendor-select{font-size:11px;padding:6px 12px;letter-spacing:.04em;background:transparent;color:var(--ink);border:1px solid var(--line);cursor:pointer;border-radius:999px;font-weight:600;font-family:inherit;flex-shrink:0;transition:all .15s}
+.vendor-select:hover{border-color:var(--ink);background:var(--ink);color:#fff}
+.vendor-row.selected .vendor-select{background:var(--amber);color:#000;border-color:var(--amber)}
+.vendor-row.selected .vendor-select::before{content:'✓ '}
+
+/* Generate-WO CTA card */
+.wo-cta-card{background:var(--ink);color:#fff;border-radius:var(--radius);padding:20px;animation:fadeIn .25s ease}
+.wo-cta-card .lbl{font-size:11px;color:var(--teal);text-transform:uppercase;letter-spacing:.12em;font-weight:700;margin-bottom:10px}
+.wo-cta-card .vendor-name-line{color:#fff;font-weight:700;font-size:14px;margin-bottom:4px}
+.wo-cta-card .vendor-detail{color:rgba(255,255,255,.6);font-size:12px;margin-bottom:14px}
+.wo-cta-card .pill.primary{background:var(--teal);color:var(--ink);width:100%;justify-content:center}
+.wo-cta-card .pill.primary:hover{background:#fff}
+@keyframes fadeIn{from{opacity:0;transform:translateY(-4px)}to{opacity:1;transform:translateY(0)}}
+
+/* Map labels (custom OverlayView) */
+.gm-label{position:absolute;font:600 11px/1.2 Inter,sans-serif;background:rgba(255,255,255,.95);padding:3px 8px;border-radius:6px;border:1px solid var(--line);transform:translate(-50%,14px);white-space:nowrap;pointer-events:none;box-shadow:0 1px 2px rgba(10,31,61,.06);color:var(--ink)}
+.gm-label.vendor{border-color:var(--amber);color:#8c5e00}
+.gm-label.similar{border-color:var(--teal);color:var(--teal-deep);font-size:10px;padding:2px 6px}
+.gm-label.complaint{border-color:var(--red);color:var(--red);font-weight:700}
+
+/* Work-order tab placeholder when no vendor is selected yet */
+.wo-empty{background:var(--surface);border:1px dashed var(--line);border-radius:var(--radius);padding:48px;text-align:center;color:var(--ink-soft);font-size:15px}
+.wo-empty .big{font-family:Fraunces,Georgia,serif;font-size:24px;color:var(--ink);margin-bottom:8px}
+.wo-empty .pill{margin-top:20px}
+
 /* Google Maps InfoWindow override — match light theme */
 .gm-style .gm-style-iw-c{padding:0!important;border-radius:12px!important;box-shadow:var(--shadow)!important;border:1px solid var(--line)}
 .gm-style .gm-style-iw-d{overflow:auto!important;padding:16px 20px}

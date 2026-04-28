@@ -559,40 +559,46 @@ function renderAll(d, form, errors){
     });
   }
 
-  // Work order — kick off LLM generation in the background (non-blocking)
-  generateWorkOrder(form, d);
-
   // Map: stash the form for lazy init when the user opens the map tab.
-  // Initializing while the panel is display:none makes the map render blank.
   window._lastForm = form;
   window._mapInitialized = false;
-  // Reset placeholder text so the user knows what to do
+  window._selectedVendor = null;
+
   const mc = document.getElementById('mapCanvas');
   if(mc) mc.innerHTML = '<div class="map-placeholder">Click the <strong>Map &amp; vendors</strong> tab above to load the map.</div>';
+
+  // Work order is gated on vendor selection now — show prompt instead
+  const woDoc = document.getElementById('woDoc');
+  if(woDoc){
+    woDoc.innerHTML = '<div class="map-placeholder" style="height:300px">Select a vendor on the <strong>Map &amp; vendors</strong> tab to generate a work order.</div>';
+  }
+  setText('woStatus', '');
 }
 
 // ── Work-order generation ───────────────────────────────────────
-async function generateWorkOrder(form, analytics){
+async function generateWorkOrder(form, analytics, chosenVendor){
   if(!form){
     renderWorkOrder(SAMPLE_WO);
     setText('woStatus', 'Sample work order shown. Submit the form to generate a real one.');
     return;
   }
-  // show "generating" placeholder
   const doc = document.getElementById('woDoc');
   doc.innerHTML = '<div class="loading" style="height:200px">Generating DOT-format work order with Claude Sonnet 4.5…</div>';
-  setText('woStatus', 'Calling /api/generate-work-order …');
+  setText('woStatus', `Calling /api/generate-work-order with ${chosenVendor ? chosenVendor.name : 'no vendor'} …`);
 
-  // Pull similar past resolved orders + nearest vendor in parallel
-  const [similar, geocoded] = await Promise.all([
-    DataLoader.findSimilarComplaints(form.borough, form.complaint_type, form.zip, 5)
-      .catch(() => []),
-    geocodeAddress(form.address, form.zip).catch(() => null),
-  ]);
-  let nearestVendor = null;
-  if(geocoded){
-    const vendors = await DataLoader.findNearestVendors(geocoded.lat, geocoded.lng, 1).catch(() => []);
-    nearestVendor = vendors[0] || null;
+  // Similar past resolved orders for the few-shot prompt
+  const similar = await DataLoader.findSimilarComplaints(
+    form.borough, form.complaint_type, form.zip, 5
+  ).catch(() => []);
+
+  // Use the explicitly-chosen vendor; fall back to auto-pick only if none given
+  let nearestVendor = chosenVendor || null;
+  if(!nearestVendor){
+    const geocoded = await geocodeAddress(form.address, form.zip).catch(() => null);
+    if(geocoded){
+      const auto = await DataLoader.findNearestVendors(geocoded.lat, geocoded.lng, 1).catch(() => []);
+      nearestVendor = auto[0] || null;
+    }
   }
 
   const payload = {
@@ -1045,84 +1051,218 @@ async function initResultsMap(form){
 
   const iw = new google.maps.InfoWindow();
 
-  // Complaint pin (red)
+  // Complaint pin (red, larger, slight glow ring) — anchor for hover routes
   const complaintMarker = new google.maps.Marker({
-    map: _resultsMap, position: origin,
-    icon: pinIcon('#e63946', 12),
-    title: form.address, zIndex: 1000,
+    map: _resultsMap,
+    position: origin,
+    icon: {
+      path: google.maps.SymbolPath.CIRCLE,
+      scale: 12, fillColor:'#e63946', fillOpacity:1,
+      strokeColor:'#fff', strokeWeight:3,
+    },
+    title: form.address,
+    zIndex: 1000,
   });
   complaintMarker.addListener('click', () => {
     iw.setContent(`<div class="gm-popup">
       <div class="ttl">Your complaint</div>
-      <div class="meta">${form.address} · ${form.borough} ${form.zip}</div>
-      <div class="row"><strong>${form.complaint_type}</strong></div>
-      <div class="row">Reported just now · ${form.duration || ''}</div>
+      <div class="meta">${escapeHtml(form.address)} · ${escapeHtml(form.borough)} ${escapeHtml(form.zip)}</div>
+      <div class="row"><strong>${escapeHtml(form.complaint_type)}</strong></div>
+      <div class="row">Reported just now · ${escapeHtml(form.duration || '')}</div>
       <span class="badge">Open</span>
     </div>`);
     iw.open({map: _resultsMap, anchor: complaintMarker});
   });
   _mapMarkers.push(complaintMarker);
 
-  // Vendors (green) — nearest 5 within 2 mi
+  // ── Vendors (amber, name label below, click to select) ──────
   const vendors = await DataLoader.findNearestVendors(origin.lat, origin.lng, 8);
   const vList = document.getElementById('vendorList');
-  vList.innerHTML = '<div class="lbl">Nearest vendors</div>';
-  vendors.filter(v => v.distance <= 3).slice(0, 5).forEach(v => {
+  vList.innerHTML = `
+    <div class="lbl">Nearest vendors · select one to generate the work order</div>
+    <div class="vendor-prompt" id="vendorPrompt">No vendor selected yet.</div>`;
+
+  // Shared polyline for hover-route preview
+  let _hoverRoute = null;
+  function showRoute(vendorPos){
+    if(_hoverRoute) _hoverRoute.setMap(null);
+    _hoverRoute = new google.maps.Polyline({
+      path: [vendorPos, origin],
+      geodesic: true,
+      strokeColor: '#a07f00',
+      strokeOpacity: 0.85,
+      strokeWeight: 3,
+      map: _resultsMap,
+      icons: [{
+        icon: { path: google.maps.SymbolPath.FORWARD_CLOSED_ARROW, scale: 3, strokeColor:'#a07f00' },
+        offset: '60%',
+      }],
+      zIndex: 5,
+    });
+  }
+  function hideRoute(){
+    if(_hoverRoute){ _hoverRoute.setMap(null); _hoverRoute = null; }
+  }
+
+  const vendorMarkers = [];
+  const nearVendors = vendors.filter(v => v.distance <= 3).slice(0, 5);
+
+  function selectVendor(v){
+    window._selectedVendor = v;
+    // Highlight the chosen marker, dim others
+    vendorMarkers.forEach(({marker, vendor}) => {
+      marker.setIcon(vendorIcon(vendor.name, vendor === v));
+      marker.setZIndex(vendor === v ? 200 : 100);
+    });
+    // Highlight the chosen sidebar card
+    document.querySelectorAll('.vendor-card').forEach(el => {
+      el.classList.toggle('selected', el.dataset.license === v.license);
+    });
+    document.getElementById('vendorPrompt').innerHTML =
+      `Selected: <strong>${escapeHtml(v.name)}</strong> · <a href="#workorder" class="inline-link" onclick="document.querySelector('.tab[data-tab=workorder]').click();return false;">Generate work order →</a>`;
+    // Kick off LLM generation
+    generateWorkOrder(window._lastForm, null, v);
+  }
+
+  nearVendors.forEach(v => {
     const m = new google.maps.Marker({
-      map: _resultsMap, position: {lat: v.lat, lng: v.lng},
-      icon: pinIcon('#2ec4b6', 9), title: v.name,
+      map: _resultsMap,
+      position: {lat: v.lat, lng: v.lng},
+      icon: vendorIcon(v.name, false),
+      title: `${v.name} · ${v.distance.toFixed(1)} mi`,
+      zIndex: 100,
     });
-    m.addListener('click', () => {
-      iw.setContent(`<div class="gm-popup">
-        <div class="ttl">${v.name}</div>
-        <div class="meta">NYC Lic. #${v.license} · ${v.distance.toFixed(1)} mi</div>
-        <div class="row">${v.phone || '—'}</div>
-        <span class="badge">Licensed contractor</span>
-      </div>`);
-      iw.open({map: _resultsMap, anchor: m});
-    });
+    vendorMarkers.push({marker: m, vendor: v});
+
+    m.addListener('mouseover', () => showRoute({lat: v.lat, lng: v.lng}));
+    m.addListener('mouseout',  hideRoute);
+    m.addListener('click', () => selectVendor(v));
+
     _mapMarkers.push(m);
-    vList.insertAdjacentHTML('beforeend',
-      `<div class="map-list-item"><span><strong>${v.name}</strong><br>${v.phone || ''}</span><span class="meta">${v.distance.toFixed(1)} mi</span></div>`);
+
+    const searchUrl = `https://www.google.com/search?q=${encodeURIComponent(v.name + ' NYC electrician')}`;
+    vList.insertAdjacentHTML('beforeend', `
+      <div class="vendor-card map-list-item" data-license="${escapeHtml(v.license)}">
+        <div class="vendor-info">
+          <div class="vendor-name">
+            <strong>${escapeHtml(v.name)}</strong>
+            <a href="${searchUrl}" target="_blank" rel="noopener noreferrer"
+               class="vendor-link" title="Find website (opens Google search)"
+               onclick="event.stopPropagation()">↗</a>
+          </div>
+          <div class="vendor-sub">${escapeHtml(v.phone || '')} · Lic. #${escapeHtml(v.license)}</div>
+        </div>
+        <div class="vendor-actions">
+          <span class="meta">${v.distance.toFixed(1)} mi</span>
+          <button type="button" class="pill teal small select-vendor">Select</button>
+        </div>
+      </div>`);
+
+    // Wire up the Select button (and clicking the card itself)
+    const card = vList.querySelector(`.vendor-card[data-license="${CSS.escape(v.license)}"]`);
+    card.addEventListener('mouseenter', () => showRoute({lat: v.lat, lng: v.lng}));
+    card.addEventListener('mouseleave', hideRoute);
+    card.querySelector('.select-vendor').addEventListener('click', (e) => {
+      e.stopPropagation();
+      selectVendor(v);
+    });
   });
 
-  // Similar past complaints (teal)
+  // ── Similar past complaints — color-coded by days-to-close ──
   const similar = await DataLoader.findSimilarComplaints(form.borough, form.complaint_type, form.zip, 8);
   const sList = document.getElementById('similarList');
   sList.innerHTML = '<div class="lbl">Similar resolved complaints</div>';
+
+  // Legend explaining the color coding
+  sList.insertAdjacentHTML('beforeend', `
+    <div class="similar-legend">
+      <span><span class="dot" style="background:#2ec4b6"></span>≤7 days</span>
+      <span><span class="dot" style="background:#ffb703"></span>≤30 days</span>
+      <span><span class="dot" style="background:#e63946"></span>>30 days</span>
+      <span><span class="dot" style="background:#6b7a8f"></span>still open</span>
+    </div>`);
+
   similar.slice(0, 5).forEach(s => {
     const m = new google.maps.Marker({
-      map: _resultsMap, position: {lat: s.lat, lng: s.lng},
-      icon: pinIcon('#00b4d8', 7), title: s.address,
+      map: _resultsMap,
+      position: {lat: s.lat, lng: s.lng},
+      icon: similarIcon(s.days, s.status),
+      title: `${s.raw || s.type} · ${s.days != null ? s.days + 'd' : (s.status || 'unknown')}`,
     });
     m.addListener('click', () => {
       iw.setContent(`<div class="gm-popup">
-        <div class="ttl">${s.raw || s.type}</div>
-        <div class="meta">${s.address} · ${s.borough} ${s.zip}</div>
-        <div class="row">Reported ${s.date}${s.days ? ` · closed in ${s.days} days` : ''}</div>
-        <span class="badge">${s.status}</span>
+        <div class="ttl">${escapeHtml(s.raw || s.type)}</div>
+        <div class="meta">${escapeHtml(s.address)} · ${escapeHtml(s.borough)} ${escapeHtml(s.zip)}</div>
+        <div class="row">Reported ${escapeHtml(s.date)}${s.days ? ` · closed in <strong>${s.days} days</strong>` : ''}</div>
+        <span class="badge">${escapeHtml(s.status)}</span>
       </div>`);
       iw.open({map: _resultsMap, anchor: m});
     });
     _mapMarkers.push(m);
-    sList.insertAdjacentHTML('beforeend',
-      `<div class="map-list-item"><span><strong>${s.raw || s.type}</strong><br>${s.address}</span><span class="meta">${s.date}${s.days ? ` · ${s.days}d` : ''}</span></div>`);
+
+    const tone = s.days == null ? 'open' : s.days <= 7 ? 'fast' : s.days <= 30 ? 'med' : 'slow';
+    sList.insertAdjacentHTML('beforeend', `
+      <div class="map-list-item">
+        <span><strong>${escapeHtml(s.raw || s.type)}</strong><br>${escapeHtml(s.address)}</span>
+        <span class="days-tag days-${tone}">${s.days != null ? s.days + 'd' : (s.status || '—')}</span>
+      </div>`);
   });
 
-  // Fit bounds to show complaint + nearest pins
+  // Fit bounds
   const bounds = new google.maps.LatLngBounds();
   _mapMarkers.forEach(m => bounds.extend(m.getPosition()));
   if(_mapMarkers.length > 1) _resultsMap.fitBounds(bounds, {top:50,left:50,right:50,bottom:50});
 }
 
-function pinIcon(color, size){
+function escapeHtml(s){
+  return String(s || '').replace(/[<>&"']/g, c => ({'<':'&lt;','>':'&gt;','&':'&amp;','"':'&quot;',"'":'&#39;'}[c]));
+}
+
+// SVG vendor icon: amber circle on top, name label below in a small chip
+function vendorIcon(name, isSelected){
+  const safe = escapeHtml(name);
+  const charW = 6.5;
+  const labelW = Math.min(180, Math.max(60, name.length * charW + 16));
+  const w = Math.max(labelW, 80);
+  const fill = isSelected ? '#a07f00' : '#ffb703';
+  const ring = isSelected ? '<circle cx="' + (w/2) + '" cy="14" r="14" fill="none" stroke="#a07f00" stroke-width="2.5"/>' : '';
+  const svg = `<svg xmlns='http://www.w3.org/2000/svg' width='${w}' height='52' viewBox='0 0 ${w} 52'>` +
+    ring +
+    `<circle cx='${w/2}' cy='14' r='10' fill='${fill}' stroke='#fff' stroke-width='2.5'/>` +
+    `<rect x='${(w-labelW)/2}' y='28' width='${labelW}' height='18' rx='4' fill='#ffffff' stroke='#e6e3da' stroke-width='1'/>` +
+    `<text x='${w/2}' y='40' font-family='Inter,system-ui,sans-serif' font-size='11' font-weight='600' fill='#0a1f3d' text-anchor='middle'>${safe}</text>` +
+    `</svg>`;
   return {
-    path: google.maps.SymbolPath.CIRCLE,
-    scale: size,
-    fillColor: color, fillOpacity: 1,
-    strokeColor: '#fff', strokeWeight: 2.5,
+    url: 'data:image/svg+xml;charset=utf-8,' + encodeURIComponent(svg),
+    anchor: new google.maps.Point(w/2, 14),
+    scaledSize: new google.maps.Size(w, 52),
+    labelOrigin: new google.maps.Point(w/2, 14),
   };
 }
+
+// SVG similar-complaint icon: dot color-coded by days, "Xd" chip below
+function similarIcon(days, status){
+  // Statuses that mean "not yet closed" — pin gray, not color-coded by days
+  const openLike = ['Open', 'Pending', 'Assigned', 'In Progress', 'Started'];
+  let color, label;
+  if(openLike.includes(status)){ color = '#6b7a8f'; label = 'open'; }
+  else if(days == null){ color = '#8899aa'; label = '—'; }
+  else if(days <= 7)  { color = '#2ec4b6'; label = days + 'd'; }
+  else if(days <= 30) { color = '#ffb703'; label = days + 'd'; }
+  else                { color = '#e63946'; label = days + 'd'; }
+  const svg = `<svg xmlns='http://www.w3.org/2000/svg' width='62' height='40' viewBox='0 0 62 40'>` +
+    `<circle cx='31' cy='12' r='8' fill='${color}' stroke='#fff' stroke-width='2'/>` +
+    `<rect x='13' y='22' width='36' height='14' rx='3' fill='#ffffff' stroke='#e6e3da' stroke-width='1'/>` +
+    `<text x='31' y='32' font-family='Inter,system-ui,sans-serif' font-size='10' font-weight='700' fill='${color}' text-anchor='middle'>${label}</text>` +
+    `</svg>`;
+  return {
+    url: 'data:image/svg+xml;charset=utf-8,' + encodeURIComponent(svg),
+    anchor: new google.maps.Point(31, 12),
+    scaledSize: new google.maps.Size(62, 40),
+  };
+}
+
+// (pinIcon helper removed — vendorIcon and similarIcon now handle pin SVGs)
 
 // Light-theme Google Maps style — desaturated, paper-like
 const LIGHT_MAP_STYLE = [
