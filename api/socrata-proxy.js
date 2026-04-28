@@ -12,11 +12,32 @@
 
 const DEFAULT_DATASET   = 'erm2-nwe9';
 const SOCRATA_DIRECT    = 'https://data.cityofnewyork.gov';
-// Public CORS proxies, tried in order until one works
+// Public CORS proxies, tried in order until one works.
+// Each entry: { wrap, headers } — different proxies require different headers.
 const PROXY_PROVIDERS = [
-  url => `https://corsproxy.io/?url=${encodeURIComponent(url)}`,
-  url => `https://api.allorigins.win/raw?url=${encodeURIComponent(url)}`,
-  url => `https://api.codetabs.com/v1/proxy?quest=${encodeURIComponent(url)}`,
+  {
+    wrap: url => `https://api.allorigins.win/raw?url=${encodeURIComponent(url)}`,
+    headers: () => ({}),
+    timeout: 18000,
+  },
+  {
+    wrap: url => `https://api.codetabs.com/v1/proxy/?quest=${url}`,
+    headers: () => ({}),
+    timeout: 12000,
+  },
+  {
+    wrap: url => `https://corsproxy.io/?url=${encodeURIComponent(url)}`,
+    headers: () => ({
+      'Origin':  'https://nyc-311-unresolved.vercel.app',
+      'Referer': 'https://nyc-311-unresolved.vercel.app/',
+    }),
+    timeout: 12000,
+  },
+  {
+    wrap: url => `https://thingproxy.freeboard.io/fetch/${url}`,
+    headers: () => ({}),
+    timeout: 12000,
+  },
 ];
 
 const TIMEOUT_MS      = 12000;
@@ -55,15 +76,24 @@ async function fetchWithTimeout(url, opts = {}) {
 
 async function fetchSocrata(directUrl, headers) {
   const errors = [];
-  for (const wrap of PROXY_PROVIDERS) {
-    const proxyUrl = wrap(directUrl);
+  for (const provider of PROXY_PROVIDERS) {
+    const proxyUrl = provider.wrap(directUrl);
+    const allHeaders = { ...headers, ...provider.headers() };
     try {
-      const r = await fetchWithTimeout(proxyUrl, { headers });
+      const r = await fetchWithTimeout(proxyUrl, {
+        headers: allHeaders,
+        timeout: provider.timeout,
+      });
       const body = await r.text();
-      if (r.ok) return { status: r.status, body, via: proxyUrl.split('?')[0] };
-      errors.push(`${proxyUrl.split('?')[0]} → ${r.status}`);
+      // Some proxies return 200 with HTML error pages — sniff for JSON
+      const looksJson = body.startsWith('[') || body.startsWith('{');
+      if (r.ok && looksJson) {
+        return { status: r.status, body, via: proxyUrl.split('?')[0].split('://')[1].split('/')[0] };
+      }
+      errors.push(`${proxyUrl.split('?')[0].split('://')[1].split('/')[0]} → ${r.ok ? 'non-JSON' : r.status}`);
     } catch (e) {
-      errors.push(`${proxyUrl.split('?')[0]} → ${e.message}`);
+      const host = proxyUrl.split('?')[0].split('://')[1].split('/')[0];
+      errors.push(`${host} → ${e.message}`);
     }
   }
   throw new Error(`All proxies failed: ${errors.join('; ')}`);

@@ -1,35 +1,43 @@
 // Vercel serverless function (Node.js): GET /api/health
-// Routes through public CORS proxies (same workaround as socrata-proxy.js)
-// because Vercel's serverless DNS can't resolve data.cityofnewyork.gov.
+// Routes through public CORS proxies because Vercel's serverless DNS
+// can't resolve data.cityofnewyork.gov.
 
 const SOCRATA_DIRECT = 'https://data.cityofnewyork.gov';
 const PROXIES = [
-  url => `https://corsproxy.io/?url=${encodeURIComponent(url)}`,
-  url => `https://api.allorigins.win/raw?url=${encodeURIComponent(url)}`,
-  url => `https://api.codetabs.com/v1/proxy?quest=${encodeURIComponent(url)}`,
+  { wrap: u => `https://api.allorigins.win/raw?url=${encodeURIComponent(u)}`, headers: () => ({}), timeout: 18000 },
+  { wrap: u => `https://api.codetabs.com/v1/proxy/?quest=${u}`, headers: () => ({}), timeout: 12000 },
+  { wrap: u => `https://corsproxy.io/?url=${encodeURIComponent(u)}`,
+    headers: () => ({ 'Origin': 'https://nyc-311-unresolved.vercel.app', 'Referer': 'https://nyc-311-unresolved.vercel.app/' }),
+    timeout: 12000 },
+  { wrap: u => `https://thingproxy.freeboard.io/fetch/${u}`, headers: () => ({}), timeout: 12000 },
 ];
-const TIMEOUT_MS = 8000;
 
 function pickYear() {
   const now = new Date();
   return now.getUTCMonth() > 1 ? now.getUTCFullYear() - 1 : now.getUTCFullYear() - 2;
 }
 
-async function tryProxies(url, headers) {
+async function tryProxies(url, baseHeaders) {
   const errs = [];
-  for (const wrap of PROXIES) {
-    const proxied = wrap(url);
+  for (const p of PROXIES) {
+    const proxied = p.wrap(url);
     const ctrl = new AbortController();
-    const timer = setTimeout(() => ctrl.abort(), TIMEOUT_MS);
+    const timer = setTimeout(() => ctrl.abort(), p.timeout);
+    const host = proxied.split('?')[0].split('://')[1].split('/')[0];
     try {
-      const r = await fetch(proxied, { headers, signal: ctrl.signal });
+      const r = await fetch(proxied, {
+        headers: { ...baseHeaders, ...p.headers() },
+        signal: ctrl.signal,
+      });
       const body = await r.text();
       clearTimeout(timer);
-      if (r.ok) return { status: r.status, body, via: proxied.split('?')[0] };
-      errs.push(`${proxied.split('?')[0]} → ${r.status}`);
+      if (r.ok && (body.startsWith('[') || body.startsWith('{'))) {
+        return { status: r.status, body, via: host };
+      }
+      errs.push(`${host} → ${r.ok ? 'non-JSON' : r.status}`);
     } catch (e) {
       clearTimeout(timer);
-      errs.push(`${proxied.split('?')[0]} → ${e.message}`);
+      errs.push(`${host} → ${e.message}`);
     }
   }
   throw new Error(errs.join('; '));
@@ -59,7 +67,7 @@ export default async function handler(req, res) {
     return res.end(JSON.stringify({
       ok, value: n, year, via: result.via,
       detail: ok
-        ? `live · ${year} Manhattan = ${n.toLocaleString()} complaints`
+        ? `live · ${year} Manhattan = ${n.toLocaleString()} complaints (via ${result.via})`
         : `unexpected count (${n}) — dataset schema may have changed`,
     }));
   } catch (err) {
