@@ -11,20 +11,13 @@
 
 (function(global){
   // ── Endpoint resolution ────────────────────────────────────────
-  // When running on a deployed origin (Vercel), proxy through our own
-  // serverless function so the browser never has to reach Socrata directly.
-  // This bypasses corporate firewalls, DNS filters, ad blockers, and
-  // browser-level content blockers that may target third-party APIs.
-  // When running on localhost or file://, hit Socrata directly (no
-  // proxy available in `python -m http.server`).
-  function resolveEndpoint(){
-    const host = (typeof location !== 'undefined') ? location.hostname : '';
-    const isLocal = host === 'localhost' || host === '127.0.0.1' || host === '' || host === '::1';
-    return isLocal
-      ? 'https://data.cityofnewyork.gov/resource/erm2-nwe9.json'
-      : '/api/socrata-proxy';
-  }
-  const DATASET = resolveEndpoint();
+  // Live data is served by a Cloudflare Worker at the URL below — needed
+  // because data.cityofnewyork.gov is unreachable from many networks
+  // (corporate firewalls, certain ISPs, AND Vercel's serverless DNS
+  // sandbox), but Cloudflare Workers can reach the Socrata-direct
+  // alias `nycopendata.socrata.com`. Worker source: workers/socrata-proxy.js
+  const CF_WORKER = 'https://nyc-streetlight-proxy.nddivecha.workers.dev';
+  const DATASET = CF_WORKER;
 
   // Today is in 2026, so 2025 is the most recent FULLY-CLOSED calendar year.
   // The full 2024 dataset is also still useful (verified baseline). Default
@@ -294,13 +287,21 @@
   // streetlight count for the active YEAR. We don't pin to a specific
   // number because the dataset shifts as records settle.
   async function healthCheck(){
+    // Use the Worker's purpose-built /health endpoint (already does a
+    // canary count + range check). Falls back to a direct soda() call
+    // if the /health endpoint is unreachable.
+    try{
+      const r = await fetch(`${CF_WORKER}/health`, {
+        signal: AbortSignal.timeout(6000)
+      });
+      if(r.ok) return await r.json();
+    }catch(e){ /* fall through */ }
     try{
       const r = await soda({
         $select:'count(*)',
         $where:`${baseFilter()} AND borough='MANHATTAN'`
       }, {timeout:6000});
       const n = +r[0]?.count_1 || +r[0]?.count || 0;
-      // Plausible Manhattan annual streetlight volume: 1,000 – 20,000
       const ok = n >= 1000 && n <= 20000;
       return {
         ok, value:n, year:YEAR,
@@ -309,10 +310,7 @@
           : `unexpected count (${n}) — dataset schema may have changed`
       };
     }catch(e){
-      return {
-        ok:false, value:null, year:YEAR,
-        detail: `Socrata unreachable: ${e.message}`
-      };
+      return { ok:false, value:null, year:YEAR, detail:`Socrata unreachable: ${e.message}` };
     }
   }
 
