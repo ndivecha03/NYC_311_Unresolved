@@ -12,6 +12,12 @@
 // Optional: set SOCRATA_APP_TOKEN env var in Vercel project settings to
 // lift the unauthenticated rate limit. Token never reaches the browser.
 
+// Vercel's default DNS resolver returns ENOTFOUND for data.cityofnewyork.gov
+// (and many other gov/.org domains). Force Node to use Cloudflare + Google
+// resolvers directly so the lookup succeeds.
+import dns from 'node:dns';
+dns.setServers(['1.1.1.1', '1.0.0.1', '8.8.8.8', '8.8.4.4']);
+
 const DEFAULT_DATASET = 'erm2-nwe9';
 const SOCRATA_HOST    = 'https://data.cityofnewyork.gov';
 const TIMEOUT_MS      = 12000;

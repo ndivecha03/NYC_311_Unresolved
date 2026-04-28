@@ -5,6 +5,11 @@
 //
 // Returns: {ok, value, year, detail}
 
+// Override Vercel's default DNS resolver, which returns ENOTFOUND for
+// data.cityofnewyork.gov. Force Cloudflare + Google nameservers.
+import dns from 'node:dns';
+dns.setServers(['1.1.1.1', '1.0.0.1', '8.8.8.8', '8.8.4.4']);
+
 const SOCRATA_URL = 'https://data.cityofnewyork.gov/resource/erm2-nwe9.json';
 const TIMEOUT_MS  = 8000;
 
