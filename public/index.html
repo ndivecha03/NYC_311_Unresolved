@@ -33,15 +33,15 @@
   <div class="wrap">
     <span class="eyebrow">● Live · NYC 311 · 2024</span>
     <h1 class="display">A city that never sleeps shouldn't <em>go dark.</em></h1>
-    <p class="lede">30,881 streetlight outages were reported to NYC 311 in 2024. One in three Manhattan complaints still sits unresolved a month later. We close that loop — in under sixty seconds.</p>
+    <p class="lede">33,835 streetlight outages were reported to NYC 311 in 2025 — a 10% jump over 2024. One in three Manhattan complaints still sits unresolved a month later. We close that loop — in under sixty seconds.</p>
     <div class="hero-cta">
       <a class="pill primary" href="#report">Report an outage <span class="arrow">→</span></a>
       <a class="pill ghost" href="#about">See the data <span class="arrow">→</span></a>
     </div>
     <div class="hero-stats">
-      <div class="hero-stat"><div class="num">30,881</div><div class="lbl">complaints filed in 2024</div></div>
+      <div class="hero-stat"><div class="num">33,835</div><div class="lbl">complaints filed in 2025</div></div>
       <div class="hero-stat"><div class="num bad">1 in 3</div><div class="lbl">Manhattan complaints unresolved at 30 days</div></div>
-      <div class="hero-stat"><div class="num">$15.4M</div><div class="lbl">est. annual local-vendor revenue</div></div>
+      <div class="hero-stat"><div class="num">$16.9M</div><div class="lbl">est. annual local-vendor revenue</div></div>
     </div>
   </div>
 </header>
@@ -55,8 +55,8 @@
         <h2>Complaints don't just sit. They get lost — sometimes for years.</h2>
       </div>
       <div>
-        <p>NYC DOT maintains 250,000 streetlamps. When one fails, residents call 311 and the complaint enters a queue that, in Manhattan, closes within thirty days only 67% of the time. The remaining third get duplicated, merged, or administratively shut without the lamp ever turning back on.</p>
-        <p>Meanwhile, 1,853 licensed local electricians live in the same neighborhoods — qualified, idle, and shut out of the pipeline. We connect the two.</p>
+        <p>NYC DOT maintains 250,000 streetlamps. When one fails, residents call 311 and the complaint enters a queue that, in Manhattan, closes within thirty days only 67% of the time. Citywide, that figure is climbing — total 311 streetlight reports rose from 30,881 in 2024 to 33,835 in 2025. The remaining third get duplicated, merged, or administratively shut without the lamp ever turning back on.</p>
+        <p>Meanwhile, 1,242 licensed local electricians live in the same neighborhoods — qualified, idle, and shut out of the pipeline. We connect the two.</p>
       </div>
     </div>
 
@@ -297,20 +297,36 @@
 <script src="data-loader.js"></script>
 <script>
 // ── Tabs ─────────────────────────────────────────────────────────
+// State for lazy map init: set on form submit, consumed when the user
+// first opens the map tab. Google Maps fails to render in a hidden
+// (display:none) container because the inner div has 0×0 dimensions
+// at construct time — so we defer init until the panel is visible.
+window._lastForm = null;
+window._mapInitialized = false;
+
 document.querySelectorAll('.tab').forEach(t=>{
   t.addEventListener('click',()=>{
     document.querySelectorAll('.tab').forEach(x=>x.classList.remove('active'));
     document.querySelectorAll('.tab-panel').forEach(x=>x.classList.remove('active'));
     t.classList.add('active');
     document.getElementById('panel-'+t.dataset.tab).classList.add('active');
-    // Google Maps caches container dimensions at init; trigger a resize
-    // when the map tab becomes visible so it lays out correctly.
-    if(t.dataset.tab === 'map' && window._resultsMap && window.google){
-      setTimeout(() => {
-        const c = window._resultsMap.getCenter();
-        google.maps.event.trigger(window._resultsMap, 'resize');
-        window._resultsMap.setCenter(c);
-      }, 50);
+
+    if(t.dataset.tab === 'map'){
+      // Lazy-init on first open
+      if(!window._mapInitialized && window._lastForm){
+        window._mapInitialized = true;
+        initResultsMap(window._lastForm).catch(err => {
+          console.error('Map init failed:', err);
+          window._mapInitialized = false;
+        });
+      } else if(window._resultsMap && window.google){
+        // Already initialized — trigger a resize in case container size changed
+        setTimeout(() => {
+          const c = window._resultsMap.getCenter();
+          google.maps.event.trigger(window._resultsMap, 'resize');
+          window._resultsMap.setCenter(c);
+        }, 50);
+      }
     }
   });
 });
@@ -546,8 +562,13 @@ function renderAll(d, form, errors){
   // Work order — kick off LLM generation in the background (non-blocking)
   generateWorkOrder(form, d);
 
-  // Map tab — geocode + render map + vendor/similar pins
-  initResultsMap(form);
+  // Map: stash the form for lazy init when the user opens the map tab.
+  // Initializing while the panel is display:none makes the map render blank.
+  window._lastForm = form;
+  window._mapInitialized = false;
+  // Reset placeholder text so the user knows what to do
+  const mc = document.getElementById('mapCanvas');
+  if(mc) mc.innerHTML = '<div class="map-placeholder">Click the <strong>Map &amp; vendors</strong> tab above to load the map.</div>';
 }
 
 // ── Work-order generation ───────────────────────────────────────
