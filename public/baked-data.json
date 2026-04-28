@@ -1,16 +1,16 @@
 {
   "_meta": {
-    "purpose": "Static dataset bundled with the dashboard. Page loads this first as a baseline, then overlays live Socrata results when the user's network can reach the Worker proxy. Browser also writes successful live fetches to localStorage so subsequent visits use the freshest snapshot.",
+    "purpose": "Static dataset bundled with the dashboard. Page loads this first; live Socrata results overlay when reachable.",
     "year": 2025,
-    "snapshot_at": "2026-04-27T00:00:00Z",
+    "snapshot_at": "2026-04-28T19:15:18.802710Z",
     "dataset": "erm2-nwe9 (NYC 311 Service Requests)",
-    "source": "Live snapshot via Cloudflare Worker proxy (nycopendata.socrata.com upstream). Volume + closure metrics measured directly. Descriptor mix and histograms scaled from 2024 ratios.",
+    "source": "Live snapshot via Cloudflare Worker proxy (https://nyc-streetlight-proxy.nddivecha.workers.dev)",
     "filter": "complaint_type = 'Street Light Condition'",
-    "regenerate_with": "python scripts/bake-from-worker.py 2025"
+    "regenerate_with": "python scripts/bake-from-worker.py"
   },
   "city": {
     "totalVolume": 33835,
-    "medianDays": 7
+    "medianDays": 8
   },
   "boroughs": {
     "Manhattan": {
@@ -19,24 +19,72 @@
       "closure7": 58.9,
       "closure30": 67.0,
       "closure90": 80.6,
-      "duplicates": 11.0,
-      "seasonality": [396, 412, 395, 477, 556, 557, 539, 537, 648, 604, 602, 476],
+      "duplicates": 0.0,
+      "seasonality": [
+        396,
+        412,
+        395,
+        477,
+        556,
+        557,
+        539,
+        537,
+        648,
+        604,
+        602,
+        476
+      ],
       "descriptor": {
-        "Street Light Out": 2342,
-        "Cycling": 695,
-        "Glassware/Fixture": 1131,
-        "Pole/Lamppost Damage": 786,
-        "Base Cover": 553,
-        "Other": 692
+        "Street Light Out": 4332,
+        "Traffic Signal Light": 282,
+        "Lamppost Base Door/Cover Open": 219,
+        "Multiple Street Lights Out": 183,
+        "Lamppost Wire Exposed": 166,
+        "Lamppost Damaged": 122,
+        "Street Light Dayburning": 113,
+        "Fixture/Luminaire Hanging": 98,
+        "Street Light Cycling": 85,
+        "Lamppost Leaning": 85,
+        "Lamppost Missing": 69,
+        "Street Light Lamp Missing": 61,
+        "Lamppost Knocked Down": 57,
+        "Fixture/Luminaire Out Of Position": 49,
+        "Street Light Lamp Dim": 48,
+        "Lamppost Base Door/Cover Missing": 44,
+        "Fixture/Luminaire Damaged": 33,
+        "Fixture/Luminaire Door Open": 29,
+        "Foreign Attachment On Lamppost": 21,
+        "Flood Light Lamp Out": 18
       },
       "histogram": [
-        {"label":"0-3","count":280},
-        {"label":"4-7","count":1100},
-        {"label":"8-14","count":1240},
-        {"label":"15-21","count":865},
-        {"label":"22-30","count":667},
-        {"label":"31-60","count":540},
-        {"label":"61+","count":203}
+        {
+          "label": "0-3",
+          "count": 2557
+        },
+        {
+          "label": "4-7",
+          "count": 1095
+        },
+        {
+          "label": "8-14",
+          "count": 375
+        },
+        {
+          "label": "15-21",
+          "count": 67
+        },
+        {
+          "label": "22-30",
+          "count": 58
+        },
+        {
+          "label": "31-60",
+          "count": 524
+        },
+        {
+          "label": "61+",
+          "count": 680
+        }
       ]
     },
     "Brooklyn": {
@@ -45,24 +93,72 @@
       "closure7": 34.3,
       "closure30": 80.6,
       "closure90": 89.1,
-      "duplicates": 6.5,
-      "seasonality": [658, 657, 654, 614, 617, 574, 668, 739, 793, 949, 810, 768],
+      "duplicates": 0.0,
+      "seasonality": [
+        658,
+        657,
+        654,
+        614,
+        617,
+        574,
+        668,
+        739,
+        793,
+        949,
+        810,
+        768
+      ],
       "descriptor": {
-        "Street Light Out": 3201,
-        "Cycling": 968,
-        "Glassware/Fixture": 1457,
-        "Pole/Lamppost Damage": 1003,
-        "Base Cover": 729,
-        "Other": 1143
+        "Street Light Out": 6560,
+        "Street Light Dayburning": 245,
+        "Lamppost Damaged": 182,
+        "Street Light Lamp Dim": 181,
+        "Lamppost Knocked Down": 164,
+        "Multiple Street Lights Out": 157,
+        "Lamppost Wire Exposed": 131,
+        "Lamppost Leaning": 131,
+        "Street Light Cycling": 115,
+        "Fixture/Luminaire Hanging": 87,
+        "Street Light Lamp Missing": 73,
+        "Traffic Signal Light": 59,
+        "Lamppost Base Door/Cover Open": 51,
+        "Lamppost Missing": 51,
+        "Fixture/Luminaire Out Of Position": 49,
+        "Flood Light Lamp Out": 42,
+        "Fixture/Luminaire Missing": 37,
+        "Lamppost Base Door/Cover Missing": 32,
+        "Lamppost Base Door/Cover Damaged": 31,
+        "Fixture/Luminaire Damaged": 28
       },
       "histogram": [
-        {"label":"0-3","count":340},
-        {"label":"4-7","count":1090},
-        {"label":"8-14","count":2440},
-        {"label":"15-21","count":1880},
-        {"label":"22-30","count":1105},
-        {"label":"31-60","count":770},
-        {"label":"61+","count":428}
+        {
+          "label": "0-3",
+          "count": 1202
+        },
+        {
+          "label": "4-7",
+          "count": 1713
+        },
+        {
+          "label": "8-14",
+          "count": 3695
+        },
+        {
+          "label": "15-21",
+          "count": 61
+        },
+        {
+          "label": "22-30",
+          "count": 184
+        },
+        {
+          "label": "31-60",
+          "count": 431
+        },
+        {
+          "label": "61+",
+          "count": 714
+        }
       ]
     },
     "Queens": {
@@ -71,24 +167,72 @@
       "closure7": 51.1,
       "closure30": 80.8,
       "closure90": 87.8,
-      "duplicates": 7.8,
-      "seasonality": [788, 721, 695, 715, 564, 583, 624, 668, 749, 778, 717, 653],
+      "duplicates": 0.0,
+      "seasonality": [
+        788,
+        721,
+        695,
+        715,
+        564,
+        583,
+        624,
+        668,
+        749,
+        778,
+        717,
+        653
+      ],
       "descriptor": {
-        "Street Light Out": 3104,
-        "Cycling": 940,
-        "Glassware/Fixture": 1409,
-        "Pole/Lamppost Damage": 977,
-        "Base Cover": 706,
-        "Other": 1119
+        "Street Light Out": 6332,
+        "Lamppost Knocked Down": 218,
+        "Multiple Street Lights Out": 200,
+        "Lamppost Missing": 166,
+        "Street Light Cycling": 134,
+        "Lamppost Wire Exposed": 122,
+        "Street Light Lamp Missing": 122,
+        "Street Light Dayburning": 122,
+        "Lamppost Damaged": 121,
+        "Lamppost Leaning": 118,
+        "Fixture/Luminaire Hanging": 98,
+        "Street Light Lamp Dim": 76,
+        "Fixture/Luminaire Out Of Position": 50,
+        "Lamppost Base Door/Cover Open": 47,
+        "Fixture/Luminaire Damaged": 38,
+        "Fixture/Luminaire Missing": 36,
+        "Fixture/Luminaire Door Open": 33,
+        "Lamppost Base Door/Cover Missing": 33,
+        "Lamppost Base Door/Cover Damaged": 31,
+        "Traffic Signal Light": 27
       },
       "histogram": [
-        {"label":"0-3","count":820},
-        {"label":"4-7","count":1880},
-        {"label":"8-14","count":2010},
-        {"label":"15-21","count":1140},
-        {"label":"22-30","count":820},
-        {"label":"31-60","count":1010},
-        {"label":"61+","count":449}
+        {
+          "label": "0-3",
+          "count": 2937
+        },
+        {
+          "label": "4-7",
+          "count": 1280
+        },
+        {
+          "label": "8-14",
+          "count": 1526
+        },
+        {
+          "label": "15-21",
+          "count": 613
+        },
+        {
+          "label": "22-30",
+          "count": 316
+        },
+        {
+          "label": "31-60",
+          "count": 354
+        },
+        {
+          "label": "61+",
+          "count": 670
+        }
       ]
     },
     "Bronx": {
@@ -97,24 +241,72 @@
       "closure7": 50.8,
       "closure30": 83.0,
       "closure90": 89.1,
-      "duplicates": 8.2,
-      "seasonality": [535, 564, 493, 453, 443, 454, 571, 656, 815, 711, 570, 486],
+      "duplicates": 0.0,
+      "seasonality": [
+        535,
+        564,
+        493,
+        453,
+        443,
+        454,
+        571,
+        656,
+        815,
+        711,
+        570,
+        486
+      ],
       "descriptor": {
-        "Street Light Out": 2543,
-        "Cycling": 765,
-        "Glassware/Fixture": 1147,
-        "Pole/Lamppost Damage": 797,
-        "Base Cover": 579,
-        "Other": 920
+        "Street Light Out": 5286,
+        "Fixture/Luminaire Hanging": 292,
+        "Multiple Street Lights Out": 177,
+        "Lamppost Knocked Down": 143,
+        "Street Light Cycling": 118,
+        "Street Light Dayburning": 80,
+        "Traffic Signal Light": 70,
+        "Lamppost Wire Exposed": 69,
+        "Street Light Lamp Missing": 65,
+        "Lamppost Missing": 57,
+        "Fixture/Luminaire Door Open": 57,
+        "Fixture/Luminaire Damaged": 42,
+        "Street Light Lamp Dim": 41,
+        "Lamppost Damaged": 40,
+        "Lamppost Leaning": 32,
+        "Fixture/Luminaire Missing": 25,
+        "Lamppost Base Door/Cover Missing": 25,
+        "Lamppost Base Door/Cover Open": 19,
+        "Fixture/Luminaire Out Of Position": 16,
+        "Glassware Hanging": 15
       },
       "histogram": [
-        {"label":"0-3","count":650},
-        {"label":"4-7","count":1450},
-        {"label":"8-14","count":1660},
-        {"label":"15-21","count":960},
-        {"label":"22-30","count":880},
-        {"label":"31-60","count":730},
-        {"label":"61+","count":421}
+        {
+          "label": "0-3",
+          "count": 2358
+        },
+        {
+          "label": "4-7",
+          "count": 1070
+        },
+        {
+          "label": "8-14",
+          "count": 1184
+        },
+        {
+          "label": "15-21",
+          "count": 743
+        },
+        {
+          "label": "22-30",
+          "count": 247
+        },
+        {
+          "label": "31-60",
+          "count": 259
+        },
+        {
+          "label": "61+",
+          "count": 468
+        }
       ]
     },
     "Staten Island": {
@@ -123,24 +315,72 @@
       "closure7": 23.4,
       "closure30": 87.7,
       "closure90": 95.8,
-      "duplicates": 5.4,
-      "seasonality": [198, 204, 215, 208, 194, 242, 333, 418, 474, 606, 418, 464],
+      "duplicates": 0.0,
+      "seasonality": [
+        198,
+        204,
+        215,
+        208,
+        194,
+        242,
+        333,
+        418,
+        474,
+        606,
+        418,
+        464
+      ],
       "descriptor": {
-        "Street Light Out": 1500,
-        "Cycling": 446,
-        "Glassware/Fixture": 678,
-        "Pole/Lamppost Damage": 470,
-        "Base Cover": 341,
-        "Other": 539
+        "Street Light Out": 3507,
+        "Street Light Cycling": 58,
+        "Street Light Dayburning": 55,
+        "Multiple Street Lights Out": 49,
+        "Fixture/Luminaire Hanging": 45,
+        "Lamppost Knocked Down": 38,
+        "Bracket Arm Missing": 25,
+        "Street Light Lamp Missing": 23,
+        "Street Light Lamp Dim": 21,
+        "Fixture/Luminaire Out Of Position": 21,
+        "Lamppost Damaged": 18,
+        "Lamppost Leaning": 18,
+        "New Con Ed Service Request": 17,
+        "Lamppost Wire Exposed": 17,
+        "Lamppost Missing": 10,
+        "Fixture/Luminaire Damaged": 8,
+        "Traffic Signal Light": 7,
+        "Fixture/Luminaire Missing": 7,
+        "Flood Light Lamp Out": 6,
+        "Fixture/Luminaire Door Open": 4
       },
       "histogram": [
-        {"label":"0-3","count":180},
-        {"label":"4-7","count":645},
-        {"label":"8-14","count":1080},
-        {"label":"15-21","count":720},
-        {"label":"22-30","count":540},
-        {"label":"31-60","count":345},
-        {"label":"61+","count":204}
+        {
+          "label": "0-3",
+          "count": 227
+        },
+        {
+          "label": "4-7",
+          "count": 702
+        },
+        {
+          "label": "8-14",
+          "count": 2490
+        },
+        {
+          "label": "15-21",
+          "count": 14
+        },
+        {
+          "label": "22-30",
+          "count": 54
+        },
+        {
+          "label": "31-60",
+          "count": 218
+        },
+        {
+          "label": "61+",
+          "count": 197
+        }
       ]
     }
   }
