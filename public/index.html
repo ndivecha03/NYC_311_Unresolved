@@ -1018,12 +1018,18 @@ async function initResultsMap(form){
     return;
   }
 
-  // Fresh map container
+  // Fresh map container — explicit pixel dimensions because Google Maps
+  // measures at construct time and 100% on a min-height parent collapses to 0.
   canvas.innerHTML = '';
   const mapEl = document.createElement('div');
-  mapEl.style.height = '100%';
-  mapEl.style.width = '100%';
+  mapEl.id = 'gmCanvas';
+  mapEl.style.height = '580px';
+  mapEl.style.width  = '100%';
   canvas.appendChild(mapEl);
+  // Force a synchronous reflow so the browser commits the size before
+  // Google Maps reads it.
+  // eslint-disable-next-line no-unused-expressions
+  mapEl.offsetHeight;
 
   await window._gmReady;
   _mapMarkers.forEach(m => m.setMap(null));
