@@ -12,14 +12,64 @@
 // Optional: set SOCRATA_APP_TOKEN env var in Vercel project settings to
 // lift the unauthenticated rate limit. Token never reaches the browser.
 
-// Vercel's default DNS resolver returns ENOTFOUND for data.cityofnewyork.gov
-// (and many other gov/.org domains). Force Node to use Cloudflare + Google
-// resolvers directly so the lookup succeeds.
-import dns from 'node:dns';
-dns.setServers(['1.1.1.1', '1.0.0.1', '8.8.8.8', '8.8.4.4']);
+// Vercel's serverless DNS sandbox returns ENOTFOUND for
+// data.cityofnewyork.gov. Workaround: use DNS-over-HTTPS to Cloudflare
+// 1.1.1.1, get the real IP, then fetch directly to that IP with proper
+// SNI/Host headers. This bypasses Vercel's DNS resolver entirely while
+// keeping the original hostname for TLS cert validation.
+
+import https from 'node:https';
 
 const DEFAULT_DATASET = 'erm2-nwe9';
 const SOCRATA_HOST    = 'https://data.cityofnewyork.gov';
+const SOCRATA_HOSTNAME = 'data.cityofnewyork.gov';
+
+// Tiny in-memory cache so we don't DoH-lookup on every request
+let _cachedIp = null, _cachedAt = 0;
+const IP_TTL_MS = 5 * 60 * 1000;
+
+async function resolveIp(hostname) {
+  if (_cachedIp && Date.now() - _cachedAt < IP_TTL_MS) return _cachedIp;
+  const r = await fetch(
+    `https://1.1.1.1/dns-query?name=${hostname}&type=A`,
+    { headers: { 'accept': 'application/dns-json' } }
+  );
+  const j = await r.json();
+  const ans = (j.Answer || []).find(a => a.type === 1);
+  if (!ans) throw new Error(`DoH: no A record for ${hostname}`);
+  _cachedIp = ans.data;
+  _cachedAt = Date.now();
+  return _cachedIp;
+}
+
+// Fetch by IP with explicit SNI hostname so TLS cert validation passes
+function httpsGetByIp(ip, hostname, path, extraHeaders = {}) {
+  return new Promise((resolve, reject) => {
+    const req = https.get({
+      host: ip,
+      port: 443,
+      path,
+      servername: hostname,    // SNI
+      headers: {
+        'Host': hostname,
+        'Accept': 'application/json',
+        'User-Agent': 'NYC-Street-Lights/1.0 (Vercel)',
+        ...extraHeaders,
+      },
+      timeout: 12000,
+    }, (res) => {
+      const chunks = [];
+      res.on('data', c => chunks.push(c));
+      res.on('end', () => resolve({
+        status: res.statusCode,
+        body: Buffer.concat(chunks).toString('utf-8'),
+        headers: res.headers,
+      }));
+    });
+    req.on('error', reject);
+    req.on('timeout', () => req.destroy(new Error('Request timed out')));
+  });
+}
 const TIMEOUT_MS      = 12000;
 const MAX_QUERY_LEN   = 4096;
 const ALLOWED_PARAMS  = new Set([
@@ -74,41 +124,30 @@ export default async function handler(req, res) {
   }
   sp.delete('_dataset');
 
-  const forwardUrl = `${SOCRATA_HOST}/resource/${dataset}.json?${sp.toString()}`;
-
-  const headers = {
-    'Accept':     'application/json',
-    'User-Agent': 'NYC-Street-Lights/1.0 (Vercel)',
-  };
-  if (process.env.SOCRATA_APP_TOKEN) {
-    headers['X-App-Token'] = process.env.SOCRATA_APP_TOKEN;
-  }
-
-  const ctrl = new AbortController();
-  const timer = setTimeout(() => ctrl.abort(), TIMEOUT_MS);
+  const path = `/resource/${dataset}.json?${sp.toString()}`;
+  const extra = {};
+  if (process.env.SOCRATA_APP_TOKEN) extra['X-App-Token'] = process.env.SOCRATA_APP_TOKEN;
 
   try {
-    const r = await fetch(forwardUrl, { headers, signal: ctrl.signal });
-    const body = await r.text();
-    clearTimeout(timer);
+    const ip = await resolveIp(SOCRATA_HOSTNAME);
+    const result = await httpsGetByIp(ip, SOCRATA_HOSTNAME, path, extra);
 
-    if (!r.ok) {
-      return reply(res, r.status, {
-        error: `Socrata HTTP ${r.status}`,
-        detail: body.slice(0, 400),
+    if (result.status >= 400) {
+      return reply(res, result.status, {
+        error: `Socrata HTTP ${result.status}`,
+        detail: result.body.slice(0, 400),
       });
     }
     setCors(res);
     res.statusCode = 200;
     res.setHeader('Content-Type', 'application/json');
     res.setHeader('Cache-Control', 'public, max-age=300, s-maxage=300');
-    res.end(body);
+    res.end(result.body);
   } catch (err) {
-    clearTimeout(timer);
     return reply(res, 502, {
       error: `Cannot reach Socrata: ${err.message || err.toString()}`,
       cause: err.cause?.message || null,
-      url: forwardUrl,
+      ip: _cachedIp,
     });
   }
 }
