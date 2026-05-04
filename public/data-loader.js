@@ -330,6 +330,7 @@
     // ── Pre-fill from baked data so charts always have something ──────
     if(bakedB){
       data.boroughVolume = bakedB.volume;
+      data.yearlyVolume = bakedB.yearlyVolume || null;
       data.zipVolume = Math.round(bakedB.volume * 0.12); // approx — replaced if live succeeds
       data.medianDays = {
         thisZip: bakedB.medianDays + 4,

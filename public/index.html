@@ -161,9 +161,9 @@
       <!-- ROW 1: borough volume KPI + 7/30/90 gauges -->
       <div class="chart-grid wide">
         <div class="chart-card">
-          <div class="head"><h3>Borough volume · 2025</h3><span class="badge verified">Verified</span></div>
-          <div class="sub" id="s-volume">Total streetlight complaints filed in this borough</div>
-          <div class="body" id="c-volume" style="display:flex;align-items:center;justify-content:center"></div>
+          <div class="head"><h3>Volume trend · 2020–2025</h3><span class="badge verified">Verified</span></div>
+          <div class="sub" id="s-volume">Annual streetlight complaints filed in this borough</div>
+          <div class="body" id="c-volume"></div>
           <a class="src" href="sources.html#boroughVolume"><span class="ico">i</span> Source: NYC OpenData erm2-nwe9</a>
         </div>
         <div class="chart-card">
@@ -257,8 +257,8 @@
   </div>
 </footer>
 
-<script src="charts.js"></script>
-<script src="data-loader.js"></script>
+<script src="charts.js?v=20260504a"></script>
+<script src="data-loader.js?v=20260504a"></script>
 <script>
 // ── Tabs ─────────────────────────────────────────────────────────
 // State for lazy map init: set on form submit, consumed when the user
@@ -386,19 +386,42 @@ function renderAll(d, form, errors){
   const yr = (window.DataLoader && DataLoader.getYear) ? DataLoader.getYear() : 2025;
 
   // Subtitles
-  setText('s-volume', `Streetlight complaints filed in ${borough} during ${yr}`);
   setText('s-desc',   `${borough} · ${yr}`);
   setText('s-gauges', `${borough} · ${yr}`);
   setText('s-hist',   `${borough} · ${yr} · highlighted = where this complaint is forecast to land`);
 
-  // ── 1. Borough volume (single big number) ──────────────────────
+  // ── 1. Borough volume — multi-year line graph ──────────────────
   const volEl = document.getElementById('c-volume');
-  if(volEl){
+  if(volEl && d.yearlyVolume?.values?.length){
+    const yv = d.yearlyVolume;
+    const latest = yv.values[yv.values.length - 1];
+    const earliest = yv.values[0];
+    const deltaPct = earliest ? ((latest - earliest) / earliest) * 100 : 0;
+    const arrow = deltaPct >= 0 ? '↑' : '↓';
+    const tone = deltaPct >= 0 ? 'var(--red)' : 'var(--green)';
+
+    setText('s-volume',
+      `${borough} · ${yv.years[0]}–${yv.years[yv.years.length-1]} · ` +
+      `${earliest.toLocaleString()} → ${latest.toLocaleString()} ` +
+      `(${arrow} ${Math.abs(deltaPct).toFixed(0)}%)`
+    );
+
+    Charts.sparkline(volEl, {
+      series: [{
+        name: borough,
+        color: Charts.PALETTE.teal,
+        points: yv.values.map((v, i) => ({x: yv.years[i], y: v})),
+      }],
+      xLabels: yv.years.map(String),
+    });
+  } else if(volEl){
+    // Fallback if yearly data isn't available
     volEl.innerHTML = `
       <div style="text-align:center">
-        <div style="font-family:Fraunces,Georgia,serif;font-size:84px;font-weight:600;line-height:1;letter-spacing:-.03em;color:var(--ink)">${fmt(d.boroughVolume)}</div>
-        <div style="margin-top:14px;font-size:13px;color:var(--ink-mute);text-transform:uppercase;letter-spacing:.1em;font-weight:600">total complaints filed</div>
+        <div style="font-family:Fraunces,Georgia,serif;font-size:64px;font-weight:600;line-height:1;letter-spacing:-.03em;color:var(--ink)">${fmt(d.boroughVolume)}</div>
+        <div style="margin-top:14px;font-size:13px;color:var(--ink-mute);text-transform:uppercase;letter-spacing:.1em;font-weight:600">${yr} total</div>
       </div>`;
+    setText('s-volume', `${borough} · ${yr}`);
   }
 
   // ── 2. % closed within 7 / 30 / 90 days (3 gauges) ─────────────

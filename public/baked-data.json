@@ -15,6 +15,11 @@
   "boroughs": {
     "Manhattan": {
       "volume": 6199,
+      "yearlyVolume": {
+        "_meta": "Annual streetlight complaint volume per borough — Socrata's Street Light Condition complaint_type starts in 2020.",
+        "years": [2020, 2021, 2022, 2023, 2024, 2025],
+        "values": [5625, 10971, 10792, 6639, 4962, 6199]
+      },
       "medianDays": 4,
       "closure7": 58.9,
       "closure30": 67.0,
@@ -89,6 +94,11 @@
     },
     "Brooklyn": {
       "volume": 8501,
+      "yearlyVolume": {
+        "_meta": "Annual streetlight complaint volume per borough — Socrata's Street Light Condition complaint_type starts in 2020.",
+        "years": [2020, 2021, 2022, 2023, 2024, 2025],
+        "values": [12489, 11756, 10911, 9512, 8639, 8501]
+      },
       "medianDays": 9,
       "closure7": 34.3,
       "closure30": 80.6,
@@ -163,6 +173,11 @@
     },
     "Queens": {
       "volume": 8255,
+      "yearlyVolume": {
+        "_meta": "Annual streetlight complaint volume per borough — Socrata's Street Light Condition complaint_type starts in 2020.",
+        "years": [2020, 2021, 2022, 2023, 2024, 2025],
+        "values": [14393, 12042, 13258, 9222, 8571, 8255]
+      },
       "medianDays": 6,
       "closure7": 51.1,
       "closure30": 80.8,
@@ -237,6 +252,11 @@
     },
     "Bronx": {
       "volume": 6751,
+      "yearlyVolume": {
+        "_meta": "Annual streetlight complaint volume per borough — Socrata's Street Light Condition complaint_type starts in 2020.",
+        "years": [2020, 2021, 2022, 2023, 2024, 2025],
+        "values": [11597, 15502, 17203, 6903, 6184, 6751]
+      },
       "medianDays": 7,
       "closure7": 50.8,
       "closure30": 83.0,
@@ -311,6 +331,11 @@
     },
     "Staten Island": {
       "volume": 3974,
+      "yearlyVolume": {
+        "_meta": "Annual streetlight complaint volume per borough — Socrata's Street Light Condition complaint_type starts in 2020.",
+        "years": [2020, 2021, 2022, 2023, 2024, 2025],
+        "values": [4852, 4176, 4684, 2103, 2318, 3974]
+      },
       "medianDays": 9,
       "closure7": 23.4,
       "closure30": 87.7,
