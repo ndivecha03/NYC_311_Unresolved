@@ -237,7 +237,9 @@ section.alt{background:var(--bg-alt)}
 .vendor-prompt strong{color:var(--ink)}
 .vendor-prompt .inline-link{color:var(--teal-deep);text-decoration:none;font-weight:600;margin-left:4px}
 .vendor-prompt .inline-link:hover{text-decoration:underline}
-.vendor-card{cursor:pointer;transition:background .15s, border-color .15s;padding:12px 8px;border-radius:8px;align-items:center}
+.vendor-card{cursor:pointer;transition:background .15s, border-color .15s;padding:12px 8px;border-radius:8px;align-items:center;gap:12px}
+.vendor-rank{flex:0 0 28px;width:28px;height:28px;border-radius:50%;background:var(--amber);color:var(--ink);font-family:Inter,sans-serif;font-weight:800;font-size:13px;display:flex;align-items:center;justify-content:center;border:2px solid #fff;box-shadow:0 0 0 1.5px var(--amber)}
+.vendor-card.selected .vendor-rank{background:#a07f00;color:#fff;box-shadow:0 0 0 1.5px #a07f00}
 .vendor-card:hover{background:var(--bg-alt)}
 .vendor-card.selected{background:#fff7df;border-left:3px solid var(--amber);padding-left:8px}
 .vendor-card.selected .vendor-name strong{color:#0a1f3d}
