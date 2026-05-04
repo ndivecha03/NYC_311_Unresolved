@@ -48,7 +48,10 @@
   //   2. baked-data.json (committed to repo)             — site default
   // The "live overlay" path additionally writes successful Socrata fetches
   // back to localStorage so subsequent visits use the freshest snapshot.
-  const LS_KEY = 'nycSL.cachedSnapshot.v1';
+  // Bumped to v2 when yearlyVolume was added to the schema; old v1 caches
+  // didn't carry that field and would silently fall through to the old
+  // big-number rendering path.
+  const LS_KEY = 'nycSL.cachedSnapshot.v2';
   const LS_MAX_AGE_DAYS = 7;
   let _baked = null;
 

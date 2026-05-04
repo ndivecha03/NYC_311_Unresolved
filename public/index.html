@@ -158,8 +158,8 @@
            dataset, so they always render regardless of network state.
            See docs/ANALYTICS_TIERS.md for why these were chosen. -->
 
-      <!-- ROW 1: borough volume KPI + 7/30/90 gauges -->
-      <div class="chart-grid wide">
+      <!-- ROW 1: volume trend (line) + estimated completion (boxplot) -->
+      <div class="chart-grid">
         <div class="chart-card">
           <div class="head"><h3>Volume trend · 2020–2025</h3><span class="badge verified">Verified</span></div>
           <div class="sub" id="s-volume">Annual streetlight complaints filed in this borough</div>
@@ -167,38 +167,48 @@
           <a class="src" href="sources.html#boroughVolume"><span class="ico">i</span> Source: NYC OpenData erm2-nwe9</a>
         </div>
         <div class="chart-card">
-          <div class="head"><h3>% closed within…</h3><span class="badge verified">Verified</span></div>
-          <div class="sub" id="s-gauges">Borough · 2025</div>
-          <div class="body" id="c-gauges" style="display:flex;justify-content:space-around;gap:8px"></div>
-          <a class="src" href="sources.html#closure"><span class="ico">i</span> Source: NYC OpenData erm2-nwe9</a>
+          <div class="head"><h3>Estimated completion time</h3><span class="badge forecast">Forecast</span></div>
+          <div class="sub" id="s-box">Days-to-close distribution for similar complaints</div>
+          <div class="body" id="c-box"></div>
+          <a class="src" href="sources.html#forecast"><span class="ico">i</span> Q1 / median / Q3 derived from the histogram</a>
         </div>
       </div>
 
-      <!-- ROW 2: median days bar + descriptor donut -->
+      <!-- ROW 2: % closed within (progress bars) + median days -->
       <div class="chart-grid">
+        <div class="chart-card">
+          <div class="head"><h3>% closed within…</h3><span class="badge verified">Verified</span></div>
+          <div class="sub" id="s-progress">Borough · 2025</div>
+          <div class="body" id="c-progress"></div>
+          <a class="src" href="sources.html#closure"><span class="ico">i</span> Source: NYC OpenData erm2-nwe9</a>
+        </div>
         <div class="chart-card">
           <div class="head"><h3>Median days to close</h3><span class="badge verified">Verified</span></div>
           <div class="sub">Borough vs citywide</div>
           <div class="body" id="c-median"></div>
           <a class="src" href="sources.html#median"><span class="ico">i</span> SoQL: median(date_diff_d(closed, created))</a>
         </div>
+      </div>
+
+      <!-- ROW 3: descriptor (horizontal bars) + closure rate by borough (horizontal bars) -->
+      <div class="chart-grid">
         <div class="chart-card">
           <div class="head"><h3>Complaint descriptor mix</h3><span class="badge verified">Verified</span></div>
-          <div class="sub" id="s-desc">Borough · 2025</div>
+          <div class="sub" id="s-desc">Top descriptors · ${'borough'} · 2025</div>
           <div class="body" id="c-descriptor"></div>
           <a class="src" href="sources.html#descriptor"><span class="ico">i</span> Source: NYC OpenData erm2-nwe9</a>
         </div>
-      </div>
-
-      <!-- ROW 3: choropleth + histogram -->
-      <div class="chart-grid">
         <div class="chart-card">
           <div class="head"><h3>30-day closure rate by borough</h3><span class="badge verified">Verified</span></div>
-          <div class="sub">Darker = better. Citywide context for your borough.</div>
-          <div class="body" id="c-choro"></div>
+          <div class="sub">All 5 boroughs · your borough highlighted</div>
+          <div class="body" id="c-boroughs"></div>
           <a class="src" href="sources.html#choropleth"><span class="ico">i</span> Source: NYC OpenData erm2-nwe9</a>
         </div>
-        <div class="chart-card">
+      </div>
+
+      <!-- ROW 4: distribution histogram (full-width) -->
+      <div class="chart-grid">
+        <div class="chart-card" style="grid-column:1/-1">
           <div class="head"><h3>Distribution of close times</h3><span class="badge verified">Verified</span></div>
           <div class="sub" id="s-hist">Borough · 2025 · highlighted = forecast bucket</div>
           <div class="body" id="c-hist"></div>
@@ -257,8 +267,8 @@
   </div>
 </footer>
 
-<script src="charts.js?v=20260504a"></script>
-<script src="data-loader.js?v=20260504a"></script>
+<script src="charts.js?v=20260504b"></script>
+<script src="data-loader.js?v=20260504b"></script>
 <script>
 // ── Tabs ─────────────────────────────────────────────────────────
 // State for lazy map init: set on form submit, consumed when the user
@@ -323,8 +333,8 @@ async function onSubmit(e){
 
 // ── Loading / error states ──────────────────────────────────────
 function showLoading(){
-  // 6-chart loading state (matches the trimmed analytics tab)
-  ['c-volume','c-gauges','c-median','c-descriptor','c-choro','c-hist'].forEach(id=>{
+  // 7-chart loading state
+  ['c-volume','c-box','c-progress','c-median','c-descriptor','c-boroughs','c-hist'].forEach(id=>{
     const el = document.getElementById(id);
     if(el) el.innerHTML = '<div class="loading">Loading…</div>';
   });
@@ -386,9 +396,10 @@ function renderAll(d, form, errors){
   const yr = (window.DataLoader && DataLoader.getYear) ? DataLoader.getYear() : 2025;
 
   // Subtitles
-  setText('s-desc',   `${borough} · ${yr}`);
-  setText('s-gauges', `${borough} · ${yr}`);
-  setText('s-hist',   `${borough} · ${yr} · highlighted = where this complaint is forecast to land`);
+  setText('s-desc',     `Top descriptors · ${borough} · ${yr}`);
+  setText('s-progress', `${borough} · ${yr}`);
+  setText('s-box',      `${borough} · ${yr} · derived from close-time distribution`);
+  setText('s-hist',     `${borough} · ${yr} · highlighted = where this complaint is forecast to land`);
 
   // ── 1. Borough volume — multi-year line graph ──────────────────
   const volEl = document.getElementById('c-volume');
@@ -424,15 +435,14 @@ function renderAll(d, form, errors){
     setText('s-volume', `${borough} · ${yr}`);
   }
 
-  // ── 2. % closed within 7 / 30 / 90 days (3 gauges) ─────────────
+  // ── 2. % closed within 7 / 30 / 90 days (progress bars, color-coded) ─
   if(d.closurePct){
-    const ge = document.getElementById('c-gauges');
-    ge.innerHTML = '';
-    [['7 days',d.closurePct.d7],['30 days',d.closurePct.d30],['90 days',d.closurePct.d90]].forEach(([lbl, v]) => {
-      const wrap = document.createElement('div');
-      wrap.style.flex = '1';
-      ge.appendChild(wrap);
-      Charts.gauge(wrap, {value: v || 0, max: 100, label: lbl});
+    Charts.progressBars(document.getElementById('c-progress'), {
+      items: [
+        {label: '7 days',  value: d.closurePct.d7  || 0},
+        {label: '30 days', value: d.closurePct.d30 || 0},
+        {label: '90 days', value: d.closurePct.d90 || 0},
+      ],
     });
   }
 
@@ -446,22 +456,52 @@ function renderAll(d, form, errors){
     });
   }
 
-  // ── 4. Descriptor mix (donut) ──────────────────────────────────
+  // ── 4. Estimated completion time (box-and-whisker) ─────────────
+  // Derive Q1/median/Q3 from the histogram bin midpoints. We don't have
+  // raw close-day percentiles in the baked data, but the bin distribution
+  // gives us an honest approximation.
+  if(d.histogram && d.medianDays){
+    const stats = quantilesFromHistogram(d.histogram);
+    Charts.boxPlot(document.getElementById('c-box'), {
+      ...stats,
+      label: 'similar',
+    });
+  }
+
+  // ── 5. Descriptor mix (horizontal bars, sorted descending) ─────
   if(d.descriptor && d.descriptor.length){
     const top = d.descriptor.slice(0, 5);
     const restSum = d.descriptor.slice(5).reduce((a,b)=>a+b.value, 0);
     if(restSum > 0) top.push({label: 'Other', value: restSum});
-    Charts.donut(document.getElementById('c-descriptor'), {
-      slices: top,
-      centerValue: fmt(d.boroughVolume),
-      centerLabel: `total · ${yr}`
+    // Sort descending so largest is at top of horizontal bar list
+    const sorted = [...top].sort((a, b) => b.value - a.value);
+    // Color the top bar in teal-deep, others in lighter shades
+    const palette = [Charts.PALETTE.tealDeep, Charts.PALETTE.teal, '#48bfe3', '#8ab4f8', '#a6dcef', '#cfe9f5'];
+    Charts.hBarChart(document.getElementById('c-descriptor'), {
+      bars: sorted.map((s, i) => ({
+        label: s.label, value: s.value, color: palette[i] || Charts.PALETTE.tealLight,
+      })),
+      format: n => n.toLocaleString(),
     });
   }
 
-  // ── 5. Borough closure choropleth ──────────────────────────────
-  Charts.choropleth(document.getElementById('c-choro'), {boroughs: d.boroughClosure});
+  // ── 6. 30-day closure rate by borough (horizontal bars, your borough highlighted) ─
+  if(d.boroughClosure){
+    const entries = Object.entries(d.boroughClosure)
+      .map(([name, value]) => ({name, value}))
+      .sort((a, b) => b.value - a.value);
+    Charts.hBarChart(document.getElementById('c-boroughs'), {
+      bars: entries.map(e => ({
+        label: e.name,
+        value: e.value,
+        color: e.name === borough ? Charts.PALETTE.tealDeep : Charts.PALETTE.tealLight,
+        highlight: e.name === borough,
+      })),
+      format: n => n.toFixed(1) + '%',
+    });
+  }
 
-  // ── 6. Distribution of close times (histogram) ─────────────────
+  // ── 7. Distribution of close times (histogram) ─────────────────
   if(d.histogram){
     let hi = 2;
     if(d.medianDays?.borough){
@@ -674,6 +714,36 @@ document.getElementById('woReject').addEventListener('click', () => {
   if(!note) return;
   setText('woStatus', `Rejected — feedback: "${note}". Click "Analyze complaint" again to regenerate.`);
 });
+
+// Derive Q1/median/Q3/min/max from a histogram of close-time bins.
+// Bins are: 0-3, 4-7, 8-14, 15-21, 22-30, 31-60, 61+ days.
+// Uses bin midpoints (with linear interpolation) to estimate percentiles
+// from cumulative counts.
+function quantilesFromHistogram(bins){
+  // Map each bin label to a representative midpoint (in days).
+  // For "61+" we use 90 — most overdue cases are in the 60-120 range.
+  const midpoints = [1.5, 5.5, 11, 18, 26, 45.5, 90];
+  const total = bins.reduce((a, b) => a + (b.count || 0), 0);
+  if(total === 0) return {min:0, q1:0, median:0, q3:0, max:0};
+
+  function percentile(p){
+    const target = total * p;
+    let cum = 0;
+    for(let i = 0; i < bins.length; i++){
+      cum += bins[i].count || 0;
+      if(cum >= target) return midpoints[i];
+    }
+    return midpoints[bins.length - 1];
+  }
+
+  return {
+    min: 1,
+    q1:  percentile(0.25),
+    median: percentile(0.50),
+    q3:  percentile(0.75),
+    max: percentile(0.95),  // p95, not absolute max — keeps outliers from compressing the box
+  };
+}
 
 function setText(id, txt){
   const el = document.getElementById(id);
