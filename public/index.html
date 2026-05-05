@@ -261,8 +261,22 @@
         <div class="map-side">
           <div class="map-legend">
             <div class="legend-item"><span class="pin pin-complaint"></span> Your complaint</div>
-            <div class="legend-item"><span class="pin pin-vendor"></span> Licensed electricians within 2 mi</div>
+            <div class="legend-item">
+              <span class="pin pin-vendor-bolt" aria-hidden="true">
+                <svg viewBox="0 0 24 24" width="16" height="16">
+                  <path d="M14,2 L5,14 L11,14 L9,22 L19,10 L13,10 L16,2 Z" fill="#ffb703" stroke="#fff" stroke-width="1.2" stroke-linejoin="round"/>
+                </svg>
+              </span>
+              Licensed electricians within 2 mi
+            </div>
             <div class="legend-item"><span class="pin pin-similar"></span> Similar past complaints (last 12 mo)</div>
+            <div class="legend-sub">
+              <span class="legend-sub-label">Days-to-close badge color:</span>
+              <span class="day-chip" style="background:var(--teal-soft);color:var(--teal-deep)">&lt;7d</span>
+              <span class="day-chip" style="background:var(--amber-soft);color:#7a5800">8–30d</span>
+              <span class="day-chip" style="background:var(--red-soft);color:#a32b36">&gt;30d</span>
+              <span class="day-chip" style="background:var(--bg-alt);color:var(--ink-mute)">open</span>
+            </div>
           </div>
           <div class="map-list" id="vendorList"><div class="lbl">Nearest vendors</div></div>
           <div class="map-list" id="similarList"><div class="lbl">Similar resolved complaints</div></div>
@@ -304,8 +318,8 @@
   </div>
 </footer>
 
-<script src="charts.js?v=20260505b"></script>
-<script src="data-loader.js?v=20260505b"></script>
+<script src="charts.js?v=20260505c"></script>
+<script src="data-loader.js?v=20260505c"></script>
 <script>
 // ── Tabs ─────────────────────────────────────────────────────────
 // State for lazy map init: set on form submit, consumed when the user
@@ -484,6 +498,7 @@ function renderAll(d, form, errors){
         points: yv.values.map((v, i) => ({x: yv.years[i], y: v})),
       }],
       xLabels: yv.years.map(String),
+      labelAllPoints: true,
     });
   } else if(volEl){
     // Fallback if yearly data isn't available
@@ -799,13 +814,18 @@ document.getElementById('woReject').addEventListener('click', () => {
 });
 
 // Derive Q1/median/Q3/min/max from a histogram of close-time bins.
-// Bins are: 0-3, 4-7, 8-14, 15-21, 22-30, 31-60, 61+ days.
-// Uses bin midpoints (with linear interpolation) to estimate percentiles
-// from cumulative counts.
+// Bins: 0-3, 4-7, 8-14, 15-21, 22-30, 31-60, 61+ days.
+//
+// Returning bin midpoints would collapse Q1/median/Q3 to the same value
+// when they all fall inside one bin (e.g. all three in "8-14" would all
+// be 11). Instead we interpolate within the bin: for each percentile we
+// find the bin that crosses it, then linearly interpolate based on how
+// far through that bin's count we are.
 function quantilesFromHistogram(bins){
-  // Map each bin label to a representative midpoint (in days).
-  // For "61+" we use 90 — most overdue cases are in the 60-120 range.
-  const midpoints = [1.5, 5.5, 11, 18, 26, 45.5, 90];
+  // [low, high] day range for each bin label
+  const ranges = [
+    [0, 3], [4, 7], [8, 14], [15, 21], [22, 30], [31, 60], [61, 120],
+  ];
   const total = bins.reduce((a, b) => a + (b.count || 0), 0);
   if(total === 0) return {min:0, q1:0, median:0, q3:0, max:0};
 
@@ -813,10 +833,16 @@ function quantilesFromHistogram(bins){
     const target = total * p;
     let cum = 0;
     for(let i = 0; i < bins.length; i++){
-      cum += bins[i].count || 0;
-      if(cum >= target) return midpoints[i];
+      const c = bins[i].count || 0;
+      if(cum + c >= target){
+        // The percentile cut falls inside this bin.
+        const [lo, hi] = ranges[i];
+        const fraction = c > 0 ? (target - cum) / c : 0;
+        return lo + (hi - lo) * fraction;
+      }
+      cum += c;
     }
-    return midpoints[bins.length - 1];
+    return ranges[ranges.length - 1][1];
   }
 
   return {
@@ -824,7 +850,7 @@ function quantilesFromHistogram(bins){
     q1:  percentile(0.25),
     median: percentile(0.50),
     q3:  percentile(0.75),
-    max: percentile(0.95),  // p95, not absolute max — keeps outliers from compressing the box
+    max: percentile(0.95),  // p95 to keep outliers from squashing the box
   };
 }
 
@@ -1299,12 +1325,13 @@ async function initResultsMap(form){
   const sList = document.getElementById('similarList');
   sList.innerHTML = '<div class="lbl">Similar resolved complaints</div>';
 
-  // Legend explaining the color coding
+  // Legend explaining the color coding (matches the days-tag chip colors:
+  // blue <7d, yellow 8-30d, red >30d, gray open)
   sList.insertAdjacentHTML('beforeend', `
     <div class="similar-legend">
-      <span><span class="dot" style="background:#2ec4b6"></span>≤7 days</span>
-      <span><span class="dot" style="background:#ffb703"></span>≤30 days</span>
-      <span><span class="dot" style="background:#e63946"></span>>30 days</span>
+      <span><span class="dot" style="background:#0077b6"></span>&lt;7 days</span>
+      <span><span class="dot" style="background:#ffb703"></span>8–30 days</span>
+      <span><span class="dot" style="background:#e63946"></span>&gt;30 days</span>
       <span><span class="dot" style="background:#6b7a8f"></span>still open</span>
     </div>`);
 
@@ -1326,7 +1353,10 @@ async function initResultsMap(form){
     });
     _mapMarkers.push(m);
 
-    const tone = s.days == null ? 'open' : s.days <= 7 ? 'fast' : s.days <= 30 ? 'med' : 'slow';
+    const tone = s.days == null ? 'open'
+               : s.days < 7  ? 'fast'      // <7d  → blue
+               : s.days <= 30 ? 'med'      // 8-30 → yellow
+                              : 'slow';    // >30  → red
     sList.insertAdjacentHTML('beforeend', `
       <div class="map-list-item">
         <span><strong>${escapeHtml(s.raw || s.type)}</strong><br>${escapeHtml(s.address)}</span>
@@ -1410,18 +1440,30 @@ function boltIcon(rank, isSelected){
 
 // SVG similar-complaint icon: dot color-coded by days, "Xd" chip below
 function similarIcon(days, status){
-  // Statuses that mean "not yet closed" — pin gray, not color-coded by days
+  // The dot is ALWAYS gray — color coding lives on the days badge
+  // below the pin so the map keeps a calm visual hierarchy and the
+  // user's eye is drawn to the chips, not a sea of colored dots.
+  const PIN_GRAY = '#6b7a8f';
   const openLike = ['Open', 'Pending', 'Assigned', 'In Progress', 'Started'];
-  let color, label;
-  if(openLike.includes(status)){ color = '#6b7a8f'; label = 'open'; }
-  else if(days == null){ color = '#8899aa'; label = '—'; }
-  else if(days <= 7)  { color = '#2ec4b6'; label = days + 'd'; }
-  else if(days <= 30) { color = '#ffb703'; label = days + 'd'; }
-  else                { color = '#e63946'; label = days + 'd'; }
+  let badgeColor, badgeBg, label;
+  if(openLike.includes(status)){
+    badgeColor = '#6b7a8f'; badgeBg = '#f1efe9';   label = 'open';
+  } else if(days == null){
+    badgeColor = '#8899aa'; badgeBg = '#ffffff';   label = '—';
+  } else if(days < 7){
+    // BLUE = fast (<7 days)
+    badgeColor = '#0077b6'; badgeBg = '#e6f7fb';   label = days + 'd';
+  } else if(days <= 30){
+    // YELLOW = mid (8–30 days)
+    badgeColor = '#7a5800'; badgeBg = '#fff5d9';   label = days + 'd';
+  } else {
+    // RED = slow (>30 days)
+    badgeColor = '#a32b36'; badgeBg = '#fde6e8';   label = days + 'd';
+  }
   const svg = `<svg xmlns='http://www.w3.org/2000/svg' width='62' height='40' viewBox='0 0 62 40'>` +
-    `<circle cx='31' cy='12' r='8' fill='${color}' stroke='#fff' stroke-width='2'/>` +
-    `<rect x='13' y='22' width='36' height='14' rx='3' fill='#ffffff' stroke='#e6e3da' stroke-width='1'/>` +
-    `<text x='31' y='32' font-family='Inter,system-ui,sans-serif' font-size='10' font-weight='700' fill='${color}' text-anchor='middle'>${label}</text>` +
+    `<circle cx='31' cy='12' r='8' fill='${PIN_GRAY}' stroke='#fff' stroke-width='2'/>` +
+    `<rect x='13' y='22' width='36' height='14' rx='3' fill='${badgeBg}' stroke='${badgeColor}' stroke-width='1'/>` +
+    `<text x='31' y='32' font-family='Inter,system-ui,sans-serif' font-size='10' font-weight='700' fill='${badgeColor}' text-anchor='middle'>${label}</text>` +
     `</svg>`;
   return {
     url: 'data:image/svg+xml;charset=utf-8,' + encodeURIComponent(svg),

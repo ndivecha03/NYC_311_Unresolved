@@ -322,7 +322,15 @@ nav.topnav{ display:none; }   /* legacy top nav, hidden if any HTML still includ
 .pin{display:inline-block;width:14px;height:14px;border-radius:50%;border:2px solid #fff;box-shadow:0 0 0 1px var(--ink-mute)}
 .pin-complaint{background:var(--red)}
 .pin-vendor{background:var(--green)}
-.pin-similar{background:var(--teal)}
+.pin-similar{background:var(--ink-mute)}     /* gray, matches the on-map similar-complaint dot */
+/* Vendor-bolt legend icon: render the SVG instead of a colored circle */
+.pin-vendor-bolt{display:inline-flex;align-items:center;justify-content:center;width:18px;height:18px;flex-shrink:0}
+.pin-vendor-bolt svg{display:block}
+
+/* Days-to-close color legend strip */
+.legend-sub{display:flex;flex-wrap:wrap;align-items:center;gap:6px;margin-top:8px;padding-top:8px;border-top:1px dashed var(--line-soft);font-size:12px;color:var(--ink-soft)}
+.legend-sub-label{font-size:11px;color:var(--ink-mute);letter-spacing:.04em;margin-right:2px}
+.day-chip{font-size:11px;font-weight:700;padding:2px 8px;border-radius:4px;letter-spacing:.04em}
 .map-list .lbl{font-size:11px;color:var(--ink-mute);text-transform:uppercase;letter-spacing:.12em;font-weight:700;margin-bottom:12px}
 .map-list-item{padding:10px 0;border-top:1px solid var(--line-soft);font-size:13px;color:var(--ink-soft);display:flex;justify-content:space-between;gap:8px}
 .map-list-item:first-of-type{border-top:none}
@@ -361,7 +369,7 @@ nav.topnav{ display:none; }   /* legacy top nav, hidden if any HTML still includ
 
 /* Day-to-close tags on similar complaints */
 .days-tag{font-size:11px;font-weight:700;padding:2px 8px;border-radius:4px;letter-spacing:.04em;white-space:nowrap}
-.days-tag.days-fast{background:var(--green-soft);color:#1a7d75}
+.days-tag.days-fast{background:var(--teal-soft);color:var(--teal-deep)}
 .days-tag.days-med{background:var(--amber-soft);color:#7a5800}
 .days-tag.days-slow{background:var(--red-soft);color:#a32b36}
 .days-tag.days-open{background:var(--bg-alt);color:var(--ink-mute)}

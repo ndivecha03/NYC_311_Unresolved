@@ -148,8 +148,10 @@
     }
     // x-labels (if provided)
     if(d.xLabels){
+      // When labelAllPoints is set, show ALL x-labels (no down-sampling)
+      const showAll = d.labelAllPoints || d.xLabels.length <= 8;
       d.xLabels.forEach((lbl,i)=>{
-        if(i%Math.ceil(d.xLabels.length/6)!==0 && i!==d.xLabels.length-1) return;
+        if(!showAll && i%Math.ceil(d.xLabels.length/6)!==0 && i!==d.xLabels.length-1) return;
         const x = sx(xs[i]);
         s += text(x, H-padB+14, lbl, {size:10, color:PALETTE.inkMute, anchor:'middle'});
       });
@@ -158,9 +160,23 @@
       const color = ser.color || [PALETTE.teal, PALETTE.amber, PALETTE.green][si%3];
       const path = ser.points.map((p,i)=>(i?'L':'M')+sx(p.x)+' '+sy(p.y)).join(' ');
       s += `<path d="${path}" fill="none" stroke="${color}" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/>`;
-      // dots on last point
-      const last = ser.points[ser.points.length-1];
-      s += `<circle cx="${sx(last.x)}" cy="${sy(last.y)}" r="4" fill="${color}"/>`;
+      // When labelAllPoints is set, render a dot + value at every point
+      // (with smart positioning to keep labels above/below to avoid overlap).
+      if(d.labelAllPoints){
+        ser.points.forEach((p, i) => {
+          const cx = sx(p.x), cy = sy(p.y);
+          s += `<circle cx="${cx}" cy="${cy}" r="4" fill="${color}" stroke="#fff" stroke-width="2"/>`;
+          // Label sits above the line (or below near the top edge to avoid clipping)
+          const labelY = (cy - padT < 24) ? cy + 18 : cy - 10;
+          s += text(cx, labelY, fmtInt(p.y), {
+            size: 11, weight: 700, color: PALETTE.ink, anchor: 'middle', baseline: 'auto'
+          });
+        });
+      } else {
+        // Default: dot only on the last point
+        const last = ser.points[ser.points.length-1];
+        s += `<circle cx="${sx(last.x)}" cy="${sy(last.y)}" r="4" fill="${color}"/>`;
+      }
     });
     s += '</svg>';
     const legend = series.map((ser,si)=>{
