@@ -345,8 +345,13 @@
   function hBarChart(el, d){
     const bars = d.bars || [];
     if(!bars.length){ el.innerHTML = empty('No data'); return; }
-    const W=560, H=Math.max(220, bars.length*48 + 40);
-    const padL=110, padR=80, padT=20, padB=20;
+    // Dynamically size padL to fit the longest label and grow the canvas
+    // when labels are long (so bars don't get crushed).
+    const maxLabelLen = Math.max(...bars.map(b => (b.label || '').length));
+    const padL = Math.max(120, maxLabelLen * 8.5 + 22);
+    const padR=80, padT=20, padB=20;
+    const W = Math.max(560, padL + 280);
+    const H = Math.max(220, bars.length*48 + 40);
     const max = d.max || Math.max(...bars.map(b=>b.value));
     const rowH = (H - padT - padB) / bars.length;
     const bh = rowH * 0.62;
@@ -436,7 +441,10 @@
     if(!items.length){ el.innerHTML = empty('No data'); return; }
     const W = 460, padL = 70, padR = 64;
     const rowH = 44;
-    const H = items.length * rowH + 24;
+    // Reserve space at bottom for the threshold legend (rendered inside the
+    // SVG so it doesn't collide with the chart-card source link).
+    const legendH = 28;
+    const H = items.length * rowH + 24 + legendH;
     const trackW = W - padL - padR;
     const trackH = 14;
 
@@ -445,21 +453,15 @@
       const v = Math.max(0, Math.min(it.value || 0, 100));
       const cy = 24 + i * rowH;
       const trackY = cy - trackH/2;
-      // Threshold colors
       const color = v < 40 ? PALETTE.red
                   : v < 60 ? PALETTE.amber
                   :          PALETTE.teal;
-      // Left label (e.g. "7 days")
       s += text(padL - 12, cy, it.label, {
         size: 13, weight: 700, color: PALETTE.ink, anchor: 'end'
       });
-      // Track
       s += `<rect x="${padL}" y="${trackY}" width="${trackW}" height="${trackH}" rx="${trackH/2}" fill="${PALETTE.line}"/>`;
-      // Filled portion
       const fillW = (v/100) * trackW;
       s += `<rect x="${padL}" y="${trackY}" width="${fillW}" height="${trackH}" rx="${trackH/2}" fill="${color}"/>`;
-      // % label, anchored at the right tip of the filled portion when there's room,
-      // otherwise just past the track end
       const labelX = fillW > 50 ? padL + fillW - 8 : padL + fillW + 8;
       const labelAnchor = fillW > 50 ? 'end' : 'start';
       const labelColor = fillW > 50 ? '#fff' : color;
@@ -467,75 +469,92 @@
         size: 12, weight: 800, color: labelColor, anchor: labelAnchor
       });
     });
+
+    // ── Threshold legend rendered INSIDE the SVG ──
+    const legendY = items.length * rowH + 24 + 14;
+    const legendItems = [
+      { color: PALETTE.red,   label: '<40%' },
+      { color: PALETTE.amber, label: '40-60%' },
+      { color: PALETTE.teal,  label: '≥60%' },
+    ];
+    const legendItemW = 90;
+    const legendStartX = (W - legendItemW * legendItems.length) / 2;
+    legendItems.forEach((li, i) => {
+      const x = legendStartX + i * legendItemW;
+      s += `<rect x="${x}" y="${legendY - 7}" width="10" height="10" rx="2" fill="${li.color}"/>`;
+      s += text(x + 16, legendY, li.label, {
+        size: 11, color: PALETTE.inkSoft, anchor: 'start', baseline: 'middle'
+      });
+    });
+
     s += '</svg>';
-    // Threshold legend below
-    el.innerHTML = s + `<div class="legend" style="margin-top:12px">
-      <span><span class="swatch" style="background:${PALETTE.red}"></span>&lt;40%</span>
-      <span><span class="swatch" style="background:${PALETTE.amber}"></span>40–60%</span>
-      <span><span class="swatch" style="background:${PALETTE.teal}"></span>≥60%</span>
-    </div>`;
+    el.innerHTML = s;
   }
 
-  // ── 14. Box-and-whisker plot — for completion-time spread.
-  // Input: {min, q1, median, q3, max, label, expected?, unit}
+  // ── 14. Box-and-whisker plot — completion-time spread.
+  // Layout: prominent "median Xd" above the box; min/Q1/Q3/max value
+  // labels below the axis (no overlapping callouts above the box).
   function boxPlot(el, d){
-    const W = 460, padL = 24, padR = 24, padT = 60, padB = 70;
+    const W = 460, padL = 32, padR = 32, padT = 68, padB = 56;
     const H = 220;
     const min = d.min || 0;
     const max = d.max || 1;
-    // Pad the axis a bit beyond min/max for visual breathing room
     const axisLo = Math.max(0, min - (max - min) * 0.05);
     const axisHi = max + (max - min) * 0.05;
     const sx = v => padL + ((v - axisLo) / (axisHi - axisLo || 1)) * (W - padL - padR);
     const cy = padT + (H - padT - padB) / 2;
-    const boxH = 38;
-
-    let s = svg(W, H);
-
-    // Axis line
-    s += `<line x1="${padL}" y1="${cy + boxH/2 + 14}" x2="${W - padR}" y2="${cy + boxH/2 + 14}" stroke="${PALETTE.line}" stroke-width="1.5"/>`;
-
-    // X-axis ticks: label every reasonable interval
-    const tickValues = [axisLo, d.min, d.median, d.max, axisHi].filter((v,i,a) => a.indexOf(v) === i);
-    [d.min, d.q1, d.median, d.q3, d.max].forEach(v => {
-      const x = sx(v);
-      s += `<line x1="${x}" y1="${cy + boxH/2 + 14}" x2="${x}" y2="${cy + boxH/2 + 18}" stroke="${PALETTE.inkMute}" stroke-width="1"/>`;
-      s += text(x, cy + boxH/2 + 30, Math.round(v) + 'd', {
-        size: 11, weight: 600, color: PALETTE.inkSoft, anchor: 'middle'
-      });
-    });
-
-    // Whiskers
+    const boxH = 36;
+    const top = cy - boxH/2, bot = cy + boxH/2;
     const xMin = sx(d.min), xMax = sx(d.max);
     const xQ1  = sx(d.q1),  xQ3  = sx(d.q3);
     const xMed = sx(d.median);
-    const top = cy - boxH/2, bot = cy + boxH/2;
-    // Min whisker
+
+    let s = svg(W, H);
+
+    // Axis line just below the box
+    const axisY = bot + 14;
+    s += `<line x1="${padL}" y1="${axisY}" x2="${W - padR}" y2="${axisY}" stroke="${PALETTE.line}" stroke-width="1.5"/>`;
+
+    // Whiskers (low + high)
     s += `<line x1="${xMin}" y1="${cy}" x2="${xQ1}" y2="${cy}" stroke="${PALETTE.inkSoft}" stroke-width="2"/>`;
-    s += `<line x1="${xMin}" y1="${cy - 8}" x2="${xMin}" y2="${cy + 8}" stroke="${PALETTE.inkSoft}" stroke-width="2"/>`;
-    // Max whisker
+    s += `<line x1="${xMin}" y1="${cy - 9}" x2="${xMin}" y2="${cy + 9}" stroke="${PALETTE.inkSoft}" stroke-width="2"/>`;
     s += `<line x1="${xQ3}" y1="${cy}" x2="${xMax}" y2="${cy}" stroke="${PALETTE.inkSoft}" stroke-width="2"/>`;
-    s += `<line x1="${xMax}" y1="${cy - 8}" x2="${xMax}" y2="${cy + 8}" stroke="${PALETTE.inkSoft}" stroke-width="2"/>`;
+    s += `<line x1="${xMax}" y1="${cy - 9}" x2="${xMax}" y2="${cy + 9}" stroke="${PALETTE.inkSoft}" stroke-width="2"/>`;
     // Box
     s += `<rect x="${xQ1}" y="${top}" width="${xQ3 - xQ1}" height="${boxH}" rx="4" fill="${PALETTE.tealSoft}" stroke="${PALETTE.teal}" stroke-width="2"/>`;
     // Median line
-    s += `<line x1="${xMed}" y1="${top}" x2="${xMed}" y2="${bot}" stroke="${PALETTE.tealDeep}" stroke-width="3"/>`;
+    s += `<line x1="${xMed}" y1="${top - 4}" x2="${xMed}" y2="${bot + 4}" stroke="${PALETTE.tealDeep}" stroke-width="3"/>`;
 
-    // Anchor labels above box: "Q1 / median / Q3"
-    s += text(xQ1, top - 8, 'Q1', {size:10, color:PALETTE.inkMute, anchor:'middle', baseline:'auto'});
-    s += text(xMed, top - 24, 'median', {size:10, weight:700, color:PALETTE.tealDeep, anchor:'middle', baseline:'auto'});
-    s += text(xMed, top - 8, Math.round(d.median) + ' days', {size:13, weight:800, color:PALETTE.ink, anchor:'middle', baseline:'auto'});
-    s += text(xQ3, top - 8, 'Q3', {size:10, color:PALETTE.inkMute, anchor:'middle', baseline:'auto'});
-    // Min/Max range labels at edges
-    s += text(xMin, cy - 16, 'min', {size:9, color:PALETTE.inkMute, anchor:'middle', baseline:'auto'});
-    s += text(xMax, cy - 16, 'max', {size:9, color:PALETTE.inkMute, anchor:'middle', baseline:'auto'});
+    // ── Above the box: ONE compact callout for the median ─────────
+    s += text(xMed, top - 32, 'MEDIAN', {
+      size: 10, weight: 700, color: PALETTE.tealDeep, anchor: 'middle', baseline:'auto'
+    });
+    s += text(xMed, top - 14, Math.round(d.median) + ' days', {
+      size: 18, weight: 800, color: PALETTE.ink, anchor: 'middle', baseline:'auto'
+    });
+
+    // ── Below the axis: tick labels for min / Q1 / Q3 / max only ─
+    // Avoid double-stacking labels at the median (it's already prominently above).
+    [
+      { x: xMin, lbl: 'min',  v: d.min },
+      { x: xQ1,  lbl: 'Q1',   v: d.q1  },
+      { x: xQ3,  lbl: 'Q3',   v: d.q3  },
+      { x: xMax, lbl: 'max',  v: d.max },
+    ].forEach(t => {
+      s += `<line x1="${t.x}" y1="${axisY}" x2="${t.x}" y2="${axisY + 4}" stroke="${PALETTE.inkMute}" stroke-width="1"/>`;
+      s += text(t.x, axisY + 16, Math.round(t.v) + 'd', {
+        size: 11, weight: 700, color: PALETTE.ink, anchor: 'middle', baseline:'auto'
+      });
+      s += text(t.x, axisY + 30, t.lbl, {
+        size: 10, color: PALETTE.inkMute, anchor: 'middle', baseline:'auto'
+      });
+    });
 
     s += '</svg>';
 
     // Caption underneath
-    const halfRange = Math.round(d.q3 - d.q1);
     el.innerHTML = s + `<div style="font-size:12px;color:var(--ink-soft);margin-top:8px;text-align:center">
-      <strong>Half of ${d.label || 'similar'} complaints</strong> close in <strong>${Math.round(d.q1)}–${Math.round(d.q3)} days</strong> (${halfRange}-day spread).
+      <strong>Half of ${d.label || 'similar'} complaints</strong> close in <strong>${Math.round(d.q1)}–${Math.round(d.q3)} days</strong>.
     </div>`;
   }
 
