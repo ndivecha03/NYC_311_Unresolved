@@ -121,15 +121,78 @@ section.alt{background:var(--bg-alt)}
 
 /* RESULT TABS */
 .result-header{padding:80px 0 24px}
-/* Side TOC — sticky right rail with scroll-spy active state */
-.side-toc{position:fixed;right:24px;top:50%;transform:translateY(-50%);z-index:30;background:rgba(255,255,255,.92);backdrop-filter:saturate(180%) blur(8px);border:1px solid var(--line);border-radius:14px;padding:14px 16px;box-shadow:var(--shadow-sm);min-width:170px}
-.side-toc-label{font-size:10px;letter-spacing:.12em;text-transform:uppercase;color:var(--ink-mute);font-weight:700;margin-bottom:10px}
-.side-toc ul{list-style:none;margin:0;padding:0;display:flex;flex-direction:column;gap:2px}
-.side-toc a{display:block;padding:6px 10px;font-size:13px;color:var(--ink-soft);text-decoration:none;border-left:2px solid transparent;border-radius:0 6px 6px 0;transition:all .15s;font-weight:500}
-.side-toc a:hover{color:var(--ink);background:var(--bg-alt)}
-.side-toc a.active{color:var(--teal-deep);font-weight:700;border-left-color:var(--teal);background:var(--teal-soft)}
-@media (max-width:1280px){
-  .side-toc{display:none}
+/* Right-side rail — replaces the top nav.
+   Full viewport height, fixed to the right edge of the page.
+   The body gets right-padding so main content stops at the rail. */
+:root{ --rail-width: 260px; }
+body{ padding-right: var(--rail-width); }
+nav.topnav{ display:none; }   /* legacy top nav, hidden if any HTML still includes it */
+
+.side-rail{
+  position:fixed; top:0; right:0; bottom:0;
+  width:var(--rail-width);
+  z-index:40;
+  background:var(--surface);
+  border-left:1px solid var(--line);
+  display:flex; flex-direction:column;
+  padding:28px 22px 24px;
+  box-shadow:-8px 0 24px rgba(10,31,61,.04);
+}
+.side-rail-brand{
+  display:flex; align-items:center; gap:10px;
+  text-decoration:none; color:inherit;
+  padding-bottom:24px;
+  border-bottom:1px solid var(--line);
+  margin-bottom:24px;
+}
+.side-rail-brand .dot{
+  width:10px; height:10px; border-radius:50%;
+  background:var(--teal);
+  box-shadow:0 0 0 4px var(--teal-soft);
+  flex-shrink:0;
+}
+.side-rail-brand .brand-name{
+  font-weight:800; font-size:15px;
+  letter-spacing:-.01em; color:var(--ink);
+  line-height:1.2;
+}
+
+.side-rail-toc{ flex:1; overflow-y:auto; }
+.side-toc-label{
+  font-size:10px; letter-spacing:.12em;
+  text-transform:uppercase; color:var(--ink-mute);
+  font-weight:700; margin-bottom:10px;
+  padding-left:10px;
+}
+.side-rail-toc ul{
+  list-style:none; margin:0 0 4px; padding:0;
+  display:flex; flex-direction:column; gap:2px;
+}
+.side-rail-toc a{
+  display:block; padding:8px 12px;
+  font-size:14px; color:var(--ink-soft);
+  text-decoration:none;
+  border-left:2px solid transparent;
+  border-radius:0 6px 6px 0;
+  transition:all .15s; font-weight:500;
+}
+.side-rail-toc a:hover{ color:var(--ink); background:var(--bg-alt); }
+.side-rail-toc a.active{
+  color:var(--teal-deep); font-weight:700;
+  border-left-color:var(--teal);
+  background:var(--teal-soft);
+}
+
+.side-rail-cta{
+  padding-top:20px;
+  border-top:1px solid var(--line);
+}
+.side-rail-cta .pill{ width:100%; justify-content:center; }
+
+/* Below this width the rail collapses and the page reclaims full width */
+@media (max-width:1100px){
+  body{ padding-right:0; }
+  .side-rail{ display:none; }
 }
 
 /* Result header stat strip — estimated time to fix, borough closure, current step */

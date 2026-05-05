@@ -14,35 +14,40 @@
 </head>
 <body>
 
-<!-- Side table of contents — sticky on the right, hidden on small screens -->
-<aside class="side-toc" id="sideToc" aria-label="Page sections">
-  <div class="side-toc-label">On this page</div>
-  <ul>
-    <li><a href="#hero" data-spy="hero">Overview</a></li>
-    <li><a href="#about" data-spy="about">The problem</a></li>
-    <li><a href="#report" data-spy="report">Report</a></li>
-    <li><a href="#results" data-spy="results">Results</a></li>
-    <li><a href="sources.html">Sources</a></li>
-  </ul>
-</aside>
+<!-- Right-side rail: full-height navigation + table of contents.
+     Replaces the old top nav. Hidden on screens < 1100px (page goes
+     full-width and the rail collapses). -->
+<aside class="side-rail" id="sideToc" aria-label="Page sections">
+  <a class="side-rail-brand" href="#">
+    <span class="dot"></span>
+    <span class="brand-name">NYC Street Lights</span>
+  </a>
 
-<nav class="topnav">
-  <div class="wrap">
-    <a class="logo" href="#"><span class="dot"></span> NYC Street Lights</a>
+  <div class="side-rail-toc">
+    <div class="side-toc-label">On this page</div>
     <ul>
-      <li><a href="#about">About</a></li>
-      <li><a href="#report">Report</a></li>
-      <li><a href="#results">Results</a></li>
-      <li><a href="sources.html">Sources</a></li>
+      <li><a href="#hero" data-spy="hero">Overview</a></li>
+      <li><a href="#about" data-spy="about">The problem</a></li>
+      <li><a href="#report" data-spy="report">Report</a></li>
+      <li><a href="#results" data-spy="results">Results</a></li>
     </ul>
-    <a class="pill primary" href="#report">Report an outage <span class="arrow">→</span></a>
+
+    <div class="side-toc-label" style="margin-top:24px">More</div>
+    <ul>
+      <li><a href="sources.html">Sources &amp; methodology</a></li>
+    </ul>
   </div>
-</nav>
+
+  <div class="side-rail-cta">
+    <a class="pill primary" href="#report">
+      Report an outage <span class="arrow">→</span>
+    </a>
+  </div>
+</aside>
 
 <!-- ── HERO ──────────────────────────────────────────────── -->
 <header class="hero" id="hero">
   <div class="wrap">
-    <span class="eyebrow">● Live · NYC 311 · 2024</span>
     <h1 class="display">A city that never sleeps shouldn't <em>go dark.</em></h1>
     <p class="lede">33,835 streetlight outages were reported to NYC 311 in 2025 — a 10% jump over 2024. One in three Manhattan complaints still sits unresolved a month later. We close that loop — in under sixty seconds.</p>
     <div class="hero-cta">
@@ -299,8 +304,8 @@
   </div>
 </footer>
 
-<script src="charts.js?v=20260505a"></script>
-<script src="data-loader.js?v=20260505a"></script>
+<script src="charts.js?v=20260505b"></script>
+<script src="data-loader.js?v=20260505b"></script>
 <script>
 // ── Tabs ─────────────────────────────────────────────────────────
 // State for lazy map init: set on form submit, consumed when the user
