@@ -121,22 +121,22 @@ section.alt{background:var(--bg-alt)}
 
 /* RESULT TABS */
 .result-header{padding:80px 0 24px}
-/* Right-side rail — replaces the top nav.
-   Full viewport height, fixed to the right edge of the page.
-   The body gets right-padding so main content stops at the rail. */
+/* Left-side rail — replaces the top nav.
+   Full viewport height, fixed to the left edge of the page.
+   The body gets left-padding so main content stops at the rail. */
 :root{ --rail-width: 260px; }
-body{ padding-right: var(--rail-width); }
+body{ padding-left: var(--rail-width); }
 nav.topnav{ display:none; }   /* legacy top nav, hidden if any HTML still includes it */
 
 .side-rail{
-  position:fixed; top:0; right:0; bottom:0;
+  position:fixed; top:0; left:0; bottom:0;
   width:var(--rail-width);
   z-index:40;
   background:var(--surface);
-  border-left:1px solid var(--line);
+  border-right:1px solid var(--line);
   display:flex; flex-direction:column;
   padding:28px 22px 24px;
-  box-shadow:-8px 0 24px rgba(10,31,61,.04);
+  box-shadow:8px 0 24px rgba(10,31,61,.04);
 }
 .side-rail-brand{
   display:flex; align-items:center; gap:10px;
@@ -191,7 +191,7 @@ nav.topnav{ display:none; }   /* legacy top nav, hidden if any HTML still includ
 
 /* Below this width the rail collapses and the page reclaims full width */
 @media (max-width:1100px){
-  body{ padding-right:0; }
+  body{ padding-left:0; }
   .side-rail{ display:none; }
 }
 
