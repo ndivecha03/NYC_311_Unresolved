@@ -108,7 +108,29 @@ section.alt{background:var(--bg-alt)}
 .intake .lede{color:rgba(255,255,255,.7)}
 .form{display:grid;grid-template-columns:repeat(2,1fr);gap:20px;margin-top:48px}
 .field{display:flex;flex-direction:column;gap:8px}
-.field label{font-size:13px;color:rgba(255,255,255,.6);text-transform:uppercase;letter-spacing:.08em;font-weight:600}
+.field label{font-size:13px;color:rgba(255,255,255,.6);text-transform:uppercase;letter-spacing:.08em;font-weight:600;display:flex;align-items:center;justify-content:space-between;gap:8px}
+
+/* "Use my location" button — sits next to the address label */
+.use-location-btn{
+  display:inline-flex;align-items:center;gap:6px;
+  background:rgba(0,180,216,.15);
+  border:1px solid rgba(0,180,216,.4);
+  color:var(--teal);
+  font:600 11px/1 Inter,system-ui,sans-serif;
+  letter-spacing:.04em;text-transform:none;
+  padding:7px 12px;border-radius:999px;
+  cursor:pointer;transition:all .15s;
+}
+.use-location-btn:hover{background:rgba(0,180,216,.25);border-color:var(--teal);color:#fff}
+.use-location-btn:disabled{opacity:.6;cursor:wait}
+.use-location-btn .loc-icon{font-size:14px;line-height:1}
+.use-location-btn.locating .loc-icon{animation:pulse 1s ease-in-out infinite}
+@keyframes pulse{0%,100%{opacity:1}50%{opacity:.4}}
+
+/* Inline status hint under the address input */
+.field-hint{font-size:12px;color:rgba(255,255,255,.55);margin-top:6px;font-weight:500;text-transform:none;letter-spacing:0;min-height:16px}
+.field-hint.ok{color:var(--green)}
+.field-hint.err{color:#ff8a93}
 .field input,.field select,.field textarea{background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.12);border-radius:var(--radius-sm);padding:16px 18px;color:#fff;font:inherit;outline:none;transition:border .15s, background .15s}
 .field input::placeholder,.field textarea::placeholder{color:rgba(255,255,255,.35)}
 .field input:focus,.field select:focus,.field textarea:focus{border-color:var(--teal);background:rgba(255,255,255,.10)}

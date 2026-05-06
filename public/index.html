@@ -119,7 +119,18 @@
           </select>
         </div>
         <div class="field"><label>Zip code</label><input name="zip" placeholder="10027" pattern="[0-9]{5}" required></div>
-        <div class="field full"><label>Address or nearest cross street</label><input name="address" placeholder="W 125th St & Amsterdam Ave" required></div>
+        <div class="field full">
+          <label>
+            Address or nearest cross street
+            <button type="button" class="use-location-btn" id="useLocationBtn"
+              title="Use my current GPS location to fill the address, zip, and borough">
+              <span class="loc-icon" aria-hidden="true">⌖</span>
+              <span class="loc-text">Use my location</span>
+            </button>
+          </label>
+          <input name="address" placeholder="W 125th St & Amsterdam Ave" required>
+          <div class="field-hint" id="locStatus"></div>
+        </div>
         <div class="field">
           <label>What's wrong?</label>
           <select name="complaint_type" required>
@@ -318,8 +329,8 @@
   </div>
 </footer>
 
-<script src="charts.js?v=20260505c"></script>
-<script src="data-loader.js?v=20260505c"></script>
+<script src="charts.js?v=20260505d"></script>
+<script src="data-loader.js?v=20260505d"></script>
 <script>
 // ── Tabs ─────────────────────────────────────────────────────────
 // State for lazy map init: set on form submit, consumed when the user
@@ -1117,6 +1128,118 @@ async function geocodeAddress(address, zip){
     );
   });
 }
+
+// ── "Use my location" button — Geolocation + reverse geocode ──────
+// Asks the browser for the user's current position, then uses the
+// already-loaded Google Maps Geocoder to translate lat/lng into an
+// address that fills the form (address line, zip, and borough).
+async function useCurrentLocation(){
+  const btn = document.getElementById('useLocationBtn');
+  const status = document.getElementById('locStatus');
+  if(!btn || !status) return;
+  if(!navigator.geolocation){
+    status.textContent = '⚠ Your browser does not support geolocation.';
+    status.className = 'field-hint err';
+    return;
+  }
+
+  btn.disabled = true;
+  btn.classList.add('locating');
+  status.textContent = 'Locating you…';
+  status.className = 'field-hint';
+
+  // Wait for Google Maps to load (it powers the reverse-geocode step)
+  try { await window._gmReady; }
+  catch {
+    status.textContent = '⚠ Google Maps unavailable — fill the address manually.';
+    status.className = 'field-hint err';
+    btn.disabled = false; btn.classList.remove('locating');
+    return;
+  }
+
+  navigator.geolocation.getCurrentPosition(
+    (pos) => {
+      const {latitude: lat, longitude: lng} = pos.coords;
+      const geocoder = new google.maps.Geocoder();
+      geocoder.geocode({location: {lat, lng}}, (results, gStatus) => {
+        if(gStatus !== 'OK' || !results.length){
+          status.textContent = `⚠ Could not reverse-geocode (${gStatus}).`;
+          status.className = 'field-hint err';
+          btn.disabled = false; btn.classList.remove('locating');
+          return;
+        }
+        // Find the first useful result (street address > sublocality > else)
+        const r = results[0];
+        // Pull address components
+        const components = r.address_components || [];
+        const get = type => components.find(c => c.types.includes(type))?.long_name || '';
+        const getShort = type => components.find(c => c.types.includes(type))?.short_name || '';
+
+        const streetNum = get('street_number');
+        const route     = get('route');
+        const street    = [streetNum, route].filter(Boolean).join(' ').trim();
+        const zip       = get('postal_code');
+
+        // NYC borough resolution: borough lives in either "sublocality_level_1"
+        // (Manhattan/Brooklyn/Queens/Bronx) or "administrative_area_level_2"
+        // (Bronx is also a county/borough). Map them to our select values.
+        const sub2  = get('sublocality_level_1') || get('sublocality');
+        const adm2  = get('administrative_area_level_2');
+        const locality = get('locality');
+        const boroughMap = {
+          'manhattan':'Manhattan', 'new york':'Manhattan',
+          'brooklyn':'Brooklyn',   'kings county':'Brooklyn',  'kings':'Brooklyn',
+          'queens':'Queens',       'queens county':'Queens',
+          'bronx':'Bronx',         'the bronx':'Bronx',        'bronx county':'Bronx',
+          'staten island':'Staten Island', 'richmond county':'Staten Island', 'richmond':'Staten Island',
+        };
+        const lookup = s => boroughMap[(s || '').toLowerCase()];
+        const borough = lookup(sub2) || lookup(adm2) || lookup(locality) || '';
+
+        // Confirm the user is actually in NYC; if not, warn but still fill what we have
+        const stateShort = getShort('administrative_area_level_1');
+        const inNYC = !!borough;
+        if(!inNYC && stateShort && stateShort !== 'NY'){
+          status.textContent = `⚠ This dashboard only covers NYC. Your location is in ${stateShort}.`;
+          status.className = 'field-hint err';
+          btn.disabled = false; btn.classList.remove('locating');
+          return;
+        }
+
+        // Fill the form
+        const f = document.getElementById('intakeForm');
+        if(street) f.address.value = street;
+        else if(r.formatted_address) f.address.value = r.formatted_address.split(',')[0];
+        if(zip) f.zip.value = zip;
+        if(borough) f.borough.value = borough;
+
+        const filled = [
+          street && 'address',
+          zip && 'zip',
+          borough && 'borough',
+        ].filter(Boolean).join(', ');
+        status.textContent = `✓ Filled ${filled} from your location` +
+          (inNYC ? '' : ' — but borough not detected, please choose manually.');
+        status.className = 'field-hint ok';
+        btn.disabled = false;
+        btn.classList.remove('locating');
+      });
+    },
+    (err) => {
+      const msgMap = {
+        1: 'Permission denied. Allow location access in your browser to use this.',
+        2: 'Position unavailable. Try again or fill the address manually.',
+        3: 'Location request timed out. Try again.',
+      };
+      status.textContent = `⚠ ${msgMap[err.code] || err.message || 'Could not get your location.'}`;
+      status.className = 'field-hint err';
+      btn.disabled = false;
+      btn.classList.remove('locating');
+    },
+    { enableHighAccuracy: true, timeout: 10000, maximumAge: 60000 }
+  );
+}
+document.getElementById('useLocationBtn')?.addEventListener('click', useCurrentLocation);
 
 window._resultsMap = null;
 let _mapMarkers = [];
