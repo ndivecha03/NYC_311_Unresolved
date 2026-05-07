@@ -51,7 +51,6 @@ body{font-family:Inter,system-ui,sans-serif;background:var(--bg);color:var(--ink
 .tag{display:inline-block;background:var(--bg-alt);color:var(--ink-soft);padding:3px 10px;border-radius:12px;font-size:0.7rem;font-weight:700;letter-spacing:.06em;text-transform:uppercase;margin-left:8px;vertical-align:middle;}
 .tag.verified{background:var(--green-soft);color:#1a7d75;}
 .tag.estimate{background:var(--amber-soft);color:#a07f00;}
-.tag.fabricated{background:#fde6e8;color:#a32b36;}
 .tag.forecast{background:var(--teal-soft);color:var(--teal-deep);}
 .footer{text-align:center;color:var(--ink-mute);font-size:0.78rem;margin-top:64px;padding-top:24px;border-top:1px solid var(--line);}
 </style>
@@ -77,7 +76,6 @@ body{font-family:Inter,system-ui,sans-serif;background:var(--bg);color:var(--ink
   <li><span class="tag verified">Verified</span> measured directly from NYC OpenData via the <code>erm2-nwe9</code> dataset — no model, no estimate.</li>
   <li><span class="tag estimate">Estimate</span> computed from public market-rate references; clearly labeled on the dashboard with a "Forecast" or "Estimate" badge.</li>
   <li><span class="tag forecast">Forecast</span> derived from a measured distribution (e.g. histogram &rarr; quartiles) — accurate to the input data but not itself a measured fact.</li>
-  <li><span class="tag fabricated">Fabricated</span> generated for UX purposes only; <strong>not based on real data</strong>. Currently this applies to vendor star ratings (see &sect;6).</li>
 </ul>
 
 <h2>1. Complaint Volume by Borough &mdash; 2025 <span class="tag verified">Verified</span></h2>
@@ -201,7 +199,7 @@ GROUP BY bucket</pre>
 
 <p><strong>Worked example (Brooklyn, 2025):</strong> with histogram <code>[1202, 1713, 3695, 61, 184, 431, 714]</code> and total = 8,000, the 50% target (4,000) falls inside the 8&ndash;14d bin at fraction 0.29, giving median &asymp; 9.8d; the 75% target (6,000) is also in the 8&ndash;14d bin but at fraction 0.83, giving Q3 &asymp; 13.0d. Distinct values, same bin.</p>
 
-<h2>6. Vendor List <span class="tag verified">Verified</span> <span class="tag fabricated">Ratings: fabricated</span></h2>
+<h2>6. Vendor List <span class="tag verified">Verified</span></h2>
 
 <p>The 5 closest vendors shown on the map for each complaint, plus the sidebar list, are pulled from a baked subset of the <strong>NYC Department of Buildings master electrician license roster</strong>. The roster is published publicly and the licenses themselves are real.</p>
 
@@ -214,14 +212,7 @@ GROUP BY bucket</pre>
   <li>Returns the 5 nearest vendors, ranked 1 (closest) through 5.</li>
 </ol>
 
-<div class="disclaimer-box">
-<p><strong>⚠ DISCLOSURE: vendor star ratings and review counts are fabricated.</strong></p>
-<p>Each vendor card shows a star rating (e.g. ★★★★½ 4.6) and a review count in parentheses. <strong>These numbers are not real.</strong> The dashboard does not pull vendor ratings from any service (Google Reviews, Yelp, BBB, etc.).</p>
-<p>The numbers are generated <em>deterministically</em> from a hash of the vendor's license number, so the same vendor always shows the same rating across page loads &mdash; that's a UX choice to avoid the appearance of randomness, not a sign of real data. The rating range is artificially clamped to 3.6&ndash;4.9 stars and 12&ndash;187 reviews so the values look plausible.</p>
-<p>The fabricated rating <strong>does not affect</strong> which vendors are shown, their ranking, or which one gets assigned to the work order &mdash; ranking is purely by distance. The rating is a visual placeholder for what would, in production, be a Google Places API review pull or an internal review system.</p>
-</div>
-
-<p>Other vendor-card fields <em>are</em> real and come from the DOB roster: business name, license number, phone, address, borough, and zip.</p>
+<p>Each vendor card displays only fields backed by the DOB roster: business name, license number, phone, distance, plus a Google search link to help find the vendor's actual website. Vendor star ratings and review counts have been deliberately omitted from this dashboard &mdash; we don't have a verified source for that data, so we don't show it.</p>
 
 <h2 id="map">7. Map &mdash; Routes &amp; Geocoding <span class="tag verified">Verified</span></h2>
 

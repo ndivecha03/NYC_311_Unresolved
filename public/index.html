@@ -329,8 +329,8 @@
   </div>
 </footer>
 
-<script src="charts.js?v=20260505d"></script>
-<script src="data-loader.js?v=20260505d"></script>
+<script src="charts.js?v=20260505e"></script>
+<script src="data-loader.js?v=20260505e"></script>
 <script>
 // ── Tabs ─────────────────────────────────────────────────────────
 // State for lazy map init: set on form submit, consumed when the user
@@ -1409,8 +1409,6 @@ async function initResultsMap(form){
     _mapMarkers.push(m);
 
     const searchUrl = `https://www.google.com/search?q=${encodeURIComponent(v.name + ' NYC electrician')}`;
-    const rating = vendorRating(v.license);
-    const reviews = vendorReviewCount(v.license);
     vList.insertAdjacentHTML('beforeend', `
       <div class="vendor-card map-list-item" data-license="${escapeHtml(v.license)}">
         <div class="vendor-rank">${rank}</div>
@@ -1420,11 +1418,6 @@ async function initResultsMap(form){
             <a href="${searchUrl}" target="_blank" rel="noopener noreferrer"
                class="vendor-link" title="Find website (opens Google search)"
                onclick="event.stopPropagation()">↗</a>
-          </div>
-          <div class="vendor-rating">
-            ${renderStars(rating)}
-            <span class="rating-num">${rating.toFixed(1)}</span>
-            <span class="rating-count">(${reviews} reviews)</span>
           </div>
           <div class="vendor-sub">${escapeHtml(v.phone || '')} · Lic. #${escapeHtml(v.license)}</div>
         </div>
@@ -1491,41 +1484,6 @@ async function initResultsMap(form){
   const bounds = new google.maps.LatLngBounds();
   _mapMarkers.forEach(m => bounds.extend(m.getPosition()));
   if(_mapMarkers.length > 1) _resultsMap.fitBounds(bounds, {top:50,left:50,right:50,bottom:50});
-}
-
-// Deterministic vendor rating based on license number hash. Without
-// real review data, we synthesize a stable rating in [3.6, 4.9] so the
-// same vendor always shows the same number across page loads.
-function _vendorHash(license){
-  let h = 2166136261 >>> 0;
-  const s = String(license || '');
-  for(let i = 0; i < s.length; i++){
-    h ^= s.charCodeAt(i);
-    h = Math.imul(h, 16777619) >>> 0;
-  }
-  return h;
-}
-function vendorRating(license){
-  const h = _vendorHash(license);
-  // Map to [3.6, 4.9] with one decimal — most contractors realistically
-  // sit in this band; anything outside would feel fake.
-  return 3.6 + ((h % 14) / 10);
-}
-function vendorReviewCount(license){
-  const h = _vendorHash(license);
-  // Plausible review-count range: 12–187
-  return 12 + (h % 176);
-}
-function renderStars(rating){
-  const full = Math.floor(rating);
-  const half = rating - full >= 0.5;
-  let out = '';
-  for(let i = 0; i < 5; i++){
-    if(i < full)        out += '<span class="star full">★</span>';
-    else if(i === full && half) out += '<span class="star half">★</span>';
-    else                out += '<span class="star empty">★</span>';
-  }
-  return `<span class="stars" aria-label="${rating.toFixed(1)} of 5 stars">${out}</span>`;
 }
 
 function escapeHtml(s){

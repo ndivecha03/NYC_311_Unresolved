@@ -375,13 +375,6 @@ nav.topnav{ display:none; }   /* legacy top nav, hidden if any HTML still includ
 .vendor-name strong{font-size:13px}
 .vendor-link{display:inline-flex;align-items:center;justify-content:center;width:18px;height:18px;border-radius:50%;background:var(--bg-alt);color:var(--ink-soft);text-decoration:none;font-size:11px;font-weight:700;transition:background .15s, color .15s}
 .vendor-link:hover{background:var(--teal);color:#fff}
-.vendor-rating{display:flex;align-items:center;gap:6px;margin-top:3px;font-size:11px;color:var(--ink-soft)}
-.stars{display:inline-flex;gap:1px;letter-spacing:1px;font-size:14px;line-height:1}
-.star.full{color:var(--amber)}
-.star.half{color:var(--amber);opacity:.55}
-.star.empty{color:var(--line)}
-.rating-num{font-weight:700;color:var(--ink);margin-left:2px}
-.rating-count{color:var(--ink-mute)}
 .vendor-sub{font-size:11px;color:var(--ink-mute);margin-top:2px}
 .vendor-actions{display:flex;flex-direction:column;align-items:flex-end;gap:6px}
 .vendor-actions .meta{font-size:11px}
