@@ -78,21 +78,21 @@
 
     <div class="graphics">
       <div class="gcard">
-        <div class="head"><span class="tag" id="g1-year">Graphic 1 · Live</span></div>
+        <div class="head"><span class="tag" id="g1-year">Graphic 1</span></div>
         <h3>Complaint volume by borough</h3>
         <div class="gthumb" id="about-volume">
           <noscript><img src="img/about/g1-volume.svg" alt="Volume by borough"></noscript>
         </div>
       </div>
       <div class="gcard">
-        <div class="head"><span class="tag" id="g2-year">Graphic 2 · Live</span></div>
+        <div class="head"><span class="tag" id="g2-year">Graphic 2</span></div>
         <h3>30-day closure rate by borough</h3>
         <div class="gthumb" id="about-closure">
           <noscript><img src="img/about/g2-closure.svg" alt="Closure rate"></noscript>
         </div>
       </div>
       <div class="gcard">
-        <div class="head"><span class="tag" id="g3-year">Graphic 3 · Live</span></div>
+        <div class="head"><span class="tag" id="g3-year">Graphic 3</span></div>
         <h3>Local-vendor revenue potential by borough</h3>
         <div class="gthumb" id="about-revenue">
           <noscript><img src="img/about/g3-revenue.svg" alt="Revenue range"></noscript>
@@ -329,8 +329,8 @@
   </div>
 </footer>
 
-<script src="charts.js?v=20260505e"></script>
-<script src="data-loader.js?v=20260505e"></script>
+<script src="charts.js?v=20260505f"></script>
+<script src="data-loader.js?v=20260505f"></script>
 <script>
 // ── Tabs ─────────────────────────────────────────────────────────
 // State for lazy map init: set on form submit, consumed when the user
@@ -1060,16 +1060,12 @@ async function renderAboutPage(){
     }
   }
 
-  // Update year tags. Distinguish: Live (Socrata reachable) /
-  // Cached (localStorage from a previous live fetch) / Projected (baked-data
-  // fallback derived from prior verified year).
-  let provenance = 'Projected';
-  if(about.live) provenance = 'Live';
-  else if(about._meta?.source === 'browser-live-overlay') provenance = 'Cached';
-  const tagSuffix = `${provenance} · ${about.year}`;
-  document.getElementById('g1-year').textContent = `Graphic 1 · ${tagSuffix}`;
-  document.getElementById('g2-year').textContent = `Graphic 2 · ${tagSuffix}`;
-  document.getElementById('g3-year').textContent = `Graphic 3 · ${tagSuffix}`;
+  // Update the year on each graphic tag — no provenance label since the
+  // dataset isn't truly live (it's a snapshot, refreshed manually via
+  // scripts/bake-from-worker.py).
+  document.getElementById('g1-year').textContent = `Graphic 1 · ${about.year}`;
+  document.getElementById('g2-year').textContent = `Graphic 2 · ${about.year}`;
+  document.getElementById('g3-year').textContent = `Graphic 3 · ${about.year}`;
 
   // Sort boroughs by volume descending for graphic 1
   const sortedByVol = Object.entries(about.boroughs)

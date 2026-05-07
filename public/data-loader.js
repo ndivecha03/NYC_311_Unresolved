@@ -309,7 +309,7 @@
       return {
         ok, value:n, year:YEAR,
         detail: ok
-          ? `live · ${YEAR} Manhattan = ${n.toLocaleString()} complaints`
+          ? `${YEAR} Manhattan = ${n.toLocaleString()} complaints`
           : `unexpected count (${n}) — dataset schema may have changed`
       };
     }catch(e){
