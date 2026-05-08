@@ -470,3 +470,110 @@ footer a:hover{color:var(--ink)}
   .tab{padding:16px 18px;white-space:nowrap}
   .wo-doc{padding:32px 24px}
 }
+
+/* ╔════════════════════════════════════════════════════════════════╗
+   ║  HOURGLASS-FLOW LAYOUT — narrative-arc redesign                 ║
+   ╚════════════════════════════════════════════════════════════════╝ */
+
+/* SVG hourglass background fills entire body height */
+html{background:var(--bg)}
+body{background:transparent}
+.hourglass-bg{position:absolute;inset:0;z-index:0;pointer-events:none;overflow:hidden}
+.hourglass-bg svg{display:block;width:100%;height:100%}
+
+/* All sections sit on top of the SVG */
+section{position:relative;z-index:1;padding:120px 0}
+
+/* Light text on the wide-blue zones */
+.on-blue{color:#fff}
+.on-blue h1, .on-blue h2, .on-blue h3, .on-blue strong{color:#fff}
+.on-blue .lede{color:rgba(255,255,255,.82);font-size:21px;max-width:62ch;margin-bottom:16px}
+.on-blue .kicker{color:#9bdcef}
+.on-blue em{color:rgba(255,255,255,.65)}
+.on-blue a{color:#9bdcef}
+
+/* Dark text on white zones */
+.on-white{color:var(--ink)}
+
+/* Megastat — the giant number callouts in funnel sections */
+.megastat{font-family:Fraunces,Georgia,serif;font-weight:600;line-height:.95;
+  font-size:clamp(96px,14vw,200px);letter-spacing:-.04em}
+.megastat .unit{font-family:Inter,sans-serif;font-size:.18em;font-weight:600;
+  text-transform:uppercase;letter-spacing:.12em;display:block;margin-top:14px;
+  color:rgba(255,255,255,.7)}
+
+/* Display headlines in zones */
+h2.display{font-family:Fraunces,Georgia,serif;font-weight:600;
+  font-size:clamp(40px,6vw,80px);line-height:1.02;letter-spacing:-.02em;margin-bottom:24px}
+
+/* Text panel — used in neck sections that have prose without a card */
+.text-panel{background:var(--bg);border:1px solid var(--line);border-radius:24px;
+  padding:56px 64px;margin:0 auto;max-width:880px;
+  box-shadow:0 1px 2px rgba(10,31,61,.04), 0 12px 40px rgba(10,31,61,.08);
+  text-align:center}
+.text-panel h2{margin-left:auto;margin-right:auto;max-width:18ch}
+.text-panel .lede{margin-left:auto;margin-right:auto;font-size:20px;color:var(--ink-soft);max-width:62ch}
+
+/* Card-form — bigger, more presentation-grade than the original .intake */
+.card-form{background:var(--ink);color:#fff;border-radius:32px;padding:64px;
+  box-shadow:0 12px 40px rgba(10,31,61,.20);position:relative;z-index:2}
+.card-form .kicker{color:var(--teal)}
+.card-form h2.display{color:#fff}
+.card-form .lede{color:rgba(255,255,255,.7);font-size:19px;max-width:64ch}
+.card-form .form{display:grid;grid-template-columns:repeat(2,1fr);gap:20px;margin-top:32px}
+.card-form .submit-row{margin-top:32px;display:flex;justify-content:space-between;align-items:center;gap:16px;flex-wrap:wrap}
+.card-form .submit-row .meta{color:rgba(255,255,255,.5);font-size:14px}
+
+/* Dropzone for photo upload */
+.dropzone{border:2px dashed rgba(255,255,255,.22);border-radius:14px;padding:24px;
+  background:rgba(255,255,255,.04);transition:all .15s;text-align:center}
+.dropzone.dragover{border-color:var(--teal);background:rgba(0,180,216,.12)}
+.dropzone-prompt{color:rgba(255,255,255,.7);font-size:14px;padding:14px 0}
+.dropzone-prompt strong{color:#fff}
+.link-btn{background:none;border:none;color:var(--teal);text-decoration:underline;cursor:pointer;font:inherit;padding:0}
+.link-btn:hover{color:#fff}
+.dropzone-thumbs{display:flex;flex-wrap:wrap;gap:12px;margin-top:16px}
+.dropzone-thumbs:empty{margin:0}
+.thumb{position:relative;width:120px;height:90px;border-radius:8px;overflow:hidden;
+  border:1px solid rgba(255,255,255,.16);background:rgba(0,0,0,.2)}
+.thumb img{width:100%;height:100%;object-fit:cover;display:block}
+.thumb-remove{position:absolute;top:4px;right:4px;width:22px;height:22px;border-radius:50%;
+  border:none;background:rgba(10,31,61,.85);color:#fff;font-size:14px;font-weight:700;
+  cursor:pointer;line-height:1;display:flex;align-items:center;justify-content:center;padding:0}
+.thumb-remove:hover{background:var(--red)}
+
+/* Map area + work-order + analysis section header (lives directly under cards) */
+.map-area{margin-top:48px;background:var(--surface);border:1px solid var(--line);
+  border-radius:24px;padding:40px 32px;box-shadow:0 1px 2px rgba(10,31,61,.04), 0 12px 40px rgba(10,31,61,.06)}
+.map-area-header{margin-bottom:24px}
+.map-area-title{font-family:Fraunces,Georgia,serif;font-weight:600;font-size:clamp(28px,3.5vw,44px);
+  line-height:1.1;letter-spacing:-.02em;color:var(--ink);margin:8px 0}
+.map-area-sub{font-size:16px;color:var(--ink-soft);max-width:60ch}
+
+.wo-area{background:var(--surface);border:1px solid var(--line);border-radius:24px;
+  padding:40px 32px;box-shadow:0 1px 2px rgba(10,31,61,.04), 0 12px 40px rgba(10,31,61,.06)}
+.wo-area-header{margin-bottom:24px}
+.wo-placeholder{padding:60px 40px;text-align:center;color:var(--ink-mute);font-size:15px;
+  background:var(--bg);border:1px dashed var(--line);border-radius:16px}
+
+.analysis-header{margin-bottom:32px}
+
+/* Photos in work-order document */
+.wo-photos{display:flex;flex-wrap:wrap;gap:12px;margin:8px 0 16px}
+.wo-photos img{width:160px;height:120px;object-fit:cover;border-radius:8px;border:1px solid var(--line)}
+
+/* Source-line at the very bottom (within blue) */
+.source-line{font-size:14px;color:rgba(255,255,255,.7);text-align:center;padding:60px 0 90px;position:relative;z-index:1}
+.source-line a{color:#fff;font-weight:600;text-decoration:underline}
+
+/* Mobile: collapse the form grid */
+@media (max-width:768px){
+  section{padding:80px 0}
+  .megastat{font-size:64px}
+  h2.display{font-size:36px}
+  .card-form{padding:32px 24px;border-radius:20px}
+  .card-form .form{grid-template-columns:1fr}
+  .text-panel{padding:32px 24px}
+  .map-area, .wo-area{padding:24px 16px}
+  .wo-photos img{width:100px;height:75px}
+}
