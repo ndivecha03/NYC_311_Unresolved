@@ -475,9 +475,13 @@ footer a:hover{color:var(--ink)}
    ║  HOURGLASS-FLOW LAYOUT — narrative-arc redesign                 ║
    ╚════════════════════════════════════════════════════════════════╝ */
 
-/* SVG hourglass background fills entire body height */
+/* SVG hourglass background fills entire body height.
+   IMPORTANT: body must have position:relative so the absolute-positioned
+   .hourglass-bg gets sized relative to the body (full content height),
+   not the viewport (100vh). Without this, the hourglass collapses to
+   one screen height and looks like it's "stuck" to the hero section. */
 html{background:var(--bg)}
-body{background:transparent}
+body{background:transparent;position:relative;min-height:100vh}
 .hourglass-bg{position:absolute;inset:0;z-index:0;pointer-events:none;overflow:hidden}
 .hourglass-bg svg{display:block;width:100%;height:100%}
 
@@ -523,6 +527,43 @@ h2.display{font-family:Fraunces,Georgia,serif;font-weight:600;
 .card-form .form{display:grid;grid-template-columns:repeat(2,1fr);gap:20px;margin-top:32px}
 .card-form .submit-row{margin-top:32px;display:flex;justify-content:space-between;align-items:center;gap:16px;flex-wrap:wrap}
 .card-form .submit-row .meta{color:rgba(255,255,255,.5);font-size:14px}
+
+/* Big "Use my current location" button — primary CTA above the address.
+   Sits on its own row, full-width, prominent gradient + GPS icon. */
+.big-location-btn{
+  display:flex;align-items:center;justify-content:center;gap:14px;
+  width:100%;
+  background:linear-gradient(135deg, var(--teal) 0%, var(--teal-deep) 100%);
+  color:#fff;
+  border:none;
+  border-radius:14px;
+  padding:22px 28px;
+  font:700 17px/1 Inter,system-ui,sans-serif;
+  letter-spacing:.01em;
+  cursor:pointer;
+  box-shadow:0 6px 24px rgba(0,180,216,.35);
+  transition:transform .15s, box-shadow .15s, opacity .15s;
+}
+.big-location-btn:hover{
+  transform:translateY(-1px);
+  box-shadow:0 10px 32px rgba(0,180,216,.45);
+}
+.big-location-btn:disabled{opacity:.6;cursor:wait;transform:none}
+.big-location-btn .loc-icon{font-size:24px;line-height:1}
+.big-location-btn.locating .loc-icon{animation:pulse 1s ease-in-out infinite}
+
+/* "or" divider between the big button and the manual address input */
+.or-divider{
+  display:flex;align-items:center;gap:14px;
+  margin:18px 0 14px;
+  color:rgba(255,255,255,.5);
+  font-size:13px;font-weight:500;letter-spacing:.04em;
+  text-transform:none;
+}
+.or-divider::before, .or-divider::after{
+  content:''; flex:1; height:1px; background:rgba(255,255,255,.12);
+}
+.or-divider span{font-size:13px;color:rgba(255,255,255,.55)}
 
 /* Dropzone for photo upload */
 .dropzone{border:2px dashed rgba(255,255,255,.22);border-radius:14px;padding:24px;

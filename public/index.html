@@ -9,7 +9,7 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=Fraunces:opsz,wght@9..144,400;9..144,600;9..144,700&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="styles.css?v=20260507a">
+<link rel="stylesheet" href="styles.css?v=20260507b">
 
 <script>window._gmReady = new Promise(res => { window.onGoogleMapsLoaded = () => res(); });</script>
 <script src="https://maps.googleapis.com/maps/api/js?key=AIzaSyCxMiaz9dcPviOvTGCi9jT1kZLW49Zg37w&libraries=places&loading=async&callback=onGoogleMapsLoaded" async defer onerror="window._gmReady = Promise.reject(new Error('Google Maps script failed to load'))"></script>
@@ -178,27 +178,21 @@
       </p>
 
       <form class="form" id="intakeForm" onsubmit="onSubmit(event)">
-        <div class="field">
-          <label>Borough</label>
-          <select name="borough" required>
-            <option value="">Select…</option>
-            <option>Manhattan</option><option>Brooklyn</option><option>Queens</option><option>Bronx</option><option>Staten Island</option>
-          </select>
-        </div>
-        <div class="field">
-          <label>Zip code</label>
-          <input name="zip" placeholder="10027" pattern="[0-9]{5}" required>
-        </div>
+        <!-- Hidden — auto-derived from "Use my location" or from
+             address geocoding on submit. We don't ask the user to fill
+             these manually anymore. -->
+        <input type="hidden" name="borough">
+        <input type="hidden" name="zip">
+
         <div class="field full">
-          <label>
-            Address or nearest cross street
-            <button type="button" class="use-location-btn" id="useLocationBtn"
-              title="Use my current GPS location to fill the address, zip, and borough">
-              <span class="loc-icon" aria-hidden="true">⌖</span>
-              <span class="loc-text">Use my location</span>
-            </button>
-          </label>
-          <input name="address" placeholder="W 125th St & Amsterdam Ave" required>
+          <button type="button" class="big-location-btn" id="useLocationBtn"
+            title="Use my current GPS location">
+            <span class="loc-icon" aria-hidden="true">⌖</span>
+            <span class="loc-text">Use my current location</span>
+          </button>
+          <div class="or-divider"><span>or enter the address manually</span></div>
+          <label>Address or nearest cross street</label>
+          <input name="address" placeholder="W 125th St &amp; Amsterdam Ave, NYC" required>
           <div class="field-hint" id="locStatus"></div>
         </div>
         <div class="field">
@@ -441,8 +435,8 @@
   <a href="sources.html">Sources &amp; methodology →</a>
 </div>
 
-<script src="charts.js?v=20260507a"></script>
-<script src="data-loader.js?v=20260507a"></script>
+<script src="charts.js?v=20260507b"></script>
+<script src="data-loader.js?v=20260507b"></script>
 <script>
 // ────────────────────────────────────────────────────────────────────
 // State
@@ -520,6 +514,30 @@ dropzone.addEventListener('drop', e => {
 async function onSubmit(e){
   e.preventDefault();
   const form = Object.fromEntries(new FormData(e.target));
+
+  // If borough/zip aren't already populated (Use-my-Location was the only
+  // path that filled them), reverse-geocode the address to derive them.
+  if(!form.borough || !form.zip){
+    const status = document.getElementById('locStatus');
+    if(status){ status.textContent = 'Looking up borough and zip from your address…'; status.className = 'field-hint'; }
+    try{
+      const derived = await deriveBoroughZip(form.address);
+      if(!derived){
+        if(status){ status.textContent = '⚠ Could not find that address in NYC. Try the "Use my location" button or rephrase the address.'; status.className = 'field-hint err'; }
+        return;
+      }
+      form.borough = derived.borough;
+      form.zip = derived.zip;
+      // Mirror back to hidden inputs for any future re-submission
+      e.target.borough.value = derived.borough;
+      e.target.zip.value = derived.zip;
+      if(status){ status.textContent = `Address resolved to ${derived.borough} ${derived.zip}.`; status.className = 'field-hint ok'; }
+    } catch(err){
+      if(status){ status.textContent = `⚠ Geocode failed: ${err.message}`; status.className = 'field-hint err'; }
+      return;
+    }
+  }
+
   window._lastForm = form;
   window._mapInitialized = false;
   window._selectedVendor = null;
@@ -994,6 +1012,39 @@ async function geocodeAddress(address, zip){
           const loc = results[0].geometry.location;
           resolve({lat: loc.lat(), lng: loc.lng()});
         } else reject(new Error(`Geocode failed: ${status}`));
+      });
+  });
+}
+
+// Reverse-geocode an address string into {borough, zip} so we can drop
+// the manual borough/zip fields. Returns null if the address can't be
+// resolved to a NYC borough.
+async function deriveBoroughZip(address){
+  if(!address) return null;
+  await window._gmReady;
+  return new Promise(resolve => {
+    const g = new google.maps.Geocoder();
+    g.geocode({address: `${address}, New York, NY`, componentRestrictions:{country:'US'}},
+      (results, status) => {
+        if(status !== 'OK' || !results.length){ resolve(null); return; }
+        const r = results[0];
+        const cmp = r.address_components || [];
+        const get = t => cmp.find(c => c.types.includes(t))?.long_name || '';
+        const sub2 = get('sublocality_level_1') || get('sublocality');
+        const adm2 = get('administrative_area_level_2');
+        const locality = get('locality');
+        const map = {
+          'manhattan':'Manhattan','new york':'Manhattan',
+          'brooklyn':'Brooklyn','kings county':'Brooklyn','kings':'Brooklyn',
+          'queens':'Queens','queens county':'Queens',
+          'bronx':'Bronx','the bronx':'Bronx','bronx county':'Bronx',
+          'staten island':'Staten Island','richmond county':'Staten Island','richmond':'Staten Island',
+        };
+        const lookup = s => map[(s || '').toLowerCase()];
+        const borough = lookup(sub2) || lookup(adm2) || lookup(locality) || '';
+        const zip = get('postal_code') || '';
+        if(!borough) resolve(null);
+        else resolve({borough, zip});
       });
   });
 }
