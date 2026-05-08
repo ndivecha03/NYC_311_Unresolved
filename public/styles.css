@@ -736,6 +736,30 @@ h2.display{font-family:Fraunces,Georgia,serif;font-weight:600;
 .wo-photos{display:flex;flex-wrap:wrap;gap:12px;margin:8px 0 16px}
 .wo-photos img{width:160px;height:120px;object-fit:cover;border-radius:8px;border:1px solid var(--line)}
 
+/* Workflow diagram */
+.workflow-diagram{margin-top:32px;display:flex;flex-direction:column;gap:0;position:relative}
+.workflow-step{display:grid;grid-template-columns:64px 1fr;gap:20px;align-items:stretch;position:relative;padding:14px 0}
+.workflow-step::before{content:"";position:absolute;left:31px;top:0;bottom:0;width:2px;background:rgba(255,255,255,.12);z-index:0}
+.workflow-step:first-child::before{top:50%}
+.workflow-step:last-child::before{bottom:50%}
+.ws-marker{position:relative;z-index:1;width:64px;height:64px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-family:Fraunces,serif;font-weight:600;font-size:24px;color:#fff;background:rgba(255,255,255,.08);border:2px solid rgba(255,255,255,.18);align-self:center}
+.workflow-step.ws-compressed .ws-marker{background:var(--teal);border-color:var(--teal);color:#0a1f3d;box-shadow:0 0 0 6px rgba(0,180,216,.18)}
+.ws-content{display:flex;flex-direction:column;justify-content:center;background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.08);border-radius:14px;padding:18px 22px}
+.workflow-step.ws-compressed .ws-content{background:rgba(0,180,216,.08);border-color:rgba(0,180,216,.28)}
+.ws-name{font-size:17px;font-weight:600;color:#fff;margin-bottom:6px}
+.ws-times{display:flex;align-items:center;gap:10px;flex-wrap:wrap;font-size:14px}
+.ws-time-today{color:rgba(255,255,255,.55);text-decoration:line-through;font-variant-numeric:tabular-nums}
+.ws-time-arrow{color:rgba(255,255,255,.45);font-weight:600}
+.ws-time-tool{color:var(--teal);font-weight:700;font-variant-numeric:tabular-nums;background:rgba(0,180,216,.12);padding:3px 10px;border-radius:999px}
+.workflow-step.ws-same .ws-time-tool{color:rgba(255,255,255,.7);background:rgba(255,255,255,.08)}
+
+@media (max-width:880px){
+  .workflow-step{grid-template-columns:48px 1fr;gap:14px}
+  .workflow-step::before{left:23px}
+  .ws-marker{width:48px;height:48px;font-size:18px}
+  .ws-content{padding:14px 16px}
+}
+
 /* Source-line at the very bottom (within blue) */
 .source-line{font-size:14px;color:rgba(255,255,255,.7);text-align:center;padding:60px 0 90px;position:relative;z-index:1}
 .source-line a{color:#fff;font-weight:600;text-decoration:underline}
