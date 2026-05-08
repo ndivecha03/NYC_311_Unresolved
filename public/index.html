@@ -401,8 +401,9 @@
       <div class="why-block">
         <p class="lede" style="margin:24px 0 0">
           <strong>Revenue routed to local contractors:</strong>
-          $6.77M – $16.92M per year, landing in NYC-licensed electrician businesses
-          already in the same neighborhoods as the broken lights.
+          $0.82M – $2.05M from the 4,096 stuck tickets alone, landing in
+          NYC-licensed electrician businesses already in the same neighborhoods
+          as the broken lights.
         </p>
         <div class="why-chart" id="why-revenue-chart"></div>
       </div>
@@ -1462,17 +1463,23 @@ const LIGHT_MAP_STYLE = [
     }
   } catch(e){ /* fall back to hardcoded */ }
 
-  // R2: revenue stack — sorted by borough volume descending
+  // R2: revenue stack — based on the 4,096 stuck tickets,
+  // distributed across boroughs proportionally to volume.
   const revEl = document.getElementById('why-revenue-chart');
   if(revEl && Charts.revenueRange){
+    const STUCK = 4096;
+    const totalVol = boroughs.reduce((s,b) => s + b.volume, 0) || 1;
     const items = boroughs
       .sort((a,b) => b.volume - a.volume)
-      .map(b => ({
-        label: b.name,
-        low:  b.volume * 200,
-        mid:  b.volume * 350,
-        high: b.volume * 500,
-      }));
+      .map(b => {
+        const stuckShare = Math.round((b.volume / totalVol) * STUCK);
+        return {
+          label: b.name,
+          low:  stuckShare * 200,
+          mid:  stuckShare * 350,
+          high: stuckShare * 500,
+        };
+      });
     Charts.revenueRange(revEl, { items, onDark: true });
   }
 
