@@ -386,6 +386,8 @@
   }
 
   // ── 11. Revenue range — horizontal stacked bars showing low→high revenue
+  // Accepts {onDark:true} to flip label/value colors for use inside a
+  // dark-navy panel (e.g. the Why section).
   function revenueRange(el, d){
     const items = d.items || [];
     if(!items.length){ el.innerHTML = empty('No data'); return; }
@@ -394,23 +396,79 @@
     const max = Math.max(...items.map(it=>it.high));
     const rowH = (H - padT - padB) / items.length;
     const bh = rowH * 0.55;
+    const onDark = !!d.onDark;
+    const labelColor = onDark ? '#ffffff' : PALETTE.ink;
+    const valueColor = onDark ? 'rgba(255,255,255,0.78)' : PALETTE.inkSoft;
+    // On dark, give the "low" bar a soft teal tint that still pops; on
+    // light, keep the original tealSoft.
+    const lowFill = onDark ? 'rgba(0,180,216,0.30)' : PALETTE.tealSoft;
+    const midFill = PALETTE.teal;
     let s = svg(W,H);
     items.forEach((it,i)=>{
       const y = padT + i*rowH + (rowH-bh)/2;
-      const xLow  = padL + (it.low /max) * (W - padL - padR);
       const xMid  = padL + (it.mid /max) * (W - padL - padR);
       const xHigh = padL + (it.high/max) * (W - padL - padR);
       const isTotal = it.label === 'NYC Total';
-      // Range bar (low → high) in light teal
-      s += `<rect x="${padL}" y="${y}" width="${xHigh-padL}" height="${bh}" fill="${isTotal?PALETTE.tealDeep:PALETTE.tealSoft}" rx="6"/>`;
-      // Mid marker (most likely)
-      s += `<rect x="${padL}" y="${y}" width="${xMid-padL}" height="${bh}" fill="${isTotal?PALETTE.ink:PALETTE.teal}" rx="6"/>`;
+      // Range bar (low → high) — the light tint
+      s += `<rect x="${padL}" y="${y}" width="${xHigh-padL}" height="${bh}" fill="${isTotal?PALETTE.tealDeep:lowFill}" rx="6"/>`;
+      // Mid marker (most likely value)
+      s += `<rect x="${padL}" y="${y}" width="${xMid-padL}" height="${bh}" fill="${isTotal?PALETTE.ink:midFill}" rx="6"/>`;
       // Borough label
-      s += text(padL-12, y + bh/2, it.label, {size:isTotal?16:14, weight:isTotal?800:700, color:PALETTE.ink, anchor:'end'});
+      s += text(padL-12, y + bh/2, it.label, {size:isTotal?16:14, weight:isTotal?800:700, color:labelColor, anchor:'end'});
       // Range value to the right
       const fmt = v => '$'+(v/1e6).toFixed(2)+'M';
-      s += text(xHigh + 8, y + bh/2, `${fmt(it.low)} – ${fmt(it.high)}`, {size:12, weight:600, color:PALETTE.inkSoft, anchor:'start'});
+      s += text(xHigh + 8, y + bh/2, `${fmt(it.low)} – ${fmt(it.high)}`, {size:12, weight:600, color:valueColor, anchor:'start'});
     });
+    s += '</svg>';
+    el.innerHTML = s;
+  }
+
+  // ── 15. Time-comparison chart — two stacked bars showing dramatic
+  // before/after time compression. Designed for dark backgrounds.
+  // Input: {bars:[{label, time, value, color?}], footer?, onDark?}
+  function timeComparison(el, d){
+    const bars = d.bars || [];
+    if(!bars.length){ el.innerHTML = empty('No data'); return; }
+    const W = 640, padL = 170, padR = 130, padT = 18, padB = 56;
+    const rowH = 64;
+    const trackH = 36;
+    const H = padT + bars.length * rowH + padB;
+    const trackW = W - padL - padR;
+    const max = Math.max(...bars.map(b => b.time));
+    const onDark = d.onDark !== false;
+
+    const labelColor = onDark ? '#ffffff' : PALETTE.ink;
+    const valueColor = onDark ? '#ffffff' : PALETTE.ink;
+    const trackColor = onDark ? 'rgba(255,255,255,0.08)' : PALETTE.line;
+    const footerColor = onDark ? 'rgba(255,255,255,0.72)' : PALETTE.inkSoft;
+
+    let s = svg(W, H);
+    bars.forEach((b, i) => {
+      const y = padT + i * rowH;
+      const trackY = y + (rowH - trackH) / 2;
+      const w = Math.max(2, (b.time / max) * trackW);
+      const color = b.color || PALETTE.teal;
+
+      // Track (background lane)
+      s += `<rect x="${padL}" y="${trackY}" width="${trackW}" height="${trackH}" rx="${trackH/2}" fill="${trackColor}"/>`;
+      // Filled bar
+      s += `<rect x="${padL}" y="${trackY}" width="${w}" height="${trackH}" rx="${trackH/2}" fill="${color}"/>`;
+      // Left label
+      s += text(padL - 14, trackY + trackH/2, b.label, {
+        size:14, weight:700, color:labelColor, anchor:'end',
+      });
+      // Right value (e.g. "~30 min" or "< 60 sec")
+      s += text(padL + w + 12, trackY + trackH/2, b.value, {
+        size:14, weight:800, color:valueColor, anchor:'start',
+      });
+    });
+
+    // Footer — aggregate annual savings line
+    if(d.footer){
+      s += text(W/2, H - 22, d.footer, {
+        size:13, weight:600, color:footerColor, anchor:'middle',
+      });
+    }
     s += '</svg>';
     el.innerHTML = s;
   }
@@ -574,5 +632,5 @@
     </div>`;
   }
 
-  global.Charts = { kpiTile, barChart, hBarChart, donut, sparkline, gauge, gaugeCluster, percentileBar, progressBars, boxPlot, histogram, choropleth, rankStrip, forecastBand, revenueRange, PALETTE };
+  global.Charts = { kpiTile, barChart, hBarChart, donut, sparkline, gauge, gaugeCluster, percentileBar, progressBars, boxPlot, histogram, choropleth, rankStrip, forecastBand, revenueRange, timeComparison, PALETTE };
 })(window);

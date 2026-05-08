@@ -9,7 +9,7 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=Fraunces:opsz,wght@9..144,400;9..144,600;9..144,700&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="styles.css?v=20260508a">
+<link rel="stylesheet" href="styles.css?v=20260508b">
 
 <script>window._gmReady = new Promise(res => { window.onGoogleMapsLoaded = () => res(); });</script>
 <script src="https://maps.googleapis.com/maps/api/js?key=AIzaSyCxMiaz9dcPviOvTGCi9jT1kZLW49Zg37w&libraries=places&loading=async&callback=onGoogleMapsLoaded" async defer onerror="window._gmReady = Promise.reject(new Error('Google Maps script failed to load'))"></script>
@@ -397,20 +397,27 @@
         Clearing the 4,096 stuck tickets — and the 33,835 new street-light
         complaints filed every year — unlocks three compounding effects:
       </p>
-      <p class="lede" style="margin-top:24px">
-        <strong>Revenue routed to local contractors:</strong>
-        $6.77M – $16.92M per year, landing in NYC-licensed electrician businesses
-        already in the same neighborhoods as the broken lights.
-      </p>
-      <p class="lede" style="margin-top:24px">
-        <strong>Hours freed for city staff:</strong>
-        ~16,917 hours per year of NYC DOT time recovered, redirected from drafting
-        boilerplate to handling the cases that need engineering judgment.
-        <em style="font-size:.85em;color:rgba(255,255,255,.55);display:block;margin-top:6px">
+      <div class="why-block">
+        <p class="lede" style="margin:24px 0 0">
+          <strong>Revenue routed to local contractors:</strong>
+          $6.77M – $16.92M per year, landing in NYC-licensed electrician businesses
+          already in the same neighborhoods as the broken lights.
+        </p>
+        <div class="why-chart" id="why-revenue-chart"></div>
+      </div>
+
+      <div class="why-block">
+        <p class="lede" style="margin:24px 0 0">
+          <strong>Hours freed for city staff:</strong>
+          ~16,917 hours per year of NYC DOT time recovered, redirected from drafting
+          boilerplate to handling the cases that need engineering judgment.
+        </p>
+        <div class="why-chart" id="why-hours-chart"></div>
+        <em style="font-size:.85em;color:rgba(255,255,255,.55);display:block;margin-top:-4px">
           Assumes ~30 min per manually-drafted work order — a stated assumption,
           not a measurement (no public benchmark for current municipal WO drafting time).
         </em>
-      </p>
+      </div>
       <p class="lede" style="margin-top:24px">
         <strong>Higher municipal quality of life:</strong>
         Every closed ticket is a block lit, a stretch of sidewalk safer at midnight,
@@ -456,8 +463,8 @@
   <a href="sources.html">Sources &amp; methodology →</a>
 </div>
 
-<script src="charts.js?v=20260508a"></script>
-<script src="data-loader.js?v=20260508a"></script>
+<script src="charts.js?v=20260508b"></script>
+<script src="data-loader.js?v=20260508b"></script>
 <script>
 // ────────────────────────────────────────────────────────────────────
 // State
@@ -1326,6 +1333,60 @@ const LIGHT_MAP_STYLE = [
   {featureType:'water', elementType:'geometry', stylers:[{color:'#cce8f0'}]},
   {featureType:'water', elementType:'labels.text.fill', stylers:[{color:'#0077b6'}]},
 ];
+
+// ────────────────────────────────────────────────────────────────────
+// Why-section visuals — borough revenue stack + time-compression bars.
+// Both are computed from the verified baked-data borough volumes ×
+// the disclosed $200/$350/$500 per-repair rate ranges.
+// ────────────────────────────────────────────────────────────────────
+(async () => {
+  // Wait until charts.js is parsed
+  if(typeof Charts === 'undefined') return;
+
+  // Pull baked-data borough volumes if available, else use fallbacks
+  let boroughs = [
+    {name:'Brooklyn',      volume: 8501},
+    {name:'Queens',        volume: 8255},
+    {name:'Bronx',         volume: 6751},
+    {name:'Manhattan',     volume: 6199},
+    {name:'Staten Island', volume: 3974},
+  ];
+  try{
+    const baked = await fetch('baked-data.json?v=20260508b').then(r => r.json());
+    if(baked?.boroughs){
+      boroughs = ['Brooklyn','Queens','Bronx','Manhattan','Staten Island']
+        .map(name => ({name, volume: baked.boroughs[name]?.volume || 0}))
+        .filter(b => b.volume > 0);
+    }
+  } catch(e){ /* fall back to hardcoded */ }
+
+  // R2: revenue stack — sorted by borough volume descending
+  const revEl = document.getElementById('why-revenue-chart');
+  if(revEl && Charts.revenueRange){
+    const items = boroughs
+      .sort((a,b) => b.volume - a.volume)
+      .map(b => ({
+        label: b.name,
+        low:  b.volume * 200,
+        mid:  b.volume * 350,
+        high: b.volume * 500,
+      }));
+    Charts.revenueRange(revEl, { items, onDark: true });
+  }
+
+  // H1: time-comparison — ~30 min vs <60 sec
+  const hrEl = document.getElementById('why-hours-chart');
+  if(hrEl && Charts.timeComparison){
+    Charts.timeComparison(hrEl, {
+      bars: [
+        { label: 'Manual today',    time: 30,    value: '~30 min',      color: Charts.PALETTE.amber },
+        { label: 'With this tool',  time: 0.05,  value: '< 60 sec',     color: Charts.PALETTE.teal  },
+      ],
+      footer: 'Across 33,835 tickets/year → ~16,917 hours recovered',
+      onDark: true,
+    });
+  }
+})();
 
 // ────────────────────────────────────────────────────────────────────
 // Side TOC scroll-spy
