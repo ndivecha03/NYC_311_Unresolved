@@ -73,6 +73,22 @@ h2.display{font-family:Fraunces,Georgia,serif;font-weight:600;font-size:clamp(40
 .card-stub h3{font-family:Inter,sans-serif;font-size:18px;font-weight:700;color:var(--ink);margin-bottom:8px}
 .card-stub .placeholder-note{font-size:13px;color:var(--ink-mute);font-style:italic}
 
+/* Text panel — used for neck sections that have text directly in .wrap
+   (no card-stub). Provides an opaque cream background so dark text
+   doesn't get obscured by the dark navy column passing behind it.   */
+.text-panel{
+  background:var(--bg);
+  border:1px solid var(--line);
+  border-radius:24px;
+  padding:56px 64px;
+  margin:0 auto;
+  max-width:880px;
+  box-shadow:0 1px 2px rgba(10,31,61,.04), 0 12px 40px rgba(10,31,61,.08);
+  text-align:center;
+}
+.text-panel h2{margin-left:auto;margin-right:auto;max-width:18ch}
+.text-panel .lede{margin-left:auto;margin-right:auto}
+
 /* Footer source link sits on the dark blue */
 .source-line{font-size:14px;color:rgba(255,255,255,.7);text-align:center;padding:60px 0 90px}
 .source-line a{color:#fff;font-weight:600;text-decoration:underline}
@@ -204,18 +220,20 @@ h2.display{font-family:Fraunces,Georgia,serif;font-weight:600;font-size:clamp(40
      ╚════════════════════════════════════════════════════════════════╝ -->
 
 <section id="tool" class="on-white">
-  <div class="wrap" style="text-align:center">
-    <span class="kicker">The tool</span>
-    <h2 class="display" style="margin:auto">One tool. Sixty seconds.</h2>
-    <p class="lede" style="margin:24px auto">
-      1,242 NYC-licensed electricians sit within the same five boroughs.
-      The bottleneck isn't capacity — it's how long it takes to draft a DOT-grade
-      work order and route it to the right contractor. We compress that work
-      from days to seconds.
-    </p>
-    <p class="lede" style="margin:24px auto;font-style:italic">
-      Annual scope: <strong>33,835</strong> street-light complaints filed each year.
-    </p>
+  <div class="wrap">
+    <div class="text-panel">
+      <span class="kicker">The tool</span>
+      <h2 class="display">One tool. Sixty seconds.</h2>
+      <p class="lede" style="margin-top:24px">
+        1,242 NYC-licensed electricians sit within the same five boroughs.
+        The bottleneck isn't capacity — it's how long it takes to draft a DOT-grade
+        work order and route it to the right contractor. We compress that work
+        from days to seconds.
+      </p>
+      <p class="lede" style="margin-top:20px;font-style:italic;color:var(--ink-mute)">
+        Annual scope: <strong>33,835</strong> street-light complaints filed each year.
+      </p>
+    </div>
   </div>
 </section>
 
