@@ -215,6 +215,7 @@ nav.topnav{ display:none; }   /* legacy top nav, hidden if any HTML still includ
 @media (max-width:1100px){
   body{ padding-left:0; }
   .side-rail{ display:none; }
+  .hourglass-bg{ left:0; }   /* hourglass spans full viewport when rail is hidden */
 }
 
 /* Result header stat strip — estimated time to fix, borough closure, current step */
@@ -479,10 +480,23 @@ footer a:hover{color:var(--ink)}
    IMPORTANT: body must have position:relative so the absolute-positioned
    .hourglass-bg gets sized relative to the body (full content height),
    not the viewport (100vh). Without this, the hourglass collapses to
-   one screen height and looks like it's "stuck" to the hero section. */
+   one screen height and looks like it's "stuck" to the hero section.
+
+   The hourglass is offset to the right by --rail-width so it centers
+   on the CONTENT AREA (right of the side TOC), not the full viewport.
+   Below the mobile breakpoint where the side rail is hidden, the
+   hourglass spans the full width. */
 html{background:var(--bg)}
 body{background:transparent;position:relative;min-height:100vh}
-.hourglass-bg{position:absolute;inset:0;z-index:0;pointer-events:none;overflow:hidden}
+.hourglass-bg{
+  position:absolute;
+  top:0; bottom:0;
+  left:var(--rail-width);
+  right:0;
+  z-index:0;
+  pointer-events:none;
+  overflow:hidden;
+}
 .hourglass-bg svg{display:block;width:100%;height:100%}
 
 /* All sections sit on top of the SVG */
