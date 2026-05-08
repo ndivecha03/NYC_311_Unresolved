@@ -163,13 +163,17 @@
       // When labelAllPoints is set, render a dot + value at every point
       // (with smart positioning to keep labels above/below to avoid overlap).
       if(d.labelAllPoints){
+        const lastIdx = ser.points.length - 1;
         ser.points.forEach((p, i) => {
           const cx = sx(p.x), cy = sy(p.y);
           s += `<circle cx="${cx}" cy="${cy}" r="4" fill="${color}" stroke="#fff" stroke-width="2"/>`;
           // Label sits above the line (or below near the top edge to avoid clipping)
           const labelY = (cy - padT < 24) ? cy + 18 : cy - 10;
-          s += text(cx, labelY, fmtInt(p.y), {
-            size: 11, weight: 700, color: PALETTE.ink, anchor: 'middle', baseline: 'auto'
+          // Anchor first/last labels inward so they don't overlap the y-axis numbers
+          const anchor = i === 0 ? 'start' : i === lastIdx ? 'end' : 'middle';
+          const labelX = i === 0 ? cx + 6 : i === lastIdx ? cx - 6 : cx;
+          s += text(labelX, labelY, fmtInt(p.y), {
+            size: 11, weight: 700, color: PALETTE.ink, anchor, baseline: 'auto'
           });
         });
       } else {
@@ -609,12 +613,18 @@
 
     // ── Below the axis: tick labels for min / Q1 / Q3 / max only ─
     // Avoid double-stacking labels at the median (it's already prominently above).
-    [
-      { x: xMin, lbl: 'min',  v: d.min },
-      { x: xQ1,  lbl: 'Q1',   v: d.q1  },
-      { x: xQ3,  lbl: 'Q3',   v: d.q3  },
-      { x: xMax, lbl: 'max',  v: d.max },
-    ].forEach(t => {
+    // If two ticks would overlap (e.g. min and Q1 close together), drop the
+    // less-informative one (min/max) and keep Q1/Q3.
+    const MIN_SEP = 36;
+    const ticks = [
+      { x: xMin, lbl: 'min', v: d.min, prio: 1 },
+      { x: xQ1,  lbl: 'Q1',  v: d.q1,  prio: 2 },
+      { x: xQ3,  lbl: 'Q3',  v: d.q3,  prio: 2 },
+      { x: xMax, lbl: 'max', v: d.max, prio: 1 },
+    ];
+    if(Math.abs(xQ1 - xMin) < MIN_SEP) ticks[0].skip = true;
+    if(Math.abs(xMax - xQ3) < MIN_SEP) ticks[3].skip = true;
+    ticks.filter(t => !t.skip).forEach(t => {
       s += `<line x1="${t.x}" y1="${axisY}" x2="${t.x}" y2="${axisY + 4}" stroke="${PALETTE.inkMute}" stroke-width="1"/>`;
       s += text(t.x, axisY + 16, Math.round(t.v) + 'd', {
         size: 11, weight: 700, color: PALETTE.ink, anchor: 'middle', baseline:'auto'
