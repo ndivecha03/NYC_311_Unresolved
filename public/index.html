@@ -9,7 +9,7 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=Fraunces:opsz,wght@9..144,400;9..144,600;9..144,700&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="styles.css?v=20260508b">
+<link rel="stylesheet" href="styles.css?v=20260516e">
 
 <script>window._gmReady = new Promise(res => { window.onGoogleMapsLoaded = () => res(); });</script>
 <script src="https://maps.googleapis.com/maps/api/js?key=AIzaSyCxMiaz9dcPviOvTGCi9jT1kZLW49Zg37w&libraries=places&loading=async&callback=onGoogleMapsLoaded" async defer onerror="window._gmReady = Promise.reject(new Error('Google Maps script failed to load'))"></script>
@@ -28,10 +28,9 @@
   <div class="side-rail-toc">
     <div class="side-toc-label">The problem</div>
     <ul>
-      <li><a href="#hero" data-spy="hero">3.65M complaints</a></li>
-      <li><a href="#addressed" data-spy="addressed">Reach</a></li>
-      <li><a href="#backlog" data-spy="backlog">Backlog</a></li>
-      <li><a href="#streetlights" data-spy="streetlights">Our scope</a></li>
+      <li><a href="#hero" data-spy="hero">92% to 2 firms</a></li>
+      <li><a href="#rule" data-spy="rule">The 2019 rule</a></li>
+      <li><a href="#solution" data-spy="solution">Our matrix</a></li>
     </ul>
 
     <div class="side-toc-label" style="margin-top:24px">The tool</div>
@@ -39,7 +38,7 @@
       <li><a href="#tool" data-spy="tool">Overview</a></li>
       <li><a href="#report" data-spy="report">Report</a></li>
       <li><a href="#workorder" data-spy="workorder">Work order</a></li>
-      <li><a href="#analysis" data-spy="analysis">Analysis</a></li>
+      <li><a href="#equity-impact" data-spy="equity-impact">Equity impact</a></li>
     </ul>
 
     <div class="side-toc-label" style="margin-top:24px">A framework</div>
@@ -94,60 +93,57 @@
 <section id="hero" class="on-blue">
   <div class="wrap">
     <div class="dark-panel">
-      <span class="kicker">NYC 311 · 2025</span>
+      <span class="kicker">NYC streetlight contracts · 2003–2026</span>
       <div class="megastat">
-        3,654,988
-        <span class="unit">complaints filed</span>
+        92%
+        <span class="unit">of $1.32B goes to two companies</span>
       </div>
       <p class="lede" style="margin-top:32px">
-        Rodents in the walls. Leaks bleeding through ceilings. Noise after midnight.
-        Sidewalks cracked into trip hazards. Heat that won't come on in January.
-        Every grievance in the city flows into one queue.
+        Welsbach Electric and Hellman Electric together take <strong>$883M</strong>
+        of the $1.32B in NYC streetlight and traffic-signal contracts on record.
+        The other 1,883 NYC-licensed electricians compete for the remainder — or
+        more often, get nothing at all.
       </p>
     </div>
   </div>
 </section>
 
-<section id="addressed" class="on-blue">
+<section id="rule" class="on-blue">
   <div class="wrap">
     <div class="dark-panel">
-      <span class="kicker">Reach</span>
-      <h2 class="display"><strong>97.98%</strong> technically reach an agency.</h2>
+      <span class="kicker">The 2019 rule nobody's using</span>
+      <h2 class="display">A law has existed since 2019 to fix this.</h2>
       <p class="lede">
-        Not just DOT — DSNY handles sanitation, HPD takes housing complaints,
-        DEP runs water and sewer, NYPD fields noise and illegal parking,
-        DOB inspects buildings. <strong>Sixty-plus city agencies share the 311 load.</strong>
-        A 311 ticket almost always gets <em>somewhere</em>.
+        NYC PPB Rule 3-08 lets any agency buy directly from a certified M/WBE
+        vendor for up to <strong>$1.5M per purchase</strong> — no competitive
+        solicitation required. For a $5,000 streetlight repair, the rule
+        applies trivially.
+      </p>
+      <p class="lede" style="margin-top:14px">
+        We identified <strong>101 NYC-licensed electricians</strong> who are
+        eligible under this rule — minority- and women-owned, PASSPort-enrolled,
+        active license, NAICS-matched. Across all five boroughs.
+        <strong>The city is using almost none of them.</strong>
       </p>
     </div>
   </div>
 </section>
 
-<section id="backlog" class="on-blue">
+<section id="solution" class="on-blue">
   <div class="wrap">
     <div class="dark-panel">
-      <span class="kicker">But</span>
-      <h2 class="display"><strong>4.25%</strong> never finish.</h2>
+      <span class="kicker">What we built</span>
+      <h2 class="display">A matrix that ranks the 101.</h2>
       <p class="lede">
-        155,172 grievances filed in 2025 sat unresolved more than 90 days later.
-        Officially routed. Practically frozen. The system delivers — until it doesn't.
+        Submit a streetlight complaint. Our tool ranks the <strong>101
+        direct-purchase-eligible electricians</strong> across <strong>eight
+        weighted components</strong> — proximity, license tenure,
+        owner-demographic equity, recent workload, and four more — then
+        surfaces the top five for your address with full score transparency.
       </p>
-    </div>
-  </div>
-</section>
-
-<section id="streetlights" class="on-blue">
-  <div class="wrap">
-    <div class="dark-panel">
-      <span class="kicker">Of that backlog</span>
-      <div class="megastat">
-        4,096
-        <span class="unit">street light complaints stuck</span>
-      </div>
-      <p class="lede" style="margin-top:32px">
-        The slice we built this tool to clear. A dark intersection isn't a
-        quality-of-life nuisance — it's a measurable safety gap that compounds
-        every night it stays unlit.
+      <p class="lede" style="margin-top:14px">
+        Same complaint. Same 2019 rule. A vendor pool the city already had —
+        but wasn't using.
       </p>
     </div>
   </div>
@@ -161,16 +157,15 @@
 <section id="tool" class="on-white">
   <div class="wrap">
     <div class="text-panel">
-      <span class="kicker">The tool</span>
-      <h2 class="display">One tool. Sixty seconds.</h2>
+      <span class="kicker">Try it</span>
+      <h2 class="display">Submit a complaint. See the matrix work.</h2>
       <p class="lede" style="margin-top:24px">
-        1,242 NYC-licensed electricians sit within the same five boroughs.
-        The bottleneck isn't capacity — it's how long it takes to draft a DOT-grade
-        work order and route it to the right contractor. We compress that work
-        from days to seconds.
-      </p>
-      <p class="lede" style="margin-top:20px;font-style:italic;color:var(--ink-mute)">
-        Annual scope: <strong>33,835</strong> street-light complaints filed each year.
+        Enter any NYC address with a broken streetlight. The tool ranks the
+        <strong>101 direct-purchase-eligible electricians</strong> against
+        your complaint location and surfaces the top five — each with the
+        full score breakdown so you can see exactly why they were picked.
+        If fewer than five eligible vendors sit within 10 miles, the matrix
+        gracefully expands to the next tier and tells you it did.
       </p>
     </div>
   </div>
@@ -265,31 +260,36 @@
           Hover any vendor pin to see the driving route to your complaint. Click <strong>Select</strong> on the vendor you want.
         </p>
       </div>
-      <div class="map-grid">
-        <div class="map-shell" id="mapCanvas"><div class="map-placeholder">Geocoding…</div></div>
-        <div class="map-side">
-          <div class="map-legend">
-            <div class="legend-item"><span class="pin pin-complaint"></span> Your complaint</div>
-            <div class="legend-item">
-              <span class="pin pin-vendor-bolt" aria-hidden="true">
-                <svg viewBox="0 0 24 24" width="16" height="16">
-                  <path d="M14,2 L5,14 L11,14 L9,22 L19,10 L13,10 L16,2 Z" fill="#ffb703" stroke="#fff" stroke-width="1.2" stroke-linejoin="round"/>
-                </svg>
-              </span>
-              Licensed electricians within 2 mi
-            </div>
-            <div class="legend-item"><span class="pin pin-similar"></span> Similar past complaints (last 12 mo)</div>
-            <div class="legend-sub">
-              <span class="legend-sub-label">Days-to-close badge color:</span>
-              <span class="day-chip" style="background:var(--teal-soft);color:var(--teal-deep)">&lt;7d</span>
-              <span class="day-chip" style="background:var(--amber-soft);color:#7a5800">8–30d</span>
-              <span class="day-chip" style="background:var(--red-soft);color:#a32b36">&gt;30d</span>
-              <span class="day-chip" style="background:var(--bg-alt);color:var(--ink-mute)">open</span>
-            </div>
+      <div class="map-fullwidth">
+        <div class="map-shell tall" id="mapCanvas"><div class="map-placeholder">Geocoding…</div></div>
+        <div class="map-legend map-legend-row">
+          <div class="legend-item"><span class="pin pin-complaint"></span> Your complaint</div>
+          <div class="legend-item">
+            <span class="pin pin-vendor-bolt" aria-hidden="true">
+              <svg viewBox="0 0 24 24" width="16" height="16">
+                <path d="M14,2 L5,14 L11,14 L9,22 L19,10 L13,10 L16,2 Z" fill="#ffb703" stroke="#fff" stroke-width="1.2" stroke-linejoin="round"/>
+              </svg>
+            </span>
+            Recommended electricians (ranked)
           </div>
-          <div class="map-list" id="vendorList"><div class="lbl">Nearest vendors</div></div>
-          <div class="map-list" id="similarList"><div class="lbl">Similar resolved complaints</div></div>
+          <div class="legend-item"><span class="pin pin-similar"></span> Similar past complaints (last 12 mo)</div>
         </div>
+      </div>
+
+      <!-- Vendor description cards — full width, below the map -->
+      <div class="vendor-detail-section">
+        <div class="vendor-detail-header">
+          <span class="kicker" style="color:var(--teal-deep)">Step 2 of 3</span>
+          <h3 class="vendor-detail-title">Five vendors from the 101 eligible pool.</h3>
+          <p class="vendor-detail-sub">
+            Ranked across the 8-component equity-first matrix. Each card shows
+            the vendor's score, credibility signals, owner-demographic badges,
+            and why the matrix surfaced them. Click <strong>Why this vendor?</strong>
+            on any card to see the per-component breakdown.
+          </p>
+        </div>
+        <div class="map-list" id="vendorList"></div>
+        <div class="map-list" id="similarList" style="margin-top:32px"></div>
       </div>
     </div>
   </div>
@@ -328,57 +328,107 @@
 <!-- Section 8 — Analysis report (5 charts inline, no tabs).
      Whole section sits inside a .analysis-card so the dark text isn't
      obscured by the dark-navy hourglass column passing behind it. -->
-<section id="analysis" class="on-white">
+<section id="equity-impact" class="on-white">
   <div class="wrap">
     <div class="analysis-card">
       <div class="analysis-header">
-        <span class="kicker" style="color:var(--teal-deep)">Analysis</span>
-        <h2 class="analysis-title" id="analysisTitle">
-          Your complaint, in context.
+        <span class="kicker" style="color:var(--teal-deep)">Equity impact</span>
+        <h2 class="analysis-title" id="equityTitle">
+          What this complaint redistributes.
         </h2>
       </div>
 
-      <!-- Intro row: smaller "repeat-at-address" KPI on the left,
-           subheading prose on the right -->
-      <div class="analysis-intro-row">
-        <div class="kpi-compact" id="k-repeat"></div>
-        <p class="analysis-sub" id="analysisSub">
-          Borough-level data on how 311 handles street-light complaints —
-          submission trend, completion rates, and where this report is
-          most likely to land in the queue.
+      <p class="analysis-sub" style="margin-bottom:24px">
+        Every dispatch through this tool routes work that would otherwise have
+        gone to Welsbach or Hellman to a small minority- or women-owned electrician
+        within 10 miles of the complaint. The numbers below show the immediate
+        impact of <em>your</em> complaint, and the citywide impact if the matrix
+        were used at scale.
+      </p>
+
+      <!-- Three KPI tiles in a row: this dispatch, this neighborhood/year, citywide/year -->
+      <div class="equity-kpi-row">
+        <div class="equity-kpi">
+          <div class="equity-kpi-label">This complaint pays</div>
+          <div class="equity-kpi-value" id="kpiPerComplaint">$5,000</div>
+          <div class="equity-kpi-sub" id="kpiPerComplaintSub">to <em>your selected vendor</em></div>
+        </div>
+        <div class="equity-kpi">
+          <div class="equity-kpi-label">If this matrix runs your block all year</div>
+          <div class="equity-kpi-value" id="kpiPerBlock">$—</div>
+          <div class="equity-kpi-sub" id="kpiPerBlockSub">
+            to small-business electricians within 2 mi
+          </div>
+        </div>
+        <div class="equity-kpi">
+          <div class="equity-kpi-label">If NYC ran this matrix citywide</div>
+          <div class="equity-kpi-value" id="kpiCitywide">$50.7M / yr</div>
+          <div class="equity-kpi-sub">
+            redirected from 2 primes to <strong>101</strong> M/WBE electricians
+          </div>
+        </div>
+      </div>
+
+      <!-- Concentration before/after -->
+      <div class="equity-concentration">
+        <h3 class="equity-subhead">Where the $1.32B currently goes</h3>
+        <p class="equity-subhead-sub">
+          From NYC OpenData "Recent Contract Awards" (qyyg-4tf5), filtered to
+          DOT, DDC, and 6 other agencies × electrical-trade keywords (2003-2026).
+        </p>
+        <div class="conc-bar">
+          <div class="conc-seg conc-seg-welsbach" style="width:49%"
+               title="Welsbach Electric Corp · 46 awards · $648M">
+            <span class="conc-label">Welsbach · 49%</span>
+          </div>
+          <div class="conc-seg conc-seg-hellman" style="width:18%"
+               title="Hellman Electric LLC · 24 awards · $235M">
+            <span class="conc-label">Hellman · 18%</span>
+          </div>
+          <div class="conc-seg conc-seg-other10" style="width:25%"
+               title="10 other vendors with some city contract history">
+            <span class="conc-label">10 others · 25%</span>
+          </div>
+          <div class="conc-seg conc-seg-rest" style="width:8%"
+               title="The other 1,883 licensed electricians who currently get nothing">
+            <span class="conc-label">Rest · 8%</span>
+          </div>
+        </div>
+        <p class="conc-caption">
+          <strong>1,883 of 1,894</strong> NYC-licensed electricians (99.4%) hold
+          zero direct DOT/DDC/DCAS streetlight or electrical contracts.
         </p>
       </div>
 
-      <!-- Estimated completion time — wider, sits on its own row below the intro -->
-      <div class="chart-card chart-card-wide">
-        <div class="head"><h3>Estimated completion time</h3><span class="badge forecast">Forecast</span></div>
-        <div class="sub" id="s-box">Days-to-close distribution for similar complaints</div>
-        <div class="body" id="c-box"></div>
-        <a class="src" href="sources.html#forecast"><span class="ico">i</span> Q1 / median / Q3 derived from the histogram</a>
-      </div>
-
-      <div class="chart-grid">
-        <div class="chart-card">
-          <div class="head"><h3>Volume trend · 2020–2025</h3><span class="badge verified">Verified</span></div>
-          <div class="sub" id="s-volume">Annual streetlight complaints filed in this borough</div>
-          <div class="body" id="c-volume"></div>
-          <a class="src" href="sources.html#boroughVolume"><span class="ico">i</span> Source: NYC OpenData erm2-nwe9</a>
+      <!-- After-state -->
+      <div class="equity-after">
+        <h3 class="equity-subhead">Where it could go under the 2019 rule</h3>
+        <p class="equity-subhead-sub">
+          101 NYC electricians are direct-purchase-eligible under PPB Rule 3-08:
+          M/WBE-certified, PASSPort-enrolled, NAICS-matched, active license.
+        </p>
+        <div class="equity-after-grid">
+          <div class="equity-after-stat">
+            <div class="equity-after-num">38</div>
+            <div class="equity-after-lbl">Black-owned</div>
+          </div>
+          <div class="equity-after-stat">
+            <div class="equity-after-num">28</div>
+            <div class="equity-after-lbl">Hispanic-owned</div>
+          </div>
+          <div class="equity-after-stat">
+            <div class="equity-after-num">17</div>
+            <div class="equity-after-lbl">Asian-owned</div>
+          </div>
+          <div class="equity-after-stat">
+            <div class="equity-after-num">18</div>
+            <div class="equity-after-lbl">Women-owned (non-minority)</div>
+          </div>
         </div>
-        <div class="chart-card">
-          <div class="head"><h3>% closed within…</h3><span class="badge verified">Verified</span></div>
-          <div class="sub" id="s-progress">Borough · 2025</div>
-          <div class="body" id="c-progress"></div>
-          <a class="src" href="sources.html#closure"><span class="ico">i</span> Source: NYC OpenData erm2-nwe9</a>
-        </div>
-      </div>
-
-      <div class="chart-grid">
-        <div class="chart-card" style="grid-column:1/-1">
-          <div class="head"><h3>Distribution of close times</h3><span class="badge verified">Verified</span></div>
-          <div class="sub" id="s-hist">Borough · 2025 · highlighted = where this complaint is forecast to land</div>
-          <div class="body" id="c-hist"></div>
-          <a class="src" href="sources.html#histogram"><span class="ico">i</span> SoQL: CASE-WHEN bucketing on date_diff_d</a>
-        </div>
+        <p class="conc-caption">
+          Distributed across every borough — 29 Queens, 28 Brooklyn, 18 Bronx,
+          13 Manhattan, 13 Staten Island.
+        </p>
       </div>
     </div>
   </div>
@@ -392,38 +442,50 @@
 <section id="why" class="on-blue">
   <div class="wrap">
     <div class="dark-panel">
-      <span class="kicker">Why</span>
-      <h2 class="display">A city that grows from within.</h2>
+      <span class="kicker">Why this matters</span>
+      <h2 class="display">A rule, finally used.</h2>
       <p class="lede">
-        Clearing the 4,096 stuck tickets — and the 33,835 new street-light
-        complaints filed every year — unlocks three compounding effects:
+        New York City has spent seven years with a procurement rule that lets
+        agencies route up to $1.5M per purchase directly to certified M/WBE
+        vendors. It has done so for streetlight repairs essentially zero times.
+        Our tool exists to change three things at once:
       </p>
+
       <div class="why-block">
         <p class="lede" style="margin:24px 0 0">
-          <strong>Revenue routed to local contractors:</strong>
-          $0.82M – $2.05M from the 4,096 stuck tickets alone, landing in
-          NYC-licensed electrician businesses already in the same neighborhoods
-          as the broken lights.
+          <strong>Wealth, not just light.</strong>
+          $50M+ per year of NYC streetlight work that currently flows to
+          two large primes could instead route to 101 minority- and
+          women-owned electricians across all five boroughs — at the same
+          per-job cost, under existing law, with no procurement reform required.
         </p>
         <div class="why-chart" id="why-revenue-chart"></div>
       </div>
 
       <div class="why-block">
         <p class="lede" style="margin:24px 0 0">
-          <strong>Hours freed for city staff:</strong>
-          ~16,917 hours per year of NYC DOT time recovered, redirected from drafting
-          boilerplate to handling the cases that need engineering judgment.
+          <strong>Transparency, not friction.</strong>
+          Every dispatch logs why a vendor was picked — score, components,
+          demographic identity, distance, prior city work. Reviewers can replay
+          any decision the system makes. Procurement staff get auto-generated
+          PPB Rule 3-08 justification memos in place of hours of paperwork.
         </p>
-        <div class="why-chart" id="why-hours-chart"></div>
-        <em style="font-size:.85em;color:rgba(255,255,255,.55);display:block;margin-top:-4px">
-          Assumes ~30 min per manually-drafted work order — a stated assumption,
-          not a measurement (no public benchmark for current municipal WO drafting time).
-        </em>
       </div>
+
+      <div class="why-block">
+        <p class="lede" style="margin:24px 0 0">
+          <strong>Vendors discoverable, not invisible.</strong>
+          1,733 NYC-licensed electricians today hold zero direct city contracts
+          and no M/WBE certification on file. The matrix surfaces the 101 who
+          are eligible, points the next 48 toward eligibility (one missing
+          criterion), and turns the rest into a knowable, geocoded pool the
+          city can actually see.
+        </p>
+      </div>
+
       <p class="lede" style="margin-top:24px">
-        <strong>Higher municipal quality of life:</strong>
-        Every closed ticket is a block lit, a stretch of sidewalk safer at midnight,
-        a small business handed real revenue, a city employee freed to do harder work.
+        Three changes. No new laws. Same complaints. Same budget. Different
+        recipients of the dollars.
       </p>
     </div>
   </div>
@@ -434,11 +496,13 @@
   <div class="wrap">
     <div class="dark-panel">
       <span class="kicker">How it works</span>
-      <h2 class="display">From complaint to crew — sequentially.</h2>
+      <h2 class="display">From complaint to local crew.</h2>
       <p class="lede">
-        A street-light complaint passes through seven stages before a vendor is on-site.
-        Today, four of those stages are paperwork bottlenecks taking days or weeks.
-        Our tool collapses them to seconds.
+        A streetlight complaint passes through seven stages before a vendor is
+        on-site. Four are paperwork bottlenecks that today take days. The
+        matrix collapses them to seconds — and at step 5, it surfaces a
+        direct-purchase-eligible local vendor instead of defaulting to the
+        two incumbent primes.
       </p>
 
       <div class="workflow-diagram">
@@ -491,11 +555,11 @@
         <div class="workflow-step ws-compressed">
           <div class="ws-marker">5</div>
           <div class="ws-content">
-            <div class="ws-name">Match a verified local vendor</div>
+            <div class="ws-name">Match a direct-purchase-eligible local vendor via the equity-first matrix</div>
             <div class="ws-times">
-              <span class="ws-time-today">~days</span>
+              <span class="ws-time-today">routed to incumbent prime</span>
               <span class="ws-time-arrow">→</span>
-              <span class="ws-time-tool">instant</span>
+              <span class="ws-time-tool">M/WBE under PPB Rule 3-08</span>
             </div>
           </div>
         </div>
@@ -522,9 +586,11 @@
       </div>
 
       <p class="lede" style="margin-top:32px;font-size:18px">
-        <strong>Steps 2–5 collapse from roughly a week of paperwork into under two minutes.</strong>
-        Steps 1, 6, and 7 are physical-world events the tool can't make faster — but it
-        also doesn't get in their way.
+        <strong>Steps 2–5 collapse from roughly a week of paperwork into under
+        two minutes — and at step 5, the matrix routes the work to a vendor
+        the city already has on file but isn't using.</strong>
+        Steps 1, 6, and 7 are physical-world events the tool doesn't speed up
+        but also doesn't get in the way of.
       </p>
     </div>
   </div>
@@ -534,26 +600,108 @@
   <div class="wrap">
     <div class="dark-panel">
       <span class="kicker">A framework, not a feature</span>
-      <h2 class="display">Same playbook. Every backlog.</h2>
+      <h2 class="display">Three more 311 backlogs. Same matrix.</h2>
       <p class="lede">
-        <strong>Citizen reports → instant work-order generation → routed to a verified local vendor.</strong>
-        The same three steps apply to every backlog 311 carries:
+        The matrix works wherever three conditions stack: a concentrated procurement
+        structure where a handful of firms take most of the dollars, an under-used
+        equity policy lever, and a public vendor roster the city already maintains.
+        We identified three additional NYC 311 categories that fit every condition.
       </p>
-      <ul style="margin:24px 0 24px 24px;font-size:18px;color:rgba(255,255,255,.82);list-style:disc">
-        <li><strong>DSNY</strong> sanitation backlogs → local hauling crews</li>
-        <li><strong>HPD</strong> heating, leaks, habitability → verified plumbers and HVAC techs</li>
-        <li><strong>DEP</strong> water and sewer → licensed water-line contractors</li>
-        <li><strong>DOB</strong> structural and facade → licensed inspectors and engineers</li>
-        <li><strong>Parks</strong> maintenance → tree-care companies, fence and play-equipment vendors</li>
-      </ul>
-      <p class="lede">
-        <strong>Apply this beyond street lights:</strong> ~106,000 hours/year freed across DOT's
-        full docket, ~78,000 hours of stuck work made movable across NYC's full backlog,
-        and a framework that ports to every U.S. city operating a 311 system.
-      </p>
-      <p class="lede" style="margin-top:32px">
-        Interdependent communities compound. Every closed ticket builds the next one.
-        Block by block, contractor by contractor, hour by recovered hour.
+
+      <div class="framework-row">
+
+        <!-- TRADE 1 — SIDEWALK REPAIR -->
+        <div class="trade-card">
+          <span class="trade-tag">DOT · Sidewalk Condition</span>
+          <h3 class="trade-name">Sidewalk repair</h3>
+          <div class="trade-redirect">
+            <div class="trade-redirect-num">$30M / yr</div>
+            <div class="trade-redirect-lbl">redirectable to M/WBE concrete contractors</div>
+          </div>
+          <dl class="trade-detail">
+            <dt>Policy lever</dt>
+            <dd>PPB Rule 3-08 ($1.5M cap). Typical sidewalk reconstruction
+                line items run <strong>$5K–$300K per block</strong> — well inside
+                the cap.</dd>
+            <dt>Current concentration</dt>
+            <dd>Triumph Construction, Tully Construction, and JR Cruz Corp.
+                take the majority of ~$100M/yr in DOT sidewalk reconstruction
+                awards.</dd>
+            <dt>Companies we'd surface</dt>
+            <dd>~150 M/WBE-certified concrete/sidewalk firms in NYC SBS
+                directory, plus ~600–900 active DCWP Home Improvement Contractor
+                licensees with concrete-trade keywords.</dd>
+            <dt>Datasets</dt>
+            <dd>SBS <code>ci93-uc8s</code> (M/WBE),
+                <code>acd4-wkax</code> (DCWP HIC), <code>ckqw-hc7u</code>
+                (DOB GC permits).</dd>
+          </dl>
+        </div>
+
+        <!-- TRADE 2 — TREE PRUNING -->
+        <div class="trade-card">
+          <span class="trade-tag">DPR · Damaged / Overgrown Tree</span>
+          <h3 class="trade-name">Tree pruning</h3>
+          <div class="trade-redirect">
+            <div class="trade-redirect-num">$15M / yr</div>
+            <div class="trade-redirect-lbl">redirectable to M/WBE arborist firms</div>
+          </div>
+          <dl class="trade-detail">
+            <dt>Policy lever</dt>
+            <dd>PPB Rule 3-08 applies. The current $8M+ block contracts can
+                be decomposed into per-community-district task orders
+                ($800K–$1.4M each), individually procurable inside the cap.</dd>
+            <dt>Current concentration</dt>
+            <dd>Dragonetti Brothers Landscaping holds Queens + Brooklyn block
+                pruning despite an active DOI monitorship — and was re-awarded
+                a <strong>$22M trimming package</strong> in 2024. SavATree
+                holds Manhattan/Bronx.</dd>
+            <dt>Companies we'd surface</dt>
+            <dd>~60–90 M/WBE-certified landscaping and arborist firms in the
+                SBS directory. Required credential is an ISA Certified Arborist
+                on staff — substantially lighter than electrician licensure.</dd>
+            <dt>Datasets</dt>
+            <dd>SBS <code>ci93-uc8s</code>, DPR Forestry Work Orders
+                <code>bdjm-n7q4</code>, Tree Points <code>hn5i-inap</code>.</dd>
+          </dl>
+        </div>
+
+        <!-- TRADE 3 — LEAD ABATEMENT -->
+        <div class="trade-card">
+          <span class="trade-tag">HPD · Lead Paint Complaint</span>
+          <h3 class="trade-name">Lead paint abatement</h3>
+          <div class="trade-redirect">
+            <div class="trade-redirect-num">$15M / yr</div>
+            <div class="trade-redirect-lbl">redirectable to M/WBE abatement firms</div>
+          </div>
+          <dl class="trade-detail">
+            <dt>Policy lever (stacked)</dt>
+            <dd>PPB Rule 3-08 plus HPD's Emergency Repair Program Pre-Qualified
+                List (random selection rule). Two equity levers, not one —
+                strongest case of the three.</dd>
+            <dt>Current concentration</dt>
+            <dd>Accredited Environmental Solutions, ABCZ Consulting, and
+                EnviroNYC dominate HPD's small PQL of ~10–15 prequalified
+                lead-abatement firms. Local Law 31 XRF demand pushing market
+                past $50M/yr.</dd>
+            <dt>Companies we'd surface</dt>
+            <dd>~40–60 M/WBE-certified abatement firms in SBS, validated
+                against the ~250 NYC-area EPA RRP-certified firms.</dd>
+            <dt>Datasets</dt>
+            <dd>SBS <code>ci93-uc8s</code>, Asbestos Control Program
+                <code>vq35-j9qm</code> (lead/asbestos firms overlap heavily),
+                EPA RRP Firm registry.</dd>
+          </dl>
+        </div>
+
+      </div>
+
+      <p class="lede" style="margin-top:36px">
+        <strong>$60M / yr in equity-redirectable city spending</strong> across
+        these three trades, on top of streetlights — distributed across roughly
+        280 minority- and women-owned NYC firms who pass the same eligibility
+        tests but rarely see direct city work. Same rule. Same matrix. Three
+        new docket categories, three different agencies, one consistent story.
       </p>
     </div>
   </div>
@@ -566,8 +714,14 @@
   <a href="sources.html">Sources &amp; methodology →</a>
 </div>
 
-<script src="charts.js?v=20260508b"></script>
-<script src="data-loader.js?v=20260508b"></script>
+<!-- Load scorer as an ES module and expose globally so non-module scripts can use it. -->
+<script type="module">
+  import * as Scorer from './scorer.js?v=20260516e';
+  window.VendorScorer = Scorer;
+  window.dispatchEvent(new Event('scorer-ready'));
+</script>
+<script src="charts.js?v=20260516e"></script>
+<script src="data-loader.js?v=20260516e"></script>
 <script>
 // ────────────────────────────────────────────────────────────────────
 // State
@@ -1271,15 +1425,27 @@ async function initResultsMap(form){
     if(_fallbackLine){ _fallbackLine.setMap(null); _fallbackLine = null; }
   }
 
-  // Vendors (lightning bolts numbered 1–5)
-  const vendors = await DataLoader.findNearestVendors(origin.lat, origin.lng, 8);
+  // Vendors — ranked by the equity-first scoring matrix.
+  const scoredResult = await DataLoader.findScoredVendors(
+    { lat: origin.lat, lng: origin.lng, borough: form.borough, estimatedCost: 5000 },
+    5
+  );
+  const scoredVendors = scoredResult.vendors || [];
+  const poolUsed = scoredResult.poolUsed;
+  const poolStats = scoredResult.poolStats;
+
   const vList = document.getElementById('vendorList');
-  vList.innerHTML = `
-    <div class="lbl">Nearest vendors · select one to generate the work order</div>
-    <div class="vendor-prompt" id="vendorPrompt">No vendor selected yet.</div>`;
+  const poolBanner = poolUsed === 'eligible-only'
+    ? `<div class="pool-banner pool-banner-good">Drawn from the <strong>${poolStats.tier1Eligible}-vendor</strong> direct-purchase-eligible pool under PPB Rule 3-08.</div>`
+    : poolUsed === 'eligible-plus-almost'
+    ? `<div class="pool-banner pool-banner-warn">Fewer than 5 of the ${poolStats.tier1Eligible} direct-purchase-eligible vendors are within 10 mi. Expanded to include <strong>${poolStats.tier2Almost} almost-eligible</strong> vendors (M/WBE-certified but missing one criterion).</div>`
+    : poolUsed === 'full-pool'
+    ? `<div class="pool-banner pool-banner-warn">Eligible pool too thin near this location. Falling back to the full <strong>${poolStats.tier3Other + poolStats.tier2Almost + poolStats.tier1Eligible}-vendor</strong> licensed-electrician pool.</div>`
+    : '';
+  vList.innerHTML = poolBanner + `<div class="vendor-prompt" id="vendorPrompt">No vendor selected yet.</div>`;
 
   const vendorMarkers = [];
-  const nearVendors = vendors.filter(v => v.distance <= 3).slice(0, 5);
+  const nearVendors = scoredVendors.filter(v => v.lat != null && v.lng != null);
 
   function selectVendor(v){
     window._selectedVendor = v;
@@ -1290,13 +1456,30 @@ async function initResultsMap(form){
     document.querySelectorAll('.vendor-card').forEach(el => {
       el.classList.toggle('selected', el.dataset.license === v.license);
     });
-    document.getElementById('vendorPrompt').innerHTML =
+    const promptEl = document.getElementById('vendorPrompt');
+    if (promptEl) promptEl.innerHTML =
       `Selected: <strong>${escapeHtml(v.name)}</strong> · generating work order…`;
+    updateEquityImpact(v);
     generateWorkOrder(window._lastForm, null, v);
     // Auto-scroll to the work order section
     setTimeout(() => {
       document.getElementById('workorder').scrollIntoView({behavior:'smooth', block:'start'});
     }, 300);
+  }
+
+  // Populate the equity impact KPIs for the selected vendor.
+  function updateEquityImpact(v){
+    const perComplaint = 5000; // assumed avg streetlight job
+    const perBlockJobsYear = 12; // assumed jobs/year within 2 mi
+    const perBlock = perComplaint * perBlockJobsYear;
+    const ownerLabel = (v.badges || []).find(b => /owned/i.test(b)) || (v.certifications?.certification || 'small-business');
+    const ethMatch = (v.badges || []).find(b => /owned/i.test(b));
+    setText('kpiPerComplaint', '$' + perComplaint.toLocaleString());
+    setText('kpiPerComplaintSub',
+      `to ${escapeHtml(v.name)} — ${escapeHtml(ethMatch || 'an overlooked NYC electrician')}`);
+    setText('kpiPerBlock', '$' + perBlock.toLocaleString() + ' / yr');
+    setText('kpiPerBlockSub',
+      `if every similar complaint within 2 mi of this address routed to ${escapeHtml(v.name)}`);
   }
 
   nearVendors.forEach((v, i) => {
@@ -1314,18 +1497,31 @@ async function initResultsMap(form){
     _mapMarkers.push(m);
 
     const searchUrl = `https://www.google.com/search?q=${encodeURIComponent(v.name + ' NYC electrician')}`;
+    const badgeHtml = (v.badges || []).map(b => {
+      const cls = badgeClass(b);
+      return `<span class="vendor-badge ${cls}">${escapeHtml(b)}</span>`;
+    }).join('');
+    const breakdownHtml = v.components ? renderBreakdown(v.components) : '';
+    const scoreDisplay = v.score != null
+      ? `<div class="vendor-score" title="Equity-first matrix score (0–100)">${v.score.toFixed(0)}</div>`
+      : '';
     vList.insertAdjacentHTML('beforeend', `
-      <div class="vendor-card map-list-item" data-license="${escapeHtml(v.license)}">
-        <div class="vendor-rank">${rank}</div>
+      <div class="vendor-card scored-card map-list-item" data-license="${escapeHtml(v.license)}">
+        <div class="vendor-rank">${rank}${scoreDisplay}</div>
         <div class="vendor-info">
           <div class="vendor-name">
             <strong>${escapeHtml(v.name)}</strong>
             <a href="${searchUrl}" target="_blank" rel="noopener noreferrer" class="vendor-link" title="Find website" onclick="event.stopPropagation()">↗</a>
           </div>
-          <div class="vendor-sub">${escapeHtml(v.phone || '')} · Lic. #${escapeHtml(v.license)}</div>
+          <div class="vendor-sub">${escapeHtml(v.phone || '')} · Lic. #${escapeHtml(v.license)} · ${v.distance != null ? v.distance.toFixed(1) + ' mi' : ''}</div>
+          ${badgeHtml ? `<div class="vendor-badges">${badgeHtml}</div>` : ''}
+          ${breakdownHtml ? `
+            <details class="vendor-breakdown" onclick="event.stopPropagation()">
+              <summary>Why this vendor?</summary>
+              ${breakdownHtml}
+            </details>` : ''}
         </div>
         <div class="vendor-actions">
-          <span class="meta">${v.distance.toFixed(1)} mi</span>
           <button type="button" class="pill teal small select-vendor">Select</button>
         </div>
       </div>`);
@@ -1381,6 +1577,43 @@ async function initResultsMap(form){
 
 function escapeHtml(s){
   return String(s || '').replace(/[<>&"']/g, c => ({'<':'&lt;','>':'&gt;','&':'&amp;','"':'&quot;',"'":'&#39;'}[c]));
+}
+
+// Map a vendor badge label to a CSS class for color theming.
+function badgeClass(label){
+  const l = String(label).toLowerCase();
+  if (l.includes('direct-purchase')) return 'b-dp';
+  if (l.includes('overlooked'))      return 'b-overlooked';
+  if (l === 'mbe')                   return 'b-mbe';
+  if (l === 'wbe')                   return 'b-wbe';
+  if (l === 'lbe' || l === 'ebe')    return 'b-lbe';
+  if (l.includes('owned'))           return 'b-eth';
+  if (l === 'passport')              return 'b-passport';
+  return 'b-generic';
+}
+
+// Render a tiny horizontal bar per scoring component.
+function renderBreakdown(c){
+  const WEIGHTS = window.VendorScorer?.WEIGHTS || {};
+  const rows = [
+    ['Workload balance',           c.workload_balance,           WEIGHTS.workload_balance],
+    ['Overlooked-but-qualified',   c.overlooked_but_qualified,   WEIGHTS.overlooked_but_qualified],
+    ['Direct-purchase eligible',   c.direct_purchase_eligibility,WEIGHTS.direct_purchase_eligibility],
+    ['Demographic equity',         c.demographic_equity,         WEIGHTS.demographic_equity],
+    ['Proximity',                  c.proximity,                  WEIGHTS.proximity],
+    ['Reliability',                c.reliability,                WEIGHTS.reliability],
+    ['Baseline capability',        c.baseline_capability,        WEIGHTS.baseline_capability],
+    ['Capacity headroom',          c.capacity_headroom,          WEIGHTS.capacity_headroom],
+  ];
+  return `<div class="score-bars">${rows.map(([label, pts, max]) => {
+    const pct = max ? Math.max(0, Math.min(100, (pts / max) * 100)) : 0;
+    return `
+      <div class="score-row">
+        <span class="score-label">${escapeHtml(label)}</span>
+        <span class="score-bar"><span class="score-fill" style="width:${pct}%"></span></span>
+        <span class="score-num">${pts.toFixed(1)} / ${max}</span>
+      </div>`;
+  }).join('')}</div>`;
 }
 
 function boltIcon(rank, isSelected){

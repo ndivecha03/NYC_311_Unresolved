@@ -7,3 +7,7 @@ node_modules/
 _script_0.js
 *.log
 .DS_Store
+
+# Transient build artifacts
+build-output.txt
+data/_socrata_cache/

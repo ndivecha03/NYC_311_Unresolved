@@ -696,6 +696,63 @@
       .slice(0, n);
   }
 
+  // Enriched vendor pool from vendors.json (the scored dataset built by
+  // scripts/build-vendors.py). Loaded lazily and cached.
+  let _enrichedPool = null;
+  async function loadEnrichedVendors(){
+    if (_enrichedPool) return _enrichedPool;
+    try {
+      const r = await fetch('vendors.json?v=20260516a');
+      const j = await r.json();
+      _enrichedPool = j.vendors || [];
+    } catch(e) {
+      console.error('Failed to load vendors.json:', e);
+      _enrichedPool = [];
+    }
+    return _enrichedPool;
+  }
+
+  // Find N vendors ranked by the equity-first scoring matrix.
+  // Accepts a complaint object: { lat, lng, borough?, estimatedCost? }.
+  // Falls back to findNearestVendors if scorer or enriched pool unavailable.
+  async function findScoredVendors(complaint, n=5, options={}){
+    const Scorer = window.VendorScorer;
+    const pool = await loadEnrichedVendors();
+    if (!Scorer || pool.length === 0) {
+      console.warn('VendorScorer or enriched pool unavailable — falling back to distance ranking');
+      const fallback = await findNearestVendors(complaint.lat, complaint.lng, n);
+      return {
+        vendors: fallback.map((v, i) => ({...v, score: null, components: null, badges: [], rank: i + 1, tier: 'other'})),
+        poolUsed: 'fallback',
+        poolStats: { tier1Eligible: 0, tier2Almost: 0, tier3Other: fallback.length, withinRadius: fallback.length },
+      };
+    }
+    const ranked = Scorer.rankTop(complaint, pool, [], { topN: n, ...options });
+    return {
+      vendors: ranked.picks.map(s => {
+        const orig = pool.find(v => v.id === s.vendor_id);
+        return {
+          name: s.vendor_name,
+          license: orig?.licensing?.licenseNumber || '',
+          phone: orig?.contact?.phone || '',
+          lat: orig?.address?.lat,
+          lng: orig?.address?.lng,
+          borough: orig?.address?.borough || '',
+          distance: s.distance_miles,
+          score: s.total,
+          components: s.components,
+          details: s.details,
+          badges: s.badges,
+          tier: s.tier,
+          rank: s.rank,
+          certifications: orig?.certifications || null,
+        };
+      }),
+      poolUsed: ranked.poolUsed,
+      poolStats: ranked.poolStats,
+    };
+  }
+
   // Find N most-similar past complaints in the same borough/zip/type.
   // Tie-break by date DESC so most-recent records surface first.
   async function findSimilarComplaints(borough, type, zip, n=5){
@@ -722,7 +779,7 @@
   global.DataLoader = {
     loadAnalytics, loadAboutPage, healthCheck, SOURCES, VERIFIED_2024,
     setYear, getYear: () => YEAR,
-    loadVendors, loadComplaints, findNearestVendors, findSimilarComplaints,
-    distMiles
+    loadVendors, loadComplaints, findNearestVendors, findScoredVendors,
+    loadEnrichedVendors, findSimilarComplaints, distMiles
   };
 })(window);
