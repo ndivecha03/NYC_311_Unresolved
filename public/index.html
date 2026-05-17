@@ -1121,12 +1121,15 @@ function downloadPpbMemo(triggerLabel){
     const vName    = (vendor && vendor.name)    || wo._vendorName    || 'See work order';
     const vLicense = (vendor && vendor.license) || wo._vendorLicense || '—';
     const vPhone   = (vendor && vendor.phone)   || '—';
+    const vAddr    = (vendor && vendor.address) || '____________________________';
     const certId   = (vendor && vendor.cert_id) || 'See SBS PASSPort record';
     const mwbeType = (vendor && vendor.mwbe)    || 'M/WBE';
     const memoRef  = 'PPB308-' + (wo.defnum || 'DRAFT').replace('SL-','');
     const memoDate = new Date().toLocaleDateString('en-US',{year:'numeric',month:'long',day:'numeric'});
     const addr     = [wo.housenum, wo.onprimname, wo.borough_full].filter(Boolean).join(' ') + ', NY';
     const desc     = wo.instructions || wo.complaint_type || 'Streetlight repair per attached work order.';
+    // Generate a PIN: agency code + work order number + year (placeholder if no real PIN system)
+    const pin      = wo.pin || ('DOT-SL-' + (wo.defnum || 'DRAFT').replace('SL-','') + '-' + new Date().getFullYear());
 
     // ── 1. Letterhead ─────────────────────────────────────────────────────
     setFont('bold', 11, NYC_BLUE);
@@ -1141,17 +1144,18 @@ function downloadPpbMemo(triggerLabel){
     y += 10;
 
     // Doc title
-    setFont('bold', 15, NYC_BLUE);
-    doc.text('SOLE-SOURCE PROCUREMENT AUTHORIZATION', mar, y);
+    setFont('bold', 14, NYC_BLUE);
+    doc.text('M/WBE NONCOMPETITIVE SMALL PURCHASE AUTHORIZATION', mar, y);
     y += 16;
     setFont('normal', 8.5, [100,100,100]);
-    doc.text('Pursuant to NYC Procurement Policy Board Rule 3-08 — M/WBE Noncompetitive Small Purchase', mar, y);
+    doc.text('Pursuant to NYC Procurement Policy Board Rule 3-08(c)(1)(iv) — M/WBE Noncompetitive Small Purchase', mar, y);
     y += 8;
     rule(y, 0.5, MID_GRAY);
     y += 10;
 
     // ── 2. Procurement Summary ────────────────────────────────────────────
     y = sectionBar('SECTION 1 — PROCUREMENT SUMMARY', y);
+    y = fieldRow('PIN',             pin, y, true);
     y = fieldRow('Work Order #',    wo.defnum || '—', y, true);
     y = fieldRow('Complaint Type',  wo.complaint_type || '—', y);
     y = fieldRow('Complaint Code',  (wo.complaint_code || '—') + '   (NIGP: 91514 · NAICS: 238210)', y);
@@ -1170,17 +1174,60 @@ function downloadPpbMemo(triggerLabel){
     ensureSpace(80);
     y = sectionBar('SECTION 2 — POLICY AUTHORITY', y);
     setFont('normal', 8, TEAL);
-    const citation = 'NYC Procurement Policy Board Rule 3-08(c)(1)(i) — M/WBE Noncompetitive Small Purchases: Any agency may purchase goods, services, or construction from a certified M/WBE vendor without competitive solicitation, provided the purchase does not exceed $1,500,000 per transaction.';
+    const citation = 'NYC Procurement Policy Board Rule 3-08(c)(1)(iv) — M/WBE Noncompetitive Small Purchases: No competition is required for the procurement of goods, services, and construction from M/WBE vendors, provided that the Contracting Officer obtains at least three price quotes from M/WBE vendors or documents their inability to do so, and provided the purchase does not exceed the maximum amount authorized pursuant to NYC Charter §311(i)(1) (currently $1,500,000).';
     const citLines = doc.splitTextToSize(citation, col - 12);
     doc.text(citLines, mar + 10, y);
     y += citLines.length * 11 + 8;
-    y = bodyText('This procurement is authorized under the above rule. Competitive solicitation is waived because the selected vendor holds active M/WBE certification from NYC Small Business Services (SBS), the estimated purchase amount is within the $1,500,000 threshold, and the vendor is responsible per the checklist in Section 4.', y);
+    y = bodyText('This procurement is authorized under the above rule. Formal competitive solicitation is not required because the selected vendor holds active M/WBE certification from NYC Small Business Services (SBS) and the estimated purchase amount is within the $1,500,000 threshold. The Contracting Officer has obtained price quotes as documented in Section 3 below, confirmed the price is reasonable, and verified vendor responsibility per the checklist in Section 5.', y);
     y += 6;
+
+    // ── 3. Price Quotes ───────────────────────────────────────────────────
+    ensureSpace(160);
+    y = sectionBar('SECTION 3 — PRICE QUOTES (PPB Rule 3-08(c)(1)(iv))', y);
+    y = bodyText('Per Rule 3-08(c)(1)(iv), the Contracting Officer must attempt to obtain at least three price quotes from M/WBE vendors or document the inability to do so. Complete one of the two options below.', y);
+    y += 6;
+
+    // Option A — quotes obtained
+    setFont('bold', 8.5, NYC_BLUE);
+    doc.text('OPTION A — Three quotes obtained:', mar, y);
+    y += 14;
+    const quoteHeaders = ['Quote #1', 'Quote #2', 'Quote #3'];
+    for(const qh of quoteHeaders){
+      doc.setFillColor(...LT_GRAY);
+      doc.rect(mar, y, col, 22, 'F');
+      setFont('bold', 7.5, DARK);
+      doc.text(qh, mar + 6, y + 9);
+      setFont('normal', 8, DARK);
+      doc.text('Vendor Name: ____________________________   Amount: $______________   Date: ____________', mar + 55, y + 9);
+      rule(y + 22, 0.3, MID_GRAY);
+      y += 22;
+    }
+    y += 8;
+
+    // Option B — unable to obtain
+    setFont('bold', 8.5, NYC_BLUE);
+    doc.text('OPTION B — Unable to obtain three quotes (explain below):', mar, y);
+    y += 14;
+    doc.setFillColor(...LT_GRAY);
+    doc.rect(mar, y, col, 36, 'F');
+    rule(y + 36, 0.3, MID_GRAY);
+    y += 44;
+
+    // Price reasonableness
+    setFont('bold', 8.5, DARK);
+    doc.text('Price Reasonableness Determination  [REQUIRED]', mar, y);
+    y += 12;
+    y = bodyText('The Contracting Officer attests that the price selected is fair and reasonable based on: ☐ market research  ☐ prior contracts  ☐ independent cost estimate  ☐ other (describe below).', y);
+    doc.setFillColor(...LT_GRAY);
+    doc.rect(mar, y, col, 28, 'F');
+    rule(y + 28, 0.3, MID_GRAY);
+    y += 36;
 
     // ── 4. Vendor Information ─────────────────────────────────────────────
     ensureSpace(120);
-    y = sectionBar('SECTION 3 — SELECTED VENDOR', y);
+    y = sectionBar('SECTION 4 — SELECTED VENDOR', y);
     y = fieldRow('Legal Business Name',  vName,    y, true);
+    y = fieldRow('Vendor Address',       vAddr,    y);
     y = fieldRow('SBS Certification ID', certId,   y);
     y = fieldRow('Certification Type',   mwbeType, y);
     y = fieldRow('NYC License #',        vLicense, y);
@@ -1189,7 +1236,7 @@ function downloadPpbMemo(triggerLabel){
 
     // ── 5. Responsibility Determination ───────────────────────────────────
     ensureSpace(180);
-    y = sectionBar('SECTION 4 — RESPONSIBILITY DETERMINATION CHECKLIST', y);
+    y = sectionBar('SECTION 5 — RESPONSIBILITY DETERMINATION CHECKLIST', y);
     y = bodyText('The procuring agency attests that it has verified each item below prior to authorizing this purchase.', y);
     y += 4;
     const checks = [
@@ -1210,8 +1257,8 @@ function downloadPpbMemo(triggerLabel){
 
     // ── 6. Signature Block ────────────────────────────────────────────────
     ensureSpace(160);
-    y = sectionBar('SECTION 5 — AUTHORIZATION & SIGNATURE', y);
-    y = bodyText('I, the undersigned authorized official, certify that: (a) the vendor named above is a currently certified M/WBE in good standing with NYC SBS; (b) the responsibility determination checklist in Section 4 has been been completed; (c) this procurement does not exceed $1,500,000; and (d) all requirements of PPB Rule 3-08 have been met.', y);
+    y = sectionBar('SECTION 6 — AUTHORIZATION & SIGNATURE', y);
+    y = bodyText('I, the undersigned authorized official, certify that: (a) the vendor named above is a currently certified M/WBE in good standing with NYC SBS; (b) at least three price quotes were obtained or the inability to do so has been documented per Section 3; (c) the price has been determined to be fair and reasonable; (d) the responsibility determination checklist in Section 5 has been completed; (e) this procurement does not exceed $1,500,000; and (f) all requirements of PPB Rule 3-08(c)(1)(iv) have been met.', y);
     y += 16;
 
     const halfW = (col - 20) / 2;
