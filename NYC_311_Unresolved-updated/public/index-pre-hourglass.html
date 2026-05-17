@@ -1,0 +1,1572 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>NYC Street Lights — Light up the city, one block at a time</title>
+<meta name="description" content="Report a streetlight outage in 60 seconds. We classify it, dispatch a licensed local electrician, and draft the DOT work order.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=Fraunces:opsz,wght@9..144,400;9..144,600;9..144,700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="styles.css">
+<script>window._gmReady = new Promise(res => { window.onGoogleMapsLoaded = () => res(); });</script>
+<script src="https://maps.googleapis.com/maps/api/js?key=AIzaSyCxMiaz9dcPviOvTGCi9jT1kZLW49Zg37w&libraries=places&loading=async&callback=onGoogleMapsLoaded" async defer onerror="window._gmReady = Promise.reject(new Error('Google Maps script failed to load'))"></script>
+</head>
+<body>
+
+<!-- Right-side rail: full-height navigation + table of contents.
+     Replaces the old top nav. Hidden on screens < 1100px (page goes
+     full-width and the rail collapses). -->
+<aside class="side-rail" id="sideToc" aria-label="Page sections">
+  <a class="side-rail-brand" href="#">
+    <span class="dot"></span>
+    <span class="brand-name">NYC Street Lights</span>
+  </a>
+
+  <div class="side-rail-toc">
+    <div class="side-toc-label">On this page</div>
+    <ul>
+      <li><a href="#hero" data-spy="hero">Overview</a></li>
+      <li><a href="#about" data-spy="about">The problem</a></li>
+      <li><a href="#report" data-spy="report">Report</a></li>
+      <li><a href="#results" data-spy="results">Results</a></li>
+    </ul>
+
+    <div class="side-toc-label" style="margin-top:24px">More</div>
+    <ul>
+      <li><a href="sources.html">Sources &amp; methodology</a></li>
+    </ul>
+  </div>
+
+  <div class="side-rail-cta">
+    <a class="pill primary" href="#report">
+      Report an outage <span class="arrow">→</span>
+    </a>
+  </div>
+</aside>
+
+<!-- ── HERO ──────────────────────────────────────────────── -->
+<header class="hero" id="hero">
+  <div class="wrap">
+    <h1 class="display">A city that never sleeps shouldn't <em>go dark.</em></h1>
+    <p class="lede">33,835 streetlight outages were reported to NYC 311 in 2025 — a 10% jump over 2024. One in three Manhattan complaints still sits unresolved a month later. We close that loop — in under sixty seconds.</p>
+    <div class="hero-cta">
+      <a class="pill primary" href="#report">Report an outage <span class="arrow">→</span></a>
+      <a class="pill ghost" href="#about">See the data <span class="arrow">→</span></a>
+    </div>
+    <div class="hero-stats">
+      <div class="hero-stat"><div class="num">33,835</div><div class="lbl">complaints filed in 2025</div></div>
+      <div class="hero-stat"><div class="num bad">1 in 3</div><div class="lbl">Manhattan complaints unresolved at 30 days</div></div>
+      <div class="hero-stat"><div class="num">$16.9M</div><div class="lbl">est. annual local-vendor revenue</div></div>
+    </div>
+  </div>
+</header>
+
+<!-- ── ABOUT ─────────────────────────────────────────────── -->
+<section id="about">
+  <div class="wrap">
+    <div class="two-col">
+      <div>
+        <span class="kicker">The Problem</span>
+        <h2>Complaints don't just sit. They get lost — sometimes for years.</h2>
+      </div>
+      <div>
+        <p>NYC DOT maintains 250,000 streetlamps. When one fails, residents call 311 and the complaint enters a queue that, in Manhattan, closes within thirty days only 67% of the time. Citywide, that figure is climbing — total 311 streetlight reports rose from 30,881 in 2024 to 33,835 in 2025. The remaining third get duplicated, merged, or administratively shut without the lamp ever turning back on.</p>
+        <p>Meanwhile, 1,242 licensed local electricians live in the same neighborhoods — qualified, idle, and shut out of the pipeline. We connect the two.</p>
+      </div>
+    </div>
+
+    <div class="graphics">
+      <div class="gcard">
+        <div class="head"><span class="tag" id="g1-year">Graphic 1</span></div>
+        <h3>Complaint volume by borough</h3>
+        <div class="gthumb" id="about-volume">
+          <noscript><img src="img/about/g1-volume.svg" alt="Volume by borough"></noscript>
+        </div>
+      </div>
+      <div class="gcard">
+        <div class="head"><span class="tag" id="g2-year">Graphic 2</span></div>
+        <h3>30-day closure rate by borough</h3>
+        <div class="gthumb" id="about-closure">
+          <noscript><img src="img/about/g2-closure.svg" alt="Closure rate"></noscript>
+        </div>
+      </div>
+      <div class="gcard">
+        <div class="head"><span class="tag" id="g3-year">Graphic 3</span></div>
+        <h3>Local-vendor revenue potential by borough</h3>
+        <div class="gthumb" id="about-revenue">
+          <noscript><img src="img/about/g3-revenue.svg" alt="Revenue range"></noscript>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ── INTAKE ────────────────────────────────────────────── -->
+<section id="report" class="alt">
+  <div class="wrap">
+    <div class="intake">
+      <span class="kicker">Step 1 of 3</span>
+      <h2>Report an outage.</h2>
+      <p class="lede">Sixty seconds. We'll classify it, dispatch a vendor, and draft the work order.</p>
+
+      <form class="form" id="intakeForm" onsubmit="onSubmit(event)">
+        <div class="field">
+          <label>Borough</label>
+          <select name="borough" required>
+            <option value="">Select…</option>
+            <option>Manhattan</option><option>Brooklyn</option><option>Queens</option><option>Bronx</option><option>Staten Island</option>
+          </select>
+        </div>
+        <div class="field"><label>Zip code</label><input name="zip" placeholder="10027" pattern="[0-9]{5}" required></div>
+        <div class="field full">
+          <label>
+            Address or nearest cross street
+            <button type="button" class="use-location-btn" id="useLocationBtn"
+              title="Use my current GPS location to fill the address, zip, and borough">
+              <span class="loc-icon" aria-hidden="true">⌖</span>
+              <span class="loc-text">Use my location</span>
+            </button>
+          </label>
+          <input name="address" placeholder="W 125th St & Amsterdam Ave" required>
+          <div class="field-hint" id="locStatus"></div>
+        </div>
+        <div class="field">
+          <label>What's wrong?</label>
+          <select name="complaint_type" required>
+            <option value="">Select…</option>
+            <option>Light out completely</option>
+            <option>Cycling on/off</option>
+            <option>Stays on during the day</option>
+            <option>Dim / weak</option>
+            <option>Glassware broken or hanging</option>
+            <option>Glassware missing</option>
+            <option>Fixture damaged</option>
+            <option>Fixture hanging or missing</option>
+            <option>Pole leaning or knocked down</option>
+            <option>Base cover damaged or missing</option>
+            <option>Wires exposed</option>
+          </select>
+        </div>
+        <div class="field">
+          <label>How long has it been out?</label>
+          <select name="duration" required>
+            <option value="">Select…</option>
+            <option>&lt; 24 hours</option><option>1–7 days</option><option>1–4 weeks</option><option>1+ months</option>
+          </select>
+        </div>
+        <div class="field full"><label>Anything else? (optional)</label><textarea name="details" rows="3" placeholder="Pole leaning slightly. Sparks visible last week."></textarea></div>
+      </form>
+
+      <div class="submit-row">
+        <span class="meta">We'll never share your information.</span>
+        <button class="pill teal" type="submit" form="intakeForm">Analyze complaint <span class="arrow">→</span></button>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ── RESULTS (3 tabs) ───────────────────────────────────── -->
+<section id="results" class="result-header">
+  <div class="wrap">
+    <span class="kicker">Your complaint, in context</span>
+    <h2 id="resultsTitle">W 125th St &amp; Amsterdam Ave · Manhattan 10027</h2>
+
+    <!-- Estimated time-to-fix callout — populated by renderAll -->
+    <div class="result-stat" id="resultStat">
+      <div class="result-stat-block">
+        <span class="result-stat-lbl">Estimated time to fix</span>
+        <span class="result-stat-val" id="estTimeToFix">—</span>
+      </div>
+      <div class="result-stat-block">
+        <span class="result-stat-lbl">Your borough's 30-day closure rate</span>
+        <span class="result-stat-val" id="estClosure30">—</span>
+      </div>
+      <div class="result-stat-block">
+        <span class="result-stat-lbl">Step</span>
+        <span class="result-stat-val" id="currentStep">1 of 3 — Analysis</span>
+      </div>
+    </div>
+
+    <div class="tabs-row">
+      <div class="tabs" role="tablist">
+        <button class="tab active" data-tab="analysis"><span class="num">01</span> Analysis</button>
+        <button class="tab" data-tab="map"><span class="num">02</span> Map &amp; vendors</button>
+        <button class="tab" data-tab="workorder"><span class="num">03</span> Work order</button>
+      </div>
+      <button type="button" class="pill primary next-step" id="nextStepBtn">
+        Next step <span class="arrow">→</span>
+      </button>
+    </div>
+
+    <!-- ANALYSIS PANEL -->
+    <div class="tab-panel active" id="panel-analysis">
+
+      <!-- The 6 most-reliable analytics — all populated from the baked
+           dataset, so they always render regardless of network state.
+           See docs/ANALYTICS_TIERS.md for why these were chosen. -->
+
+      <!-- ROW 1: volume trend (line) + estimated completion (boxplot) -->
+      <div class="chart-grid">
+        <div class="chart-card">
+          <div class="head"><h3>Volume trend · 2020–2025</h3><span class="badge verified">Verified</span></div>
+          <div class="sub" id="s-volume">Annual streetlight complaints filed in this borough</div>
+          <div class="body" id="c-volume"></div>
+          <a class="src" href="sources.html#boroughVolume"><span class="ico">i</span> Source: NYC OpenData erm2-nwe9</a>
+        </div>
+        <div class="chart-card">
+          <div class="head"><h3>Estimated completion time</h3><span class="badge forecast">Forecast</span></div>
+          <div class="sub" id="s-box">Days-to-close distribution for similar complaints</div>
+          <div class="body" id="c-box"></div>
+          <a class="src" href="sources.html#forecast"><span class="ico">i</span> Q1 / median / Q3 derived from the histogram</a>
+        </div>
+      </div>
+
+      <!-- ROW 2: % closed within (progress bars) + median days -->
+      <div class="chart-grid">
+        <div class="chart-card">
+          <div class="head"><h3>% closed within…</h3><span class="badge verified">Verified</span></div>
+          <div class="sub" id="s-progress">Borough · 2025</div>
+          <div class="body" id="c-progress"></div>
+          <a class="src" href="sources.html#closure"><span class="ico">i</span> Source: NYC OpenData erm2-nwe9</a>
+        </div>
+        <div class="chart-card">
+          <div class="head"><h3>Median days to close</h3><span class="badge verified">Verified</span></div>
+          <div class="sub">Borough vs citywide</div>
+          <div class="body" id="c-median"></div>
+          <a class="src" href="sources.html#median"><span class="ico">i</span> SoQL: median(date_diff_d(closed, created))</a>
+        </div>
+      </div>
+
+      <!-- ROW 3: descriptor (horizontal bars) + closure rate by borough (horizontal bars) -->
+      <div class="chart-grid">
+        <div class="chart-card">
+          <div class="head"><h3>Complaint descriptor mix</h3><span class="badge verified">Verified</span></div>
+          <div class="sub" id="s-desc">Top descriptors · ${'borough'} · 2025</div>
+          <div class="body" id="c-descriptor"></div>
+          <a class="src" href="sources.html#descriptor"><span class="ico">i</span> Source: NYC OpenData erm2-nwe9</a>
+        </div>
+        <div class="chart-card">
+          <div class="head"><h3>30-day closure rate by borough</h3><span class="badge verified">Verified</span></div>
+          <div class="sub">All 5 boroughs · your borough highlighted</div>
+          <div class="body" id="c-boroughs"></div>
+          <a class="src" href="sources.html#choropleth"><span class="ico">i</span> Source: NYC OpenData erm2-nwe9</a>
+        </div>
+      </div>
+
+      <!-- ROW 4: distribution histogram (full-width) -->
+      <div class="chart-grid">
+        <div class="chart-card" style="grid-column:1/-1">
+          <div class="head"><h3>Distribution of close times</h3><span class="badge verified">Verified</span></div>
+          <div class="sub" id="s-hist">Borough · 2025 · highlighted = forecast bucket</div>
+          <div class="body" id="c-hist"></div>
+          <a class="src" href="sources.html#histogram"><span class="ico">i</span> SoQL: CASE-WHEN bucketing on date_diff_d</a>
+        </div>
+      </div>
+    </div>
+
+    <!-- MAP PANEL -->
+    <div class="tab-panel" id="panel-map">
+      <div class="map-grid">
+        <div class="map-shell" id="mapCanvas"><div class="map-placeholder">Submit the form to load the map.</div></div>
+        <div class="map-side">
+          <div class="map-legend">
+            <div class="legend-item"><span class="pin pin-complaint"></span> Your complaint</div>
+            <div class="legend-item">
+              <span class="pin pin-vendor-bolt" aria-hidden="true">
+                <svg viewBox="0 0 24 24" width="16" height="16">
+                  <path d="M14,2 L5,14 L11,14 L9,22 L19,10 L13,10 L16,2 Z" fill="#ffb703" stroke="#fff" stroke-width="1.2" stroke-linejoin="round"/>
+                </svg>
+              </span>
+              Licensed electricians within 2 mi
+            </div>
+            <div class="legend-item"><span class="pin pin-similar"></span> Similar past complaints (last 12 mo)</div>
+            <div class="legend-sub">
+              <span class="legend-sub-label">Days-to-close badge color:</span>
+              <span class="day-chip" style="background:var(--teal-soft);color:var(--teal-deep)">&lt;7d</span>
+              <span class="day-chip" style="background:var(--amber-soft);color:#7a5800">8–30d</span>
+              <span class="day-chip" style="background:var(--red-soft);color:#a32b36">&gt;30d</span>
+              <span class="day-chip" style="background:var(--bg-alt);color:var(--ink-mute)">open</span>
+            </div>
+          </div>
+          <div class="map-list" id="vendorList"><div class="lbl">Nearest vendors</div></div>
+          <div class="map-list" id="similarList"><div class="lbl">Similar resolved complaints</div></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- WORK ORDER PANEL -->
+    <div class="tab-panel" id="panel-workorder">
+      <div class="wo">
+        <div class="wo-doc" id="woDoc"></div>
+        <div class="wo-side">
+          <div class="wo-side-card">
+            <div class="lbl">DOT Agent Review</div>
+            <div class="meta-line">Generated by <strong>Claude Sonnet 4.5</strong></div>
+            <div class="meta-line" id="woMethod">Cross-checked against past resolved complaints in the borough.</div>
+            <div class="meta-line" id="woStatus" style="margin-top:8px;color:var(--ink-mute);font-size:12px"></div>
+          </div>
+          <div class="wo-side-card">
+            <button class="pill approve" id="woApprove">Approve &amp; dispatch <span class="arrow">→</span></button>
+            <button class="pill reject" id="woReject">Reject / request edits</button>
+          </div>
+          <div class="wo-side-card" id="woVendor">
+            <div class="lbl">Assigned vendor</div>
+            <div class="meta-line"><strong>Bright Spark Electric Co.</strong></div>
+            <div class="meta-line">NYC Lic. #ME-12498 · 0.8 mi</div>
+            <div class="meta-line">(212) 555-0142</div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<footer>
+  <div class="wrap">
+    <div>NYC Street Lights · Built on NYC OpenData · 2026</div>
+    <div><a href="sources.html">Sources &amp; methodology →</a></div>
+  </div>
+</footer>
+
+<script src="charts.js?v=20260505f"></script>
+<script src="data-loader.js?v=20260505f"></script>
+<script>
+// ── Tabs ─────────────────────────────────────────────────────────
+// State for lazy map init: set on form submit, consumed when the user
+// first opens the map tab. Google Maps fails to render in a hidden
+// (display:none) container because the inner div has 0×0 dimensions
+// at construct time — so we defer init until the panel is visible.
+window._lastForm = null;
+window._mapInitialized = false;
+window._workOrderReady = false;     // gate for the Approve & dispatch button
+const TAB_ORDER  = ['analysis', 'map', 'workorder'];
+const TAB_LABELS = { analysis: 'Analysis', map: 'Map & vendors', workorder: 'Work order' };
+
+function activateTab(name){
+  document.querySelectorAll('.tab').forEach(x => x.classList.toggle('active', x.dataset.tab === name));
+  document.querySelectorAll('.tab-panel').forEach(x => x.classList.toggle('active', x.id === 'panel-' + name));
+
+  // Step indicator + Next button label
+  const idx = TAB_ORDER.indexOf(name);
+  if(idx >= 0) setText('currentStep', `${idx + 1} of 3 — ${TAB_LABELS[name]}`);
+  const nextBtn = document.getElementById('nextStepBtn');
+  if(nextBtn){
+    if(idx >= 0 && idx < TAB_ORDER.length - 1){
+      const nxt = TAB_ORDER[idx + 1];
+      nextBtn.innerHTML = `Next: ${TAB_LABELS[nxt]} <span class="arrow">→</span>`;
+      nextBtn.disabled = false;
+    } else {
+      nextBtn.innerHTML = 'Final step ✓';
+      nextBtn.disabled = true;
+    }
+  }
+
+  // Lazy map init / resize when the map tab becomes visible
+  if(name === 'map'){
+    if(!window._mapInitialized && window._lastForm){
+      window._mapInitialized = true;
+      initResultsMap(window._lastForm).catch(err => {
+        console.error('Map init failed:', err);
+        window._mapInitialized = false;
+      });
+    } else if(window._resultsMap && window.google){
+      setTimeout(() => {
+        const c = window._resultsMap.getCenter();
+        google.maps.event.trigger(window._resultsMap, 'resize');
+        window._resultsMap.setCenter(c);
+      }, 50);
+    }
+  }
+}
+
+document.querySelectorAll('.tab').forEach(t => {
+  t.addEventListener('click', () => activateTab(t.dataset.tab));
+});
+
+document.getElementById('nextStepBtn')?.addEventListener('click', () => {
+  const active = document.querySelector('.tab.active')?.dataset?.tab;
+  const i = TAB_ORDER.indexOf(active);
+  if(i >= 0 && i < TAB_ORDER.length - 1) activateTab(TAB_ORDER[i + 1]);
+});
+
+// ── Submit → live data → render ─────────────────────────────────
+async function onSubmit(e){
+  e.preventDefault();
+  const form = Object.fromEntries(new FormData(e.target));
+  document.getElementById('resultsTitle').textContent =
+    `${form.address} · ${form.borough} ${form.zip}`;
+  document.getElementById('results').scrollIntoView({behavior:'smooth'});
+  showLoading();
+  try{
+    const {data, errors, sources} = await DataLoader.loadAnalytics({
+      borough: form.borough,
+      zip: form.zip,
+      complaint_type: form.complaint_type,
+      address: form.address
+    });
+    renderAll(data, form, errors);
+    if(Object.keys(errors).length){
+      console.warn('Some metrics failed:', errors);
+    }
+  } catch(e){
+    console.error('Load failed:', e);
+    showError('Could not reach NYC OpenData. Showing placeholder data.');
+    renderAll(DEFAULT_DATA, form, {global: e.message});
+  }
+}
+
+// ── Loading / error states ──────────────────────────────────────
+function showLoading(){
+  // 7-chart loading state
+  ['c-volume','c-box','c-progress','c-median','c-descriptor','c-boroughs','c-hist'].forEach(id=>{
+    const el = document.getElementById(id);
+    if(el) el.innerHTML = '<div class="loading">Loading…</div>';
+  });
+  [].forEach(id=>{
+    const el = document.getElementById(id);
+    if(el) el.innerHTML = '<div class="loading">…</div>';
+  });
+}
+function showError(msg){
+  console.error(msg);
+}
+
+// ── Default placeholder data shown on first paint (before submit) ──
+const DEFAULT_DATA = {
+  boroughVolume: 4962,
+  zipVolume: 612,
+  percentile: 18,
+  repeatRate: 11,
+  dispatchHours: 38,
+  hotspotDensity: 88,
+  reportingPer1k: 14.2,
+  duplicates: 9,
+  lowIncomeClosure: 71,
+  seasonality: {
+    months:['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'],
+    thisZip:[38,42,55,61,72,85,91,88,79,68,52,41],
+    borough:[310,340,420,468,512,598,640,612,548,490,402,312],
+  },
+  descriptor:[
+    {label:'Light out', value:1820},{label:'Cycling', value:540},
+    {label:'Glassware/fixture', value:880},{label:'Pole damage', value:610},
+    {label:'Base cover', value:430},{label:'Other', value:682},
+  ],
+  medianDays:{thisZip:21, borough:19, city:14},
+  closurePct:{d7:61, d30:67, d90:88},
+  boroughClosure:{'Manhattan':67.4,'Bronx':78.3,'Queens':76.3,'Brooklyn':80.4,'Staten Island':80.4},
+  boroughRankItems:[
+    {label:'SI',value:80.4,full:'Staten Island'},{label:'Brook',value:80.4,full:'Brooklyn'},
+    {label:'Bronx',value:78.3,full:'Bronx'},{label:'Queens',value:76.3,full:'Queens'},
+    {label:'Manh',value:67.4,full:'Manhattan'},
+  ],
+  boroughRankIdx:4,
+  histogram:[
+    {label:'0-3',count:120},{label:'4-7',count:480},{label:'8-14',count:1110},
+    {label:'15-21',count:920},{label:'22-30',count:720},{label:'31-60',count:1180},
+    {label:'61+',count:432},
+  ],
+  forecast:{exp:'2026-05-14',lo:'2026-05-09',hi:'2026-05-20'},
+};
+
+// ── Render everything ────────────────────────────────────────────
+function renderAll(d, form, errors){
+  errors = errors || {};
+  form = form || {borough:'Manhattan', zip:'10027'};
+  const fmt = n => n==null ? '—' : (typeof n==='number' ? n.toLocaleString() : n);
+  const pct = n => n==null ? '—' : n.toFixed(0)+'%';
+
+  const borough = form.borough || 'Manhattan';
+  const yr = (window.DataLoader && DataLoader.getYear) ? DataLoader.getYear() : 2025;
+
+  // Subtitles
+  setText('s-desc',     `Top descriptors · ${borough} · ${yr}`);
+  setText('s-progress', `${borough} · ${yr}`);
+  setText('s-box',      `${borough} · ${yr} · derived from close-time distribution`);
+  setText('s-hist',     `${borough} · ${yr} · highlighted = where this complaint is forecast to land`);
+
+  // ── 1. Borough volume — multi-year line graph ──────────────────
+  const volEl = document.getElementById('c-volume');
+  if(volEl && d.yearlyVolume?.values?.length){
+    const yv = d.yearlyVolume;
+    const latest = yv.values[yv.values.length - 1];
+    const earliest = yv.values[0];
+    const deltaPct = earliest ? ((latest - earliest) / earliest) * 100 : 0;
+    const arrow = deltaPct >= 0 ? '↑' : '↓';
+    const tone = deltaPct >= 0 ? 'var(--red)' : 'var(--green)';
+
+    setText('s-volume',
+      `${borough} · ${yv.years[0]}–${yv.years[yv.years.length-1]} · ` +
+      `${earliest.toLocaleString()} → ${latest.toLocaleString()} ` +
+      `(${arrow} ${Math.abs(deltaPct).toFixed(0)}%)`
+    );
+
+    Charts.sparkline(volEl, {
+      series: [{
+        name: borough,
+        color: Charts.PALETTE.teal,
+        points: yv.values.map((v, i) => ({x: yv.years[i], y: v})),
+      }],
+      xLabels: yv.years.map(String),
+      labelAllPoints: true,
+    });
+  } else if(volEl){
+    // Fallback if yearly data isn't available
+    volEl.innerHTML = `
+      <div style="text-align:center">
+        <div style="font-family:Fraunces,Georgia,serif;font-size:64px;font-weight:600;line-height:1;letter-spacing:-.03em;color:var(--ink)">${fmt(d.boroughVolume)}</div>
+        <div style="margin-top:14px;font-size:13px;color:var(--ink-mute);text-transform:uppercase;letter-spacing:.1em;font-weight:600">${yr} total</div>
+      </div>`;
+    setText('s-volume', `${borough} · ${yr}`);
+  }
+
+  // ── 2. % closed within 7 / 30 / 90 days (progress bars, color-coded) ─
+  if(d.closurePct){
+    Charts.progressBars(document.getElementById('c-progress'), {
+      items: [
+        {label: '7 days',  value: d.closurePct.d7  || 0},
+        {label: '30 days', value: d.closurePct.d30 || 0},
+        {label: '90 days', value: d.closurePct.d90 || 0},
+      ],
+    });
+  }
+
+  // ── 3. Median days to close (borough vs city) ──────────────────
+  if(d.medianDays){
+    Charts.barChart(document.getElementById('c-median'), {
+      bars:[
+        {label: borough, value: d.medianDays.borough, highlight:true, color:Charts.PALETTE.teal},
+        {label: 'City',  value: d.medianDays.city,   color:Charts.PALETTE.tealLight},
+      ],
+    });
+  }
+
+  // ── 4. Estimated completion time (box-and-whisker) ─────────────
+  // Derive Q1/median/Q3 from the histogram bin midpoints. We don't have
+  // raw close-day percentiles in the baked data, but the bin distribution
+  // gives us an honest approximation.
+  if(d.histogram && d.medianDays){
+    const stats = quantilesFromHistogram(d.histogram);
+    Charts.boxPlot(document.getElementById('c-box'), {
+      ...stats,
+      label: 'similar',
+    });
+    // Populate the results header callout — prominent estimated time
+    setText('estTimeToFix', `~${Math.round(stats.median)} days`);
+  } else if(d.medianDays?.borough){
+    setText('estTimeToFix', `~${d.medianDays.borough} days`);
+  }
+  // Borough closure stat in the header
+  if(d.closurePct?.d30 != null){
+    setText('estClosure30', `${Math.round(d.closurePct.d30)}% closed in 30d`);
+  }
+
+  // ── 5. Descriptor mix (horizontal bars, sorted descending) ─────
+  if(d.descriptor && d.descriptor.length){
+    const top = d.descriptor.slice(0, 5);
+    const restSum = d.descriptor.slice(5).reduce((a,b)=>a+b.value, 0);
+    if(restSum > 0) top.push({label: 'Other', value: restSum});
+    // Sort descending so largest is at top of horizontal bar list
+    const sorted = [...top].sort((a, b) => b.value - a.value);
+    // Color the top bar in teal-deep, others in lighter shades
+    const palette = [Charts.PALETTE.tealDeep, Charts.PALETTE.teal, '#48bfe3', '#8ab4f8', '#a6dcef', '#cfe9f5'];
+    Charts.hBarChart(document.getElementById('c-descriptor'), {
+      bars: sorted.map((s, i) => ({
+        label: s.label, value: s.value, color: palette[i] || Charts.PALETTE.tealLight,
+      })),
+      format: n => n.toLocaleString(),
+    });
+  }
+
+  // ── 6. 30-day closure rate by borough (horizontal bars, your borough highlighted) ─
+  if(d.boroughClosure){
+    const entries = Object.entries(d.boroughClosure)
+      .map(([name, value]) => ({name, value}))
+      .sort((a, b) => b.value - a.value);
+    Charts.hBarChart(document.getElementById('c-boroughs'), {
+      bars: entries.map(e => ({
+        label: e.name,
+        value: e.value,
+        color: e.name === borough ? Charts.PALETTE.tealDeep : Charts.PALETTE.tealLight,
+        highlight: e.name === borough,
+      })),
+      format: n => n.toFixed(1) + '%',
+    });
+  }
+
+  // ── 7. Distribution of close times (histogram) ─────────────────
+  if(d.histogram){
+    let hi = 2;
+    if(d.medianDays?.borough){
+      const md = d.medianDays.borough;
+      hi = md<=3 ? 0 : md<=7 ? 1 : md<=14 ? 2 : md<=21 ? 3 : md<=30 ? 4 : md<=60 ? 5 : 6;
+    }
+    Charts.histogram(document.getElementById('c-hist'), {
+      bins: d.histogram, highlightIdx: hi
+    });
+  }
+
+  // Map: stash the form for lazy init when the user opens the map tab.
+  window._lastForm = form;
+  window._mapInitialized = false;
+  window._selectedVendor = null;
+
+  const mc = document.getElementById('mapCanvas');
+  if(mc) mc.innerHTML = '<div class="map-placeholder">Click the <strong>Map &amp; vendors</strong> tab above to load the map.</div>';
+
+  // Work order is gated on vendor selection now — show prompt instead
+  const woDoc = document.getElementById('woDoc');
+  if(woDoc){
+    woDoc.innerHTML = '<div class="map-placeholder" style="height:300px">Select a vendor on the <strong>Map &amp; vendors</strong> tab to generate a work order.</div>';
+  }
+  setText('woStatus', '');
+}
+
+// ── Work-order generation ───────────────────────────────────────
+async function generateWorkOrder(form, analytics, chosenVendor){
+  if(!form){
+    renderWorkOrder(SAMPLE_WO);
+    setText('woStatus', 'Sample work order shown. Submit the form to generate a real one.');
+    return;
+  }
+  const doc = document.getElementById('woDoc');
+  doc.innerHTML = '<div class="loading" style="height:200px">Generating DOT-format work order with Claude Sonnet 4.5…</div>';
+  setText('woStatus', `Calling /api/generate-work-order with ${chosenVendor ? chosenVendor.name : 'no vendor'} …`);
+
+  // Similar past resolved orders for the few-shot prompt
+  const similar = await DataLoader.findSimilarComplaints(
+    form.borough, form.complaint_type, form.zip, 5
+  ).catch(() => []);
+
+  // Use the explicitly-chosen vendor; fall back to auto-pick only if none given
+  let nearestVendor = chosenVendor || null;
+  if(!nearestVendor){
+    const geocoded = await geocodeAddress(form.address, form.zip).catch(() => null);
+    if(geocoded){
+      const auto = await DataLoader.findNearestVendors(geocoded.lat, geocoded.lng, 1).catch(() => []);
+      nearestVendor = auto[0] || null;
+    }
+  }
+
+  const payload = {
+    complaint: {
+      complaint_id: 'WEB-' + Date.now(),
+      complaint_type: form.complaint_type || 'Street Light Out',
+      address: form.address || '',
+      borough: form.borough || '',
+      zip: form.zip || '',
+      reported_date: new Date().toISOString().slice(0,10),
+      duration: form.duration || '',
+      details: form.details || '',
+      priority: ''
+    },
+    similar_past_orders: similar.filter(s => s.status === 'Closed').slice(0, 5).map(s => ({
+      address: s.address, borough: s.borough, zip: s.zip,
+      complaint_type: s.raw, days_to_close: s.days, priority: s.priority,
+    })),
+    vendor: nearestVendor ? {
+      name: nearestVendor.name,
+      license: nearestVendor.license,
+      phone: nearestVendor.phone
+    } : { name: 'Bright Spark Electric Co.', license: 'ME-12498' }
+  };
+
+  // Update the side-panel vendor card with the actual nearest vendor
+  if(nearestVendor){
+    const vendorEl = document.getElementById('woVendor');
+    if(vendorEl){
+      vendorEl.innerHTML = `
+        <div class="lbl">Assigned vendor</div>
+        <div class="meta-line"><strong>${nearestVendor.name}</strong></div>
+        <div class="meta-line">NYC Lic. #${nearestVendor.license} · ${nearestVendor.distance.toFixed(1)} mi</div>
+        <div class="meta-line">${nearestVendor.phone || ''}</div>`;
+    }
+  }
+
+  try{
+    const r = await fetch('/api/generate-work-order', {
+      method:'POST',
+      headers:{'Content-Type':'application/json'},
+      body: JSON.stringify(payload)
+    });
+    if(!r.ok){
+      const err = await r.json().catch(()=>({error:'unknown'}));
+      throw new Error(err.error || `HTTP ${r.status}`);
+    }
+    const wo = await r.json();
+    renderWorkOrder(wo);
+    setText('woStatus', `Generated in real-time · WO ${wo.defnum || ''}`);
+  } catch(e){
+    console.warn('Work-order generation failed, falling back to local synthesizer:', e);
+    renderWorkOrder(synthesizeWorkOrder(form, payload, nearestVendor));
+    setText('woStatus', `⚠ LLM API unavailable (${e.message}) — showing locally-synthesized work order from your inputs. Deploy to Vercel for the real LLM-generated version.`);
+  }
+}
+
+// ── Local fallback synthesizer ──────────────────────────────────
+// When /api/generate-work-order is unreachable (e.g. previewing locally
+// with `python -m http.server`), build a plausible DOT-format work order
+// from the user's actual form inputs instead of showing the static sample.
+function synthesizeWorkOrder(form, payload, vendor){
+  const boroMap = {Manhattan:'M', Brooklyn:'B', Bronx:'X', Queens:'Q', 'Staten Island':'SI'};
+  const boroFull = (form.borough || '').toUpperCase();
+  const boroCode = boroMap[form.borough] || '';
+
+  // Map complaint_type to canonical DOT category + code + priority
+  const ct = (form.complaint_type || '').toLowerCase();
+  let complaint_type = 'Street Light Out', complaint_code = 'SLO-01', priority = 2;
+  if(ct.includes('cycling'))                          { complaint_type='Street Light Cycling';  complaint_code='SLC-01'; priority=3; }
+  else if(ct.includes('day') || ct.includes('stays')) { complaint_type='Street Light Dayburning';complaint_code='SLD-02'; priority=3; }
+  else if(ct.includes('dim'))                         { complaint_type='Street Light Dim';      complaint_code='SLD-01'; priority=3; }
+  else if(ct.includes('hanging') && ct.includes('glass')){complaint_type='Glassware Hanging';   complaint_code='SLG-03'; priority=1; }
+  else if(ct.includes('broken') || ct.includes('hanging')){complaint_type='Glassware Broken';   complaint_code='SLG-02'; priority=2; }
+  else if(ct.includes('missing') && ct.includes('glass')){complaint_type='Glassware Missing';   complaint_code='SLG-01'; priority=2; }
+  else if(ct.includes('fixture damaged'))             { complaint_type='Fixture/Luminaire Damaged'; complaint_code='SLF-03'; priority=2; }
+  else if(ct.includes('fixture'))                     { complaint_type='Fixture/Luminaire Hanging'; complaint_code='SLF-04'; priority=1; }
+  else if(ct.includes('pole'))                        { complaint_type='Lamppost Damaged';      complaint_code='SLP-01'; priority=2; }
+  else if(ct.includes('base'))                        { complaint_type='Lamppost Base Door/Cover Damaged'; complaint_code='SLB-06'; priority=2; }
+  else if(ct.includes('wires') || ct.includes('exposed')){complaint_type='Wires Exposed';       complaint_code='SLW-01'; priority=1; }
+
+  const priority_code  = priority === 1 ? 'PRIORITY 1 — EMERGENCY'
+                       : priority === 2 ? 'PRIORITY 2 — NON-EMERGENCY'
+                       : 'PRIORITY 3 — ROUTINE';
+  const response_requirement = priority === 1
+    ? 'RESPONSE REQUIRED WITHIN: 4 HOURS — EMERGENCY RESPONSE'
+    : 'RESPONSE REQUIRED WITHIN: 10 CALENDAR DAYS';
+
+  // Parse house number + street from "1328 70th St" style addresses
+  const addr = form.address || '';
+  const m = addr.match(/^(\d+)\s+(.+)$/);
+  const housenum = m ? m[1] : '';
+  const streetName = (m ? m[2] : addr).toUpperCase();
+  const streetAbbr = streetName
+    .replace(/\bSTREET|\bAVENUE|\bAV|\bST|\bROAD|\bRD|\bBOULEVARD|\bBLVD|\bPLACE|\bPL/g, '')
+    .replace(/[^A-Z0-9]/g, ' ').trim().split(/\s+/)[0].slice(0,3).padEnd(3,'X');
+  const houseSlug = (housenum || '0000').padStart(4,'0');
+
+  return {
+    defnum: `SL-${new Date().getFullYear()}-${String(Date.now()).slice(-6)}`,
+    initby:'CSC', source:'CTZ', reported_by:'NYC 311',
+    housenum: housenum,
+    onfacename: streetName.split(/\s+/).slice(0,3).join(' '),
+    onprimname: streetName,
+    frmprimnam: '—', toprimname: '—',
+    specloc: 'I/F/O ADDRESS NR LAMPPOST',
+    boro: boroCode, borough_full: boroFull,
+    rptdate: new Date().toISOString(),
+    rptclosed: null,
+    response_requirement,
+    complaint_type, complaint_code,
+    priority_code,
+    priority_reason: priority === 1
+      ? 'Reported safety hazard requires emergency dispatch under NYC DOT 4-hour standard.'
+      : priority === 2
+      ? `${complaint_type.toLowerCase()} — replacement required within standard window.`
+      : `${complaint_type.toLowerCase()} — non-hazardous, routine repair.`,
+    pole_number: `${boroCode}-${streetAbbr}-${houseSlug}`,
+    estimated_days_to_complete: priority === 1 ? 2 : (priority === 2 ? 5 : 7),
+    materials_needed: complaint_code === 'SLO-01'
+      ? 'Photocell unit (Part No. NYC-PC-2A), 150W HPS bulb (Part No. NYC-HPS-150). Bring spare ballast NYC-BL-150 in case of starter failure.'
+      : complaint_code.startsWith('SLG')
+      ? 'Type A 16-inch borosilicate globe (Part No. NYC-GL-16A), retaining ring RR-2.'
+      : complaint_code.startsWith('SLB')
+      ? 'Lamppost base cover plate BP-4, tamper-resistant hex bolts (Part No. NYC-TB-M8).'
+      : complaint_code.startsWith('SLF')
+      ? 'LU-3 LED luminaire assembly (Part No. NYC-LU-3-LED), mounting hardware kit MH-7B.'
+      : 'None — calibration/inspection only. Bring DOT seasonal schedule reference card.',
+    work_steps: [
+      `1. Confirm pole number ${boroCode}-${streetAbbr}-${houseSlug} and report arrival to DOT dispatch.`,
+      '2. Establish pedestrian exclusion zone and don required PPE before approach.',
+      `3. Inspect ${complaint_type.toLowerCase()} and verify scope matches reported defect.`,
+      '4. Diagnose root cause — note any secondary damage or hazards.',
+      '5. Replace failed component(s) per DOT standard drawing SL-LU-2022.',
+      '6. Verify repair at next photocell trigger or via test cycle.',
+      '7. Photograph completed work and submit signed field report by end of shift.',
+    ],
+    instructions: `Diagnose and repair ${complaint_type.toLowerCase()} at ${addr}. Verify operation before clearing site.`,
+    safety_notes: priority === 1
+      ? `REQUIRED PPE: hard hat, face shield, insulated gloves (Class 0), high-visibility vest, steel-toed boots. EMERGENCY 4-HOUR RESPONSE. Establish 10-foot pedestrian exclusion zone before approach. Contact DOT Emergency Dispatch at (718) 433-3000 on arrival. If burning smell or arcing detected, call Con Edison at 1-800-75-CONED.`
+      : `REQUIRED PPE: insulated gloves (Class 00 minimum), safety glasses, high-visibility vest. Lockout/tagout required before handling any wiring. If pole is roadway-adjacent, contact DOT Traffic Operations at (212) 839-6900 before beginning work.`,
+    inspector_approval_required: priority === 1,
+    permit_required: false,
+    status: 'Open',
+    assigned_agency: 'NYC DOT — Division of Street Lighting',
+  };
+}
+
+// ── Approve / Reject handlers (frontend-only for now) ──────────
+document.getElementById('woApprove').addEventListener('click', () => {
+  if(!window._workOrderReady){
+    // No work order has been generated yet — refuse the click and tell
+    // the user how to get one.
+    setText('woStatus', '⚠ No work order to approve yet. Submit the form, open the Map tab, and select a vendor to generate a work order first.');
+    const status = document.getElementById('woStatus');
+    if(status){
+      status.style.color = 'var(--red)';
+      setTimeout(() => { if(status) status.style.color = ''; }, 4000);
+    }
+    return;
+  }
+  const btn = document.getElementById('woApprove');
+  btn.textContent = '✓ Dispatched';
+  btn.style.background = 'var(--green)';
+  btn.disabled = true;
+  setText('woStatus', 'Approved by DOT agent · vendor dispatched · timestamp ' + new Date().toLocaleString());
+});
+document.getElementById('woReject').addEventListener('click', () => {
+  if(!window._workOrderReady){
+    setText('woStatus', '⚠ No work order to reject yet. Generate one first by selecting a vendor on the Map tab.');
+    return;
+  }
+  const note = prompt('What needs to change about this work order?');
+  if(!note) return;
+  setText('woStatus', `Rejected — feedback: "${note}". Select a different vendor on the Map tab to regenerate.`);
+});
+
+// Derive Q1/median/Q3/min/max from a histogram of close-time bins.
+// Bins: 0-3, 4-7, 8-14, 15-21, 22-30, 31-60, 61+ days.
+//
+// Returning bin midpoints would collapse Q1/median/Q3 to the same value
+// when they all fall inside one bin (e.g. all three in "8-14" would all
+// be 11). Instead we interpolate within the bin: for each percentile we
+// find the bin that crosses it, then linearly interpolate based on how
+// far through that bin's count we are.
+function quantilesFromHistogram(bins){
+  // [low, high] day range for each bin label
+  const ranges = [
+    [0, 3], [4, 7], [8, 14], [15, 21], [22, 30], [31, 60], [61, 120],
+  ];
+  const total = bins.reduce((a, b) => a + (b.count || 0), 0);
+  if(total === 0) return {min:0, q1:0, median:0, q3:0, max:0};
+
+  function percentile(p){
+    const target = total * p;
+    let cum = 0;
+    for(let i = 0; i < bins.length; i++){
+      const c = bins[i].count || 0;
+      if(cum + c >= target){
+        // The percentile cut falls inside this bin.
+        const [lo, hi] = ranges[i];
+        const fraction = c > 0 ? (target - cum) / c : 0;
+        return lo + (hi - lo) * fraction;
+      }
+      cum += c;
+    }
+    return ranges[ranges.length - 1][1];
+  }
+
+  return {
+    min: 1,
+    q1:  percentile(0.25),
+    median: percentile(0.50),
+    q3:  percentile(0.75),
+    max: percentile(0.95),  // p95 to keep outliers from squashing the box
+  };
+}
+
+function setText(id, txt){
+  const el = document.getElementById(id);
+  if(el) el.textContent = txt;
+}
+
+// ── Sample work order matching the user's schema ─────────────────
+const SAMPLE_WO = {
+  defnum:'SL-2026-04261', initby:'CSC', source:'CTZ', reported_by:'NYC 311',
+  housenum:'225', onfacename:'W 125 ST', onprimname:'WEST 125TH STREET',
+  frmprimnam:'BROADWAY', toprimname:'AMSTERDAM AVENUE',
+  specloc:'NB SIDE I/F/O ADDRESS NR LAMPPOST', boro:'M', borough_full:'MANHATTAN',
+  rptdate:'2026-04-26T00:00:00.000', rptclosed:null,
+  response_requirement:'RESPONSE REQUIRED WITHIN: 10 CALENDAR DAYS',
+  complaint_type:'Street Light Out', complaint_code:'SLO-01',
+  priority_code:'PRIORITY 2 — NON-EMERGENCY',
+  priority_reason:'Lamp out reported by resident; no immediate safety hazard noted but addresses pedestrian safety on a high-foot-traffic corridor.',
+  pole_number:'MN-125W-0225', estimated_days_to_complete:6,
+  materials_needed:'Photocell unit (Part No. NYC-PC-2A), 150W HPS bulb (Part No. NYC-HPS-150). Bring spare ballast (Part No. NYC-BL-150) in case of starter failure.',
+  work_steps:[
+    '1. Confirm pole number MN-125W-0225 and report arrival to DOT dispatch.',
+    '2. Visually inspect lamp head and base cover for visible damage before powering on.',
+    '3. Test photocell trigger by hooding sensor — confirm or rule out PEC failure.',
+    '4. If PEC is faulty, replace with NYC-PC-2A unit. Otherwise replace bulb with NYC-HPS-150.',
+    '5. Verify illumination at next photocell trigger. If still inoperative, replace ballast NYC-BL-150.',
+    '6. Photograph completed repair and submit signed field report by end of shift.',
+  ],
+  instructions:'Inspect lamp head, test photocell, then replace failed component (PEC, bulb, or ballast in that order of likelihood). Verify illumination at next photocell cycle and submit field report.',
+  safety_notes:'REQUIRED PPE: insulated gloves (Class 00 minimum), safety glasses, high-visibility vest. If pole base shows water intrusion or arcing, do not proceed — call DOT Emergency Line at (718) 433-3000. Lockout/tagout required before opening fixture.',
+  inspector_approval_required:false, permit_required:false,
+  status:'Open', assigned_agency:'NYC DOT — Division of Street Lighting',
+};
+
+function renderWorkOrder(wo){
+  // Mark the work order as approvable IFF it has a real defnum (i.e. a
+  // generated or synthesized order, not the static placeholder/sample).
+  const isReal = wo && wo.defnum && wo.defnum !== 'SL-2026-04261';
+  window._workOrderReady = !!isReal;
+  // Reset the Approve button if previously dispatched
+  const approveBtn = document.getElementById('woApprove');
+  if(approveBtn && isReal){
+    approveBtn.disabled = false;
+    approveBtn.style.background = '';
+    approveBtn.innerHTML = 'Approve &amp; dispatch <span class="arrow">→</span>';
+  }
+  const pri = wo.priority_code||'';
+  const priClass = pri.startsWith('PRIORITY 1') ? 'p1' : pri.startsWith('PRIORITY 2') ? 'p2' : 'p3';
+  const steps = (wo.work_steps||[]).map(s=>`<li>${s.replace(/^\d+\.\s*/,'')}</li>`).join('');
+  const html = `
+    <div class="doc-header">
+      <div>
+        <div class="doc-title">NYC DOT Work Order</div>
+        <div class="doc-num">${wo.defnum}</div>
+      </div>
+      <div class="doc-agency">${wo.assigned_agency||''}</div>
+    </div>
+
+    <div>
+      <span class="priority-banner ${priClass}">${pri}</span>
+      <span class="response-banner">${wo.response_requirement||''}</span>
+    </div>
+
+    <h4>Location</h4>
+    <p>${wo.housenum||''} ${wo.onprimname||wo.onfacename||''}<br>
+       Between ${wo.frmprimnam||''} and ${wo.toprimname||''}<br>
+       ${(wo.borough_full||'').replace(/\b\w/g,c=>c.toUpperCase())}, NY<br>
+       <em>${wo.specloc||''}</em><br>
+       Pole #: <strong>${wo.pole_number||'—'}</strong></p>
+
+    <h4>Fault classification</h4>
+    <p><strong>${wo.complaint_type}</strong> · code ${wo.complaint_code}<br>
+       ${wo.priority_reason||''}</p>
+
+    <h4>Materials needed</h4>
+    <p>${wo.materials_needed||'—'}</p>
+
+    <h4>Work steps</h4>
+    <ol>${steps}</ol>
+
+    <h4>Dispatch instructions</h4>
+    <p>${wo.instructions||''}</p>
+
+    <div class="safety-callout">
+      <strong>Safety notes</strong>
+      ${wo.safety_notes||''}
+    </div>
+
+    <div class="grid-2">
+      <div>
+        <h4>Estimated completion</h4>
+        <p>${wo.estimated_days_to_complete||'—'} calendar days</p>
+      </div>
+      <div>
+        <h4>Approvals</h4>
+        <div class="checks">
+          <span class="check"><span class="box ${wo.inspector_approval_required?'on':''}">${wo.inspector_approval_required?'✓':''}</span> Inspector approval required</span>
+          <span class="check"><span class="box ${wo.permit_required?'on':''}">${wo.permit_required?'✓':''}</span> Permit required</span>
+        </div>
+      </div>
+    </div>
+
+    <h4>Reporting chain</h4>
+    <p>Initiated by ${wo.initby||'—'} · Source ${wo.source||'—'} · Reported by ${wo.reported_by||'—'}<br>
+       Reported ${(wo.rptdate||'').slice(0,10)} · Status: <strong>${wo.status||'Open'}</strong></p>
+  `;
+  document.getElementById('woDoc').innerHTML = html;
+}
+
+// ── Initial render with placeholder data; health check on load ──
+renderAll(DEFAULT_DATA, {borough:'Manhattan', zip:'10027'});
+
+const isFileMode = location.protocol === 'file:';
+
+// (Health pill removed from UI; refreshHealth no longer needed.)
+
+// ── Side TOC scroll-spy ────────────────────────────────────────
+// Highlights the link whose section is closest to the top of the viewport.
+// Uses IntersectionObserver where available; falls back to scroll event.
+(function(){
+  const links = document.querySelectorAll('#sideToc a[data-spy]');
+  if(!links.length) return;
+  const sections = [...links]
+    .map(a => ({a, el: document.getElementById(a.dataset.spy)}))
+    .filter(x => x.el);
+
+  function setActive(id){
+    links.forEach(a => a.classList.toggle('active', a.dataset.spy === id));
+  }
+
+  if('IntersectionObserver' in window){
+    const visible = new Map();
+    const io = new IntersectionObserver(entries => {
+      entries.forEach(e => {
+        if(e.isIntersecting) visible.set(e.target.id, e.intersectionRatio);
+        else visible.delete(e.target.id);
+      });
+      if(visible.size){
+        // Pick the section with the highest visibility
+        const top = [...visible.entries()].sort((a,b) => b[1] - a[1])[0][0];
+        setActive(top);
+      }
+    }, { rootMargin: '-30% 0px -55% 0px', threshold: [0, 0.25, 0.5, 0.75, 1] });
+    sections.forEach(s => io.observe(s.el));
+  } else {
+    // Crude fallback
+    function onScroll(){
+      const y = window.scrollY + 200;
+      let active = sections[0]?.el?.id;
+      for(const s of sections){
+        if(s.el.offsetTop <= y) active = s.el.id;
+      }
+      if(active) setActive(active);
+    }
+    window.addEventListener('scroll', onScroll, {passive:true});
+    onScroll();
+  }
+})();
+
+// ── Live About-page graphics ────────────────────────────────────
+async function renderAboutPage(){
+  const v = document.getElementById('about-volume');
+  const c = document.getElementById('about-closure');
+  const r = document.getElementById('about-revenue');
+  if(!v || !c || !r) return;
+
+  v.innerHTML = '<div class="loading" style="height:280px">Loading 2025 borough data…</div>';
+  c.innerHTML = '<div class="loading" style="height:280px">Loading…</div>';
+  r.innerHTML = '<div class="loading" style="height:280px">Loading…</div>';
+
+  let about;
+  if(isFileMode){
+    // file:// can't fetch Socrata. Render verified 2024 baseline so the
+    // page is functional in offline preview.
+    about = {
+      year: 2024, live: false,
+      boroughs: {
+        'Brooklyn':     {volume:8639, closure30:80.4, revenueLow:8639*200, revenueMid:8639*350, revenueHigh:8639*500},
+        'Queens':       {volume:8571, closure30:76.3, revenueLow:8571*200, revenueMid:8571*350, revenueHigh:8571*500},
+        'Bronx':        {volume:6184, closure30:78.3, revenueLow:6184*200, revenueMid:6184*350, revenueHigh:6184*500},
+        'Manhattan':    {volume:4962, closure30:67.4, revenueLow:4962*200, revenueMid:4962*350, revenueHigh:4962*500},
+        'Staten Island':{volume:2318, closure30:80.4, revenueLow:2318*200, revenueMid:2318*350, revenueHigh:2318*500},
+      },
+      total: 30674,
+    };
+  } else {
+    try{
+      about = await DataLoader.loadAboutPage();
+    } catch(e){
+      console.warn('About-page load failed:', e);
+      v.innerHTML = '<div class="err">Could not reach NYC OpenData. Check your network connection.</div>';
+      c.innerHTML = '';
+      r.innerHTML = '';
+      return;
+    }
+  }
+
+  // Update the year on each graphic tag — no provenance label since the
+  // dataset isn't truly live (it's a snapshot, refreshed manually via
+  // scripts/bake-from-worker.py).
+  document.getElementById('g1-year').textContent = `Graphic 1 · ${about.year}`;
+  document.getElementById('g2-year').textContent = `Graphic 2 · ${about.year}`;
+  document.getElementById('g3-year').textContent = `Graphic 3 · ${about.year}`;
+
+  // Sort boroughs by volume descending for graphic 1
+  const sortedByVol = Object.entries(about.boroughs)
+    .filter(([,d]) => d.volume != null)
+    .sort((a,b) => b[1].volume - a[1].volume);
+
+  // ── Graphic 1: Volume by borough (horizontal bars, monochrome teal)
+  // Largest = darkest teal, smallest = lightest. Highlights the leader and
+  // the laggard.
+  const vColors = [Charts.PALETTE.tealDeep, '#0096c7', Charts.PALETTE.teal, Charts.PALETTE.tealLight, '#a6dcef'];
+  Charts.hBarChart(v, {
+    bars: sortedByVol.map(([name, d], i) => ({
+      label: name,
+      value: d.volume,
+      color: vColors[i] || Charts.PALETTE.teal,
+    })),
+    format: n => n.toLocaleString(),
+  });
+
+  // ── Graphic 2: 30-day closure gauges (one per borough)
+  // Use teal monochrome — value labels render in dark ink for contrast.
+  Charts.gaugeCluster(c, {
+    items: sortedByVol
+      .map(([name, d]) => ({label: name, value: d.closure30 || 0, color: Charts.PALETTE.teal}))
+      .filter(it => it.value > 0),
+  });
+
+  // ── Graphic 3: Revenue range pyramid → horizontal range bars
+  const sortedByRev = [...sortedByVol]
+    .map(([name, d]) => ({label: name, low: d.revenueLow, mid: d.revenueMid, high: d.revenueHigh}))
+    .filter(it => it.low != null);
+  // Add NYC total at bottom
+  const total = sortedByRev.reduce((acc, it) => ({
+    low: acc.low + it.low, mid: acc.mid + it.mid, high: acc.high + it.high,
+  }), {low:0, mid:0, high:0});
+  sortedByRev.push({label:'NYC Total', ...total});
+  Charts.revenueRange(r, {items: sortedByRev});
+}
+
+renderAboutPage();
+
+// ── Geocoding & Map ────────────────────────────────────────────
+async function geocodeAddress(address, zip){
+  if(!address) return null;
+  await window._gmReady;
+  return new Promise((resolve, reject) => {
+    const g = new google.maps.Geocoder();
+    g.geocode(
+      {address: `${address}, NY ${zip || ''}`, componentRestrictions: {country: 'US'}},
+      (results, status) => {
+        if(status === 'OK' && results[0]){
+          const loc = results[0].geometry.location;
+          resolve({lat: loc.lat(), lng: loc.lng()});
+        } else reject(new Error(`Geocode failed: ${status}`));
+      }
+    );
+  });
+}
+
+// ── "Use my location" button — Geolocation + reverse geocode ──────
+// Asks the browser for the user's current position, then uses the
+// already-loaded Google Maps Geocoder to translate lat/lng into an
+// address that fills the form (address line, zip, and borough).
+async function useCurrentLocation(){
+  const btn = document.getElementById('useLocationBtn');
+  const status = document.getElementById('locStatus');
+  if(!btn || !status) return;
+  if(!navigator.geolocation){
+    status.textContent = '⚠ Your browser does not support geolocation.';
+    status.className = 'field-hint err';
+    return;
+  }
+
+  btn.disabled = true;
+  btn.classList.add('locating');
+  status.textContent = 'Locating you…';
+  status.className = 'field-hint';
+
+  // Wait for Google Maps to load (it powers the reverse-geocode step)
+  try { await window._gmReady; }
+  catch {
+    status.textContent = '⚠ Google Maps unavailable — fill the address manually.';
+    status.className = 'field-hint err';
+    btn.disabled = false; btn.classList.remove('locating');
+    return;
+  }
+
+  navigator.geolocation.getCurrentPosition(
+    (pos) => {
+      const {latitude: lat, longitude: lng} = pos.coords;
+      const geocoder = new google.maps.Geocoder();
+      geocoder.geocode({location: {lat, lng}}, (results, gStatus) => {
+        if(gStatus !== 'OK' || !results.length){
+          status.textContent = `⚠ Could not reverse-geocode (${gStatus}).`;
+          status.className = 'field-hint err';
+          btn.disabled = false; btn.classList.remove('locating');
+          return;
+        }
+        // Find the first useful result (street address > sublocality > else)
+        const r = results[0];
+        // Pull address components
+        const components = r.address_components || [];
+        const get = type => components.find(c => c.types.includes(type))?.long_name || '';
+        const getShort = type => components.find(c => c.types.includes(type))?.short_name || '';
+
+        const streetNum = get('street_number');
+        const route     = get('route');
+        const street    = [streetNum, route].filter(Boolean).join(' ').trim();
+        const zip       = get('postal_code');
+
+        // NYC borough resolution: borough lives in either "sublocality_level_1"
+        // (Manhattan/Brooklyn/Queens/Bronx) or "administrative_area_level_2"
+        // (Bronx is also a county/borough). Map them to our select values.
+        const sub2  = get('sublocality_level_1') || get('sublocality');
+        const adm2  = get('administrative_area_level_2');
+        const locality = get('locality');
+        const boroughMap = {
+          'manhattan':'Manhattan', 'new york':'Manhattan',
+          'brooklyn':'Brooklyn',   'kings county':'Brooklyn',  'kings':'Brooklyn',
+          'queens':'Queens',       'queens county':'Queens',
+          'bronx':'Bronx',         'the bronx':'Bronx',        'bronx county':'Bronx',
+          'staten island':'Staten Island', 'richmond county':'Staten Island', 'richmond':'Staten Island',
+        };
+        const lookup = s => boroughMap[(s || '').toLowerCase()];
+        const borough = lookup(sub2) || lookup(adm2) || lookup(locality) || '';
+
+        // Confirm the user is actually in NYC; if not, warn but still fill what we have
+        const stateShort = getShort('administrative_area_level_1');
+        const inNYC = !!borough;
+        if(!inNYC && stateShort && stateShort !== 'NY'){
+          status.textContent = `⚠ This dashboard only covers NYC. Your location is in ${stateShort}.`;
+          status.className = 'field-hint err';
+          btn.disabled = false; btn.classList.remove('locating');
+          return;
+        }
+
+        // Fill the form
+        const f = document.getElementById('intakeForm');
+        if(street) f.address.value = street;
+        else if(r.formatted_address) f.address.value = r.formatted_address.split(',')[0];
+        if(zip) f.zip.value = zip;
+        if(borough) f.borough.value = borough;
+
+        const filled = [
+          street && 'address',
+          zip && 'zip',
+          borough && 'borough',
+        ].filter(Boolean).join(', ');
+        status.textContent = `✓ Filled ${filled} from your location` +
+          (inNYC ? '' : ' — but borough not detected, please choose manually.');
+        status.className = 'field-hint ok';
+        btn.disabled = false;
+        btn.classList.remove('locating');
+      });
+    },
+    (err) => {
+      const msgMap = {
+        1: 'Permission denied. Allow location access in your browser to use this.',
+        2: 'Position unavailable. Try again or fill the address manually.',
+        3: 'Location request timed out. Try again.',
+      };
+      status.textContent = `⚠ ${msgMap[err.code] || err.message || 'Could not get your location.'}`;
+      status.className = 'field-hint err';
+      btn.disabled = false;
+      btn.classList.remove('locating');
+    },
+    { enableHighAccuracy: true, timeout: 10000, maximumAge: 60000 }
+  );
+}
+document.getElementById('useLocationBtn')?.addEventListener('click', useCurrentLocation);
+
+window._resultsMap = null;
+let _mapMarkers = [];
+async function initResultsMap(form){
+  const canvas = document.getElementById('mapCanvas');
+  if(!canvas) return;
+  canvas.innerHTML = '<div class="map-placeholder">Geocoding & loading map…</div>';
+
+  let origin;
+  try {
+    origin = await geocodeAddress(form.address, form.zip);
+    if(!origin) throw new Error('no result');
+  } catch(e){
+    canvas.innerHTML = `<div class="map-placeholder">Could not geocode "${form.address}". The map can't render without a valid address.</div>`;
+    return;
+  }
+
+  // Fresh map container — explicit pixel dimensions because Google Maps
+  // measures at construct time and 100% on a min-height parent collapses to 0.
+  canvas.innerHTML = '';
+  const mapEl = document.createElement('div');
+  mapEl.id = 'gmCanvas';
+  mapEl.style.height = '580px';
+  mapEl.style.width  = '100%';
+  canvas.appendChild(mapEl);
+  // Force a synchronous reflow so the browser commits the size before
+  // Google Maps reads it.
+  // eslint-disable-next-line no-unused-expressions
+  mapEl.offsetHeight;
+
+  await window._gmReady;
+  _mapMarkers.forEach(m => m.setMap(null));
+  _mapMarkers = [];
+
+  window._resultsMap = new google.maps.Map(mapEl, {
+    center: origin, zoom: 14,
+    disableDefaultUI: false,
+    streetViewControl: false, mapTypeControl: false, fullscreenControl: false,
+    styles: LIGHT_MAP_STYLE,
+  });
+  const _resultsMap = window._resultsMap;
+
+  const iw = new google.maps.InfoWindow();
+
+  // Complaint pin (red, larger, slight glow ring) — anchor for hover routes
+  const complaintMarker = new google.maps.Marker({
+    map: _resultsMap,
+    position: origin,
+    icon: {
+      path: google.maps.SymbolPath.CIRCLE,
+      scale: 12, fillColor:'#e63946', fillOpacity:1,
+      strokeColor:'#fff', strokeWeight:3,
+    },
+    title: form.address,
+    zIndex: 1000,
+  });
+  complaintMarker.addListener('click', () => {
+    iw.setContent(`<div class="gm-popup">
+      <div class="ttl">Your complaint</div>
+      <div class="meta">${escapeHtml(form.address)} · ${escapeHtml(form.borough)} ${escapeHtml(form.zip)}</div>
+      <div class="row"><strong>${escapeHtml(form.complaint_type)}</strong></div>
+      <div class="row">Reported just now · ${escapeHtml(form.duration || '')}</div>
+      <span class="badge">Open</span>
+    </div>`);
+    iw.open({map: _resultsMap, anchor: complaintMarker});
+  });
+  _mapMarkers.push(complaintMarker);
+
+  // ── Vendors (amber, name label below, click to select) ──────
+  const vendors = await DataLoader.findNearestVendors(origin.lat, origin.lng, 8);
+  const vList = document.getElementById('vendorList');
+  vList.innerHTML = `
+    <div class="lbl">Nearest vendors · select one to generate the work order</div>
+    <div class="vendor-prompt" id="vendorPrompt">No vendor selected yet.</div>`;
+
+  // ── Real driving route (Google Directions Service) ────────────
+  // Renders the actual road path the vendor would drive to the complaint.
+  // Cached per vendor so re-hovering doesn't re-call the API.
+  const _directionsService = new google.maps.DirectionsService();
+  const _directionsRenderer = new google.maps.DirectionsRenderer({
+    map: _resultsMap,
+    suppressMarkers: true,             // we have our own markers
+    suppressInfoWindows: true,
+    preserveViewport: true,            // don't re-fit on every hover
+    polylineOptions: {
+      strokeColor:   '#a07f00',
+      strokeOpacity: 0.9,
+      strokeWeight:  4,
+      zIndex: 5,
+    },
+  });
+  _directionsRenderer.setMap(null);    // hidden until first hover
+  const _routeCache = new Map();       // vendorLicense -> DirectionsResult
+
+  async function showRoute(vendor){
+    const key = vendor.license;
+    let result = _routeCache.get(key);
+    if(!result){
+      try{
+        result = await new Promise((resolve, reject) => {
+          _directionsService.route({
+            origin:      { lat: vendor.lat, lng: vendor.lng },
+            destination: origin,
+            travelMode:  google.maps.TravelMode.DRIVING,
+          }, (res, status) => {
+            if(status === 'OK') resolve(res);
+            else reject(new Error('DirectionsService: ' + status));
+          });
+        });
+        _routeCache.set(key, result);
+      } catch(err){
+        // Quota / API error → fall back to a straight line so the user
+        // still gets visual feedback
+        console.warn('Driving route unavailable, drawing straight line:', err.message);
+        if(_fallbackLine) _fallbackLine.setMap(null);
+        _fallbackLine = new google.maps.Polyline({
+          path: [{lat:vendor.lat, lng:vendor.lng}, origin],
+          geodesic: true, strokeColor:'#a07f00', strokeOpacity:0.6,
+          strokeWeight: 3, map: _resultsMap, zIndex: 5,
+        });
+        return;
+      }
+    }
+    _directionsRenderer.setMap(_resultsMap);
+    _directionsRenderer.setDirections(result);
+  }
+  let _fallbackLine = null;
+  function hideRoute(){
+    _directionsRenderer.setMap(null);
+    if(_fallbackLine){ _fallbackLine.setMap(null); _fallbackLine = null; }
+  }
+
+  // ── Vendor markers — lightning bolts numbered 1–5 ──────────────
+  const vendorMarkers = [];
+  const nearVendors = vendors.filter(v => v.distance <= 3).slice(0, 5);
+  // Already sorted by distance (findNearestVendors); rank = index + 1
+
+  function selectVendor(v){
+    window._selectedVendor = v;
+    vendorMarkers.forEach(({marker, vendor, rank}) => {
+      marker.setIcon(boltIcon(rank, vendor === v));
+      marker.setZIndex(vendor === v ? 300 : 100);
+    });
+    document.querySelectorAll('.vendor-card').forEach(el => {
+      el.classList.toggle('selected', el.dataset.license === v.license);
+    });
+    document.getElementById('vendorPrompt').innerHTML =
+      `Selected: <strong>${escapeHtml(v.name)}</strong> · <a href="#workorder" class="inline-link" onclick="document.querySelector('.tab[data-tab=workorder]').click();return false;">Generate work order →</a>`;
+    generateWorkOrder(window._lastForm, null, v);
+  }
+
+  nearVendors.forEach((v, i) => {
+    const rank = i + 1;
+    const m = new google.maps.Marker({
+      map: _resultsMap,
+      position: {lat: v.lat, lng: v.lng},
+      icon: boltIcon(rank, false),
+      title: `#${rank} · ${v.name} · ${v.distance.toFixed(1)} mi`,
+      zIndex: 100 + (5 - rank),         // closer pins on top
+    });
+    vendorMarkers.push({marker: m, vendor: v, rank});
+
+    m.addListener('mouseover', () => showRoute(v));
+    m.addListener('mouseout',  hideRoute);
+    m.addListener('click', () => selectVendor(v));
+
+    _mapMarkers.push(m);
+
+    const searchUrl = `https://www.google.com/search?q=${encodeURIComponent(v.name + ' NYC electrician')}`;
+    vList.insertAdjacentHTML('beforeend', `
+      <div class="vendor-card map-list-item" data-license="${escapeHtml(v.license)}">
+        <div class="vendor-rank">${rank}</div>
+        <div class="vendor-info">
+          <div class="vendor-name">
+            <strong>${escapeHtml(v.name)}</strong>
+            <a href="${searchUrl}" target="_blank" rel="noopener noreferrer"
+               class="vendor-link" title="Find website (opens Google search)"
+               onclick="event.stopPropagation()">↗</a>
+          </div>
+          <div class="vendor-sub">${escapeHtml(v.phone || '')} · Lic. #${escapeHtml(v.license)}</div>
+        </div>
+        <div class="vendor-actions">
+          <span class="meta">${v.distance.toFixed(1)} mi</span>
+          <button type="button" class="pill teal small select-vendor">Select</button>
+        </div>
+      </div>`);
+
+    const card = vList.querySelector(`.vendor-card[data-license="${CSS.escape(v.license)}"]`);
+    card.addEventListener('mouseenter', () => showRoute(v));
+    card.addEventListener('mouseleave', hideRoute);
+    card.querySelector('.select-vendor').addEventListener('click', (e) => {
+      e.stopPropagation();
+      selectVendor(v);
+    });
+  });
+
+  // ── Similar past complaints — color-coded by days-to-close ──
+  const similar = await DataLoader.findSimilarComplaints(form.borough, form.complaint_type, form.zip, 8);
+  const sList = document.getElementById('similarList');
+  sList.innerHTML = '<div class="lbl">Similar resolved complaints</div>';
+
+  // Legend explaining the color coding (matches the days-tag chip colors:
+  // blue <7d, yellow 8-30d, red >30d, gray open)
+  sList.insertAdjacentHTML('beforeend', `
+    <div class="similar-legend">
+      <span><span class="dot" style="background:#0077b6"></span>&lt;7 days</span>
+      <span><span class="dot" style="background:#ffb703"></span>8–30 days</span>
+      <span><span class="dot" style="background:#e63946"></span>&gt;30 days</span>
+      <span><span class="dot" style="background:#6b7a8f"></span>still open</span>
+    </div>`);
+
+  similar.slice(0, 5).forEach(s => {
+    const m = new google.maps.Marker({
+      map: _resultsMap,
+      position: {lat: s.lat, lng: s.lng},
+      icon: similarIcon(s.days, s.status),
+      title: `${s.raw || s.type} · ${s.days != null ? s.days + 'd' : (s.status || 'unknown')}`,
+    });
+    m.addListener('click', () => {
+      iw.setContent(`<div class="gm-popup">
+        <div class="ttl">${escapeHtml(s.raw || s.type)}</div>
+        <div class="meta">${escapeHtml(s.address)} · ${escapeHtml(s.borough)} ${escapeHtml(s.zip)}</div>
+        <div class="row">Reported ${escapeHtml(s.date)}${s.days ? ` · closed in <strong>${s.days} days</strong>` : ''}</div>
+        <span class="badge">${escapeHtml(s.status)}</span>
+      </div>`);
+      iw.open({map: _resultsMap, anchor: m});
+    });
+    _mapMarkers.push(m);
+
+    const tone = s.days == null ? 'open'
+               : s.days < 7  ? 'fast'      // <7d  → blue
+               : s.days <= 30 ? 'med'      // 8-30 → yellow
+                              : 'slow';    // >30  → red
+    sList.insertAdjacentHTML('beforeend', `
+      <div class="map-list-item">
+        <span><strong>${escapeHtml(s.raw || s.type)}</strong><br>${escapeHtml(s.address)}</span>
+        <span class="days-tag days-${tone}">${s.days != null ? s.days + 'd' : (s.status || '—')}</span>
+      </div>`);
+  });
+
+  // Fit bounds
+  const bounds = new google.maps.LatLngBounds();
+  _mapMarkers.forEach(m => bounds.extend(m.getPosition()));
+  if(_mapMarkers.length > 1) _resultsMap.fitBounds(bounds, {top:50,left:50,right:50,bottom:50});
+}
+
+function escapeHtml(s){
+  return String(s || '').replace(/[<>&"']/g, c => ({'<':'&lt;','>':'&gt;','&':'&amp;','"':'&quot;',"'":'&#39;'}[c]));
+}
+
+// SVG vendor icon: amber lightning bolt with rank number badge.
+// Compact (44×54) so labels never cover adjacent pins.
+function boltIcon(rank, isSelected){
+  const W = 44, H = 54;
+  const fill = isSelected ? '#a07f00' : '#ffb703';
+  // Lightning bolt path centered around (22,18), drawn within a 22-wide box
+  const bolt = 'M24,3 L11,23 L20,23 L17,38 L33,18 L23,18 L26,3 Z';
+  const ring = isSelected
+    ? `<circle cx='22' cy='20' r='19' fill='none' stroke='#a07f00' stroke-width='2.5'/>`
+    : '';
+  // Soft drop shadow under the bolt for legibility on light maps
+  const shadow = `<ellipse cx='22' cy='40' rx='14' ry='3' fill='rgba(10,31,61,0.18)'/>`;
+  // Number badge — circle below the bolt with the rank
+  const badge = `
+    <circle cx='22' cy='44' r='9' fill='#ffffff' stroke='${fill}' stroke-width='2.5'/>
+    <text x='22' y='47.5' font-family='Inter,system-ui,sans-serif' font-size='12' font-weight='800'
+          fill='#0a1f3d' text-anchor='middle'>${rank}</text>`;
+  const svg = `<svg xmlns='http://www.w3.org/2000/svg' width='${W}' height='${H}' viewBox='0 0 ${W} ${H}'>` +
+    shadow + ring +
+    `<path d='${bolt}' fill='${fill}' stroke='#ffffff' stroke-width='1.5' stroke-linejoin='round'/>` +
+    badge +
+    `</svg>`;
+  return {
+    url: 'data:image/svg+xml;charset=utf-8,' + encodeURIComponent(svg),
+    anchor: new google.maps.Point(W/2, 22),    // anchor at bolt center
+    scaledSize: new google.maps.Size(W, H),
+  };
+}
+
+// SVG similar-complaint icon: dot color-coded by days, "Xd" chip below
+function similarIcon(days, status){
+  // The dot is ALWAYS gray — color coding lives on the days badge
+  // below the pin so the map keeps a calm visual hierarchy and the
+  // user's eye is drawn to the chips, not a sea of colored dots.
+  const PIN_GRAY = '#6b7a8f';
+  const openLike = ['Open', 'Pending', 'Assigned', 'In Progress', 'Started'];
+  let badgeColor, badgeBg, label;
+  if(openLike.includes(status)){
+    badgeColor = '#6b7a8f'; badgeBg = '#f1efe9';   label = 'open';
+  } else if(days == null){
+    badgeColor = '#8899aa'; badgeBg = '#ffffff';   label = '—';
+  } else if(days < 7){
+    // BLUE = fast (<7 days)
+    badgeColor = '#0077b6'; badgeBg = '#e6f7fb';   label = days + 'd';
+  } else if(days <= 30){
+    // YELLOW = mid (8–30 days)
+    badgeColor = '#7a5800'; badgeBg = '#fff5d9';   label = days + 'd';
+  } else {
+    // RED = slow (>30 days)
+    badgeColor = '#a32b36'; badgeBg = '#fde6e8';   label = days + 'd';
+  }
+  const svg = `<svg xmlns='http://www.w3.org/2000/svg' width='62' height='40' viewBox='0 0 62 40'>` +
+    `<circle cx='31' cy='12' r='8' fill='${PIN_GRAY}' stroke='#fff' stroke-width='2'/>` +
+    `<rect x='13' y='22' width='36' height='14' rx='3' fill='${badgeBg}' stroke='${badgeColor}' stroke-width='1'/>` +
+    `<text x='31' y='32' font-family='Inter,system-ui,sans-serif' font-size='10' font-weight='700' fill='${badgeColor}' text-anchor='middle'>${label}</text>` +
+    `</svg>`;
+  return {
+    url: 'data:image/svg+xml;charset=utf-8,' + encodeURIComponent(svg),
+    anchor: new google.maps.Point(31, 12),
+    scaledSize: new google.maps.Size(62, 40),
+  };
+}
+
+// (pinIcon helper removed — vendorIcon and similarIcon now handle pin SVGs)
+
+// Light-theme Google Maps style — desaturated, paper-like
+const LIGHT_MAP_STYLE = [
+  {elementType:'geometry', stylers:[{color:'#fafaf7'}]},
+  {elementType:'labels.text.fill', stylers:[{color:'#3a4a63'}]},
+  {elementType:'labels.text.stroke', stylers:[{color:'#fafaf7'}]},
+  {featureType:'administrative', elementType:'geometry.stroke', stylers:[{color:'#e6e3da'}]},
+  {featureType:'poi', elementType:'geometry', stylers:[{color:'#f1efe9'}]},
+  {featureType:'poi', elementType:'labels', stylers:[{visibility:'off'}]},
+  {featureType:'road', elementType:'geometry', stylers:[{color:'#ffffff'}]},
+  {featureType:'road.arterial', elementType:'geometry', stylers:[{color:'#ffffff'}]},
+  {featureType:'road.highway', elementType:'geometry', stylers:[{color:'#e6f7fb'}]},
+  {featureType:'road', elementType:'labels.text.fill', stylers:[{color:'#6b7a8f'}]},
+  {featureType:'transit', elementType:'labels', stylers:[{visibility:'off'}]},
+  {featureType:'water', elementType:'geometry', stylers:[{color:'#cce8f0'}]},
+  {featureType:'water', elementType:'labels.text.fill', stylers:[{color:'#0077b6'}]},
+];
+</script>
+</body>
+</html>

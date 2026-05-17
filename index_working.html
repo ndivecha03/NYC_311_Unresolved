@@ -318,10 +318,6 @@
           <div class="wo-side-card">
             <button class="pill approve" id="woApprove">Submit and dispatch <span class="arrow">→</span></button>
             <button class="pill reject" id="woReject">Revise and edit</button>
-            <button class="pill memo-dl" id="woMemoDownload" style="display:none;margin-top:8px;background:var(--teal-deep,#007A8C);color:#fff;border:none;cursor:pointer;">
-              Download PPB 3-08 Memo ↓
-            </button>
-            <div id="woMemoStatus" style="font-size:12px;color:var(--ink-mute,#666);margin-top:6px;min-height:16px;"></div>
           </div>
         </div>
       </div>
@@ -959,7 +955,6 @@ function quantilesFromHistogram(bins){
 function renderWorkOrder(wo){
   const isReal = wo && wo.defnum;
   window._workOrderReady = !!isReal;
-  window._workOrder = isReal ? wo : null;
   const approveBtn = document.getElementById('woApprove');
   if(approveBtn && isReal){
     approveBtn.disabled = false;
@@ -1029,97 +1024,17 @@ function renderWorkOrder(wo){
   `;
 }
 
-// ── PPB 3-08 Memo download helper ──────────────────────────────────────────
-async function downloadPpbMemo(triggerLabel){
-  const wo = window._workOrder;
-  const vendor = window._selectedVendor;
-  if(!wo){ return; }
-
-  const memoStatus = document.getElementById('woMemoStatus');
-  if(memoStatus) memoStatus.textContent = 'Generating PPB 3-08 memo…';
-
-  const payload = {
-    vendor: vendor ? {
-      name:        vendor.name     || '',
-      license:     vendor.license  || '',
-      mwbe_cert_id: vendor.cert_id || '',
-      mwbe_type:   vendor.mwbe     || 'M/WBE',
-      address:     vendor.address  || '',
-      phone:       vendor.phone    || '',
-    } : {
-      name:    wo._vendorName    || 'See work order',
-      license: wo._vendorLicense || '—',
-    },
-    work_order: {
-      defnum:                      wo.defnum             || '',
-      complaint_type:              wo.complaint_type     || '',
-      complaint_code:              wo.complaint_code     || '',
-      onprimname:                  wo.onprimname         || '',
-      housenum:                    wo.housenum           || '',
-      borough_full:                wo.borough_full       || '',
-      specloc:                     wo.specloc            || '',
-      instructions:                wo.instructions       || '',
-      materials_needed:            wo.materials_needed   || '',
-      estimated_days_to_complete:  wo.estimated_days_to_complete || null,
-      priority_code:               wo.priority_code      || '',
-    },
-    agency: {
-      name:    'NYC Department of Transportation',
-      division:'Division of Street Lighting',
-      contact: '',
-      title:   '',
-    },
-    estimated_cost: null,
-  };
-
-  try {
-    const r = await fetch('/api/generate-ppb-memo', {
-      method: 'POST',
-      headers: {'Content-Type': 'application/json'},
-      body: JSON.stringify(payload),
-    });
-    if(!r.ok){
-      const err = await r.json().catch(() => ({error: `HTTP ${r.status}`}));
-      throw new Error(err.error || `HTTP ${r.status}`);
-    }
-    const blob = await r.blob();
-    const url  = URL.createObjectURL(blob);
-    const a    = document.createElement('a');
-    a.href     = url;
-    a.download = `PPB308-Memo-${wo.defnum || 'DRAFT'}.pdf`;
-    document.body.appendChild(a);
-    a.click();
-    setTimeout(() => { URL.revokeObjectURL(url); a.remove(); }, 2000);
-    if(memoStatus) memoStatus.textContent = '✓ Memo downloaded';
-  } catch(e) {
-    console.error('PPB memo generation failed:', e);
-    if(memoStatus) memoStatus.textContent = `⚠ Memo error: ${e.message}`;
-  }
-}
-
-// Approve / reject button wiring
-document.getElementById('woApprove').addEventListener('click', async () => {
+// Approve / reject button wiring (unchanged guard logic)
+document.getElementById('woApprove').addEventListener('click', () => {
   if(!window._workOrderReady){
     setText('woStatus', '⚠ No work order to approve yet. Submit the form and select a vendor first.');
     return;
   }
   const btn = document.getElementById('woApprove');
-  btn.innerHTML = 'Generating memo…';
-  btn.disabled = true;
-
-  await downloadPpbMemo('dispatch');
-
   btn.textContent = '✓ Dispatched';
   btn.style.background = 'var(--green)';
-  setText('woStatus', 'Approved · PPB 3-08 memo downloaded · vendor dispatched · ' + new Date().toLocaleString());
-
-  // Show standalone re-download button
-  const dl = document.getElementById('woMemoDownload');
-  if(dl){ dl.style.display = ''; }
-});
-
-document.getElementById('woMemoDownload').addEventListener('click', () => {
-  downloadPpbMemo('redownload');
+  btn.disabled = true;
+  setText('woStatus', 'Approved · vendor dispatched · ' + new Date().toLocaleString());
 });
 document.getElementById('woReject').addEventListener('click', () => {
   if(!window._workOrderReady){

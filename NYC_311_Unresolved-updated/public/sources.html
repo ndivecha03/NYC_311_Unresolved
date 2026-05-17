@@ -1,0 +1,337 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Sources &amp; Methodology &middot; NYC Street Lights</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=Fraunces:opsz,wght@9..144,400;9..144,600;9..144,700&display=swap" rel="stylesheet">
+<style>
+*{margin:0;padding:0;box-sizing:border-box;}
+:root{
+  --bg:#fafaf7; --bg-alt:#f1efe9; --surface:#ffffff;
+  --ink:#0a1f3d; --ink-soft:#3a4a63; --ink-mute:#6b7a8f;
+  --line:#e6e3da; --line-soft:#efece5;
+  --teal:#00b4d8; --teal-deep:#0077b6; --teal-soft:#e6f7fb;
+  --amber:#ffb703; --amber-soft:#fff5d9; --green:#2ec4b6; --green-soft:#e3f7f4;
+  --red:#e63946; --red-soft:#fde6e8;
+}
+body{font-family:Inter,system-ui,sans-serif;background:var(--bg);color:var(--ink);min-height:100vh;line-height:1.65;-webkit-font-smoothing:antialiased;}
+.header{background:rgba(250,250,247,.85);backdrop-filter:saturate(180%) blur(12px);border-bottom:1px solid var(--line);padding:18px 40px;display:flex;align-items:center;justify-content:space-between;position:sticky;top:0;z-index:10;}
+.header .brand{display:flex;align-items:center;gap:10px;}
+.header .brand .dot{width:10px;height:10px;border-radius:50%;background:var(--teal);box-shadow:0 0 0 4px var(--teal-soft);}
+.header h1{font-size:1.05rem;color:var(--ink);font-weight:800;letter-spacing:-.01em;}
+.header .sub{font-size:0.78rem;color:var(--ink-mute);margin-top:2px;}
+.header a.back{color:var(--ink);text-decoration:none;font-size:0.85rem;font-weight:600;padding:9px 16px;border:1px solid var(--line);border-radius:999px;transition:all .15s;background:#fff;}
+.header a.back:hover{border-color:var(--ink);}
+.page{max-width:920px;margin:0 auto;padding:48px 28px 96px;}
+.page h2{font-family:Fraunces,Georgia,serif;color:var(--ink);font-size:2rem;font-weight:600;letter-spacing:-.02em;margin:48px 0 18px;padding-bottom:12px;border-bottom:1px solid var(--line);}
+.page h2:first-child{margin-top:0;}
+.page h3{color:var(--ink);font-size:1.05rem;margin:28px 0 10px;font-weight:700;}
+.page p{color:var(--ink-soft);margin-bottom:12px;font-size:0.95rem;line-height:1.65;}
+.page strong{color:var(--ink);}
+.page em{color:var(--ink-soft);}
+.page ul,.page ol{margin:10px 0 16px 22px;color:var(--ink-soft);font-size:0.92rem;}
+.page ul li,.page ol li{margin-bottom:8px;}
+.page a{color:var(--teal-deep);text-decoration:none;font-weight:500;}
+.page a:hover{text-decoration:underline;}
+.page table{width:100%;border-collapse:collapse;margin:14px 0 22px;font-size:0.9rem;background:var(--surface);border:1px solid var(--line);border-radius:10px;overflow:hidden;}
+.page th,.page td{padding:12px 16px;text-align:left;border-bottom:1px solid var(--line);}
+.page tr:last-child td{border-bottom:none;}
+.page th{background:var(--bg-alt);color:var(--ink);font-weight:700;font-size:0.78rem;text-transform:uppercase;letter-spacing:.06em;}
+.page td{color:var(--ink-soft);}
+.page code,.page pre{font-family:'JetBrains Mono','Consolas','Monaco',monospace;background:var(--bg-alt);color:var(--teal-deep);border:1px solid var(--line);border-radius:6px;}
+.page code{padding:2px 6px;font-size:0.85rem;}
+.page pre{padding:14px 18px;margin:14px 0 20px;overflow-x:auto;font-size:0.82rem;line-height:1.55;color:var(--ink);}
+.disclaimer-box{background:var(--red-soft);border:1px solid var(--red);border-radius:10px;padding:18px 22px;margin:18px 0;color:#7c1f28;font-size:0.95rem;}
+.disclaimer-box strong{color:var(--red);}
+.disclaimer-box p{color:#7c1f28;margin-bottom:8px;}
+.disclaimer-box p:last-child{margin-bottom:0;}
+.tag{display:inline-block;background:var(--bg-alt);color:var(--ink-soft);padding:3px 10px;border-radius:12px;font-size:0.7rem;font-weight:700;letter-spacing:.06em;text-transform:uppercase;margin-left:8px;vertical-align:middle;}
+.tag.verified{background:var(--green-soft);color:#1a7d75;}
+.tag.estimate{background:var(--amber-soft);color:#a07f00;}
+.tag.forecast{background:var(--teal-soft);color:var(--teal-deep);}
+.footer{text-align:center;color:var(--ink-mute);font-size:0.78rem;margin-top:64px;padding-top:24px;border-top:1px solid var(--line);}
+</style>
+</head>
+<body>
+
+<div class="header">
+  <div class="brand">
+    <span class="dot"></span>
+    <div>
+      <h1>Sources &amp; Methodology</h1>
+      <div class="sub">Data provenance for every statistic on the dashboard</div>
+    </div>
+  </div>
+  <a class="back" href="/">&larr; Back to dashboard</a>
+</div>
+
+<div class="page">
+
+<h2>Summary</h2>
+<p>This page documents every figure and chart that appears on the dashboard, where the underlying data comes from, and exactly how it's derived. Items fall into four kinds:</p>
+<ul>
+  <li><span class="tag verified">Verified</span> measured directly from NYC OpenData via the <code>erm2-nwe9</code> dataset — no model, no estimate.</li>
+  <li><span class="tag estimate">Estimate</span> computed from public market-rate references; clearly labeled on the dashboard with a "Forecast" or "Estimate" badge.</li>
+  <li><span class="tag forecast">Forecast</span> derived from a measured distribution (e.g. histogram &rarr; quartiles) — accurate to the input data but not itself a measured fact.</li>
+</ul>
+
+<h2>1. Complaint Volume by Borough &mdash; 2025 <span class="tag verified">Verified</span></h2>
+
+<table>
+  <thead><tr><th>Borough</th><th>2025 Street Light Complaints</th></tr></thead>
+  <tbody>
+    <tr><td>Brooklyn</td><td>8,501</td></tr>
+    <tr><td>Queens</td><td>8,255</td></tr>
+    <tr><td>Bronx</td><td>6,751</td></tr>
+    <tr><td>Manhattan</td><td>6,199</td></tr>
+    <tr><td>Staten Island</td><td>3,974</td></tr>
+    <tr><td>Unspecified</td><td>155</td></tr>
+    <tr><td><strong>NYC Total</strong></td><td><strong>33,835</strong></td></tr>
+  </tbody>
+</table>
+
+<p><strong>Source:</strong> <a href="https://data.cityofnewyork.us/Social-Services/311-Service-Requests-from-2010-to-Present/erm2-nwe9" target="_blank" rel="noopener">NYC OpenData &mdash; 311 Service Requests from 2010 to Present</a> (dataset <code>erm2-nwe9</code>), maintained by NYC 311 and updated daily.</p>
+
+<p><strong>Methodology:</strong> Socrata SoQL query, run server-side via the Cloudflare Worker proxy at <code>nyc-streetlight-proxy.nddivecha.workers.dev</code>:</p>
+<pre>SELECT borough, count(*)
+WHERE complaint_type = 'Street Light Condition'
+  AND created_date BETWEEN '2025-01-01T00:00:00' AND '2026-01-01T00:00:00'
+GROUP BY borough</pre>
+
+<h3 id="boroughVolume">Volume Trend &middot; 2020&ndash;2025 <span class="tag verified">Verified</span></h3>
+
+<p>The line graph on the analytics page shows the same query above, run for each year from 2020 through 2025. The <code>Street Light Condition</code> complaint type starts in 2020 in the Socrata dataset (zero records pre-2020), so 2020&ndash;2025 is the full available span. The 2023 drop visible across every borough corresponds to a citywide methodology change at NYC DOT, not a real reduction in outages.</p>
+
+<table>
+  <thead><tr><th>Borough</th><th>2020</th><th>2021</th><th>2022</th><th>2023</th><th>2024</th><th>2025</th></tr></thead>
+  <tbody>
+    <tr><td>Bronx</td><td>11,597</td><td>15,502</td><td>17,203</td><td>6,903</td><td>6,184</td><td>6,751</td></tr>
+    <tr><td>Brooklyn</td><td>12,489</td><td>11,756</td><td>10,911</td><td>9,512</td><td>8,639</td><td>8,501</td></tr>
+    <tr><td>Manhattan</td><td>5,625</td><td>10,971</td><td>10,792</td><td>6,639</td><td>4,962</td><td>6,199</td></tr>
+    <tr><td>Queens</td><td>14,393</td><td>12,042</td><td>13,258</td><td>9,222</td><td>8,571</td><td>8,255</td></tr>
+    <tr><td>Staten Island</td><td>4,852</td><td>4,176</td><td>4,684</td><td>2,103</td><td>2,318</td><td>3,974</td></tr>
+  </tbody>
+</table>
+
+<h2 id="closure">2. Resolution-Speed Percentages &mdash; 2025 <span class="tag verified">Verified</span></h2>
+
+<p>Powers the <strong>"% closed within 7 / 30 / 90 days"</strong> progress bars and the <strong>"30-day closure rate by borough"</strong> chart on the analytics tab.</p>
+
+<table>
+  <thead><tr><th>Borough</th><th>Closed &lt; 7 days</th><th>Closed &le; 30 days</th><th>Closed &le; 90 days</th></tr></thead>
+  <tbody>
+    <tr><td>Staten Island</td><td>23.4%</td><td>87.7%</td><td>95.8%</td></tr>
+    <tr><td>Bronx</td><td>50.8%</td><td>83.0%</td><td>89.1%</td></tr>
+    <tr><td>Queens</td><td>51.1%</td><td>80.8%</td><td>87.8%</td></tr>
+    <tr><td>Brooklyn</td><td>34.3%</td><td>80.6%</td><td>89.1%</td></tr>
+    <tr><td>Manhattan</td><td>58.9%</td><td><strong>67.0%</strong></td><td>80.6%</td></tr>
+  </tbody>
+</table>
+
+<p>Three SoQL queries against <code>erm2-nwe9</code> per borough &mdash; one for each window:</p>
+<pre>SELECT count(*)
+WHERE complaint_type = 'Street Light Condition'
+  AND borough = '&lt;BOROUGH&gt;'
+  AND closed_date IS NOT NULL
+  AND date_diff_d(closed_date, created_date) &lt;= &lt;N&gt;
+  AND created_date BETWEEN '2025-01-01T00:00:00' AND '2026-01-01T00:00:00'</pre>
+<p>Then divided by the total filed in that borough/year (denominator from &sect;1).</p>
+
+<p><strong>Key finding:</strong> Manhattan continues to have the worst 30-day closure rate (~67%, meaning <strong>1 in 3</strong> Manhattan complaints sit unresolved a month after filing) despite leading on same-week response. This pattern has held across multiple years and is the headline statistic on the landing page.</p>
+
+<h2 id="median">3. Median Days to Close <span class="tag verified">Verified</span></h2>
+
+<p>One Socrata query per borough plus a citywide query, all 2025:</p>
+<pre>SELECT median(date_diff_d(closed_date, created_date)) AS m
+WHERE complaint_type = 'Street Light Condition'
+  AND closed_date IS NOT NULL
+  AND borough = '&lt;BOROUGH&gt;'
+  AND created_date BETWEEN '2025-01-01' AND '2026-01-01'</pre>
+
+<table>
+  <thead><tr><th>Borough</th><th>Median days to close</th></tr></thead>
+  <tbody>
+    <tr><td>Manhattan</td><td>4d</td></tr>
+    <tr><td>Queens</td><td>6d</td></tr>
+    <tr><td>Bronx</td><td>7d</td></tr>
+    <tr><td>Brooklyn</td><td>9d</td></tr>
+    <tr><td>Staten Island</td><td>9d</td></tr>
+    <tr><td><strong>Citywide</strong></td><td><strong>~7d</strong></td></tr>
+  </tbody>
+</table>
+
+<h2 id="descriptor">4. Descriptor Mix <span class="tag verified">Verified</span></h2>
+
+<p>Powers the <strong>"Complaint descriptor mix"</strong> horizontal bar chart. Top 20 problem descriptors per borough, summed for 2025; the chart shows the top 5 plus "Other".</p>
+<pre>SELECT descriptor, count(*)
+WHERE complaint_type = 'Street Light Condition'
+  AND borough = '&lt;BOROUGH&gt;'
+  AND created_date BETWEEN '2025-01-01' AND '2026-01-01'
+GROUP BY descriptor
+ORDER BY count(*) DESC
+LIMIT 20</pre>
+
+<h2 id="histogram">5. Distribution of Close Times <span class="tag verified">Verified</span></h2>
+
+<p>Bins the close-time of every <em>closed</em> 2025 complaint into the 7 buckets shown on the histogram (0&ndash;3, 4&ndash;7, 8&ndash;14, 15&ndash;21, 22&ndash;30, 31&ndash;60, 61+ days).</p>
+<pre>SELECT
+  CASE
+    WHEN date_diff_d(closed_date,created_date) &lt;= 3  THEN '0-3'
+    WHEN date_diff_d(closed_date,created_date) &lt;= 7  THEN '4-7'
+    WHEN date_diff_d(closed_date,created_date) &lt;= 14 THEN '8-14'
+    WHEN date_diff_d(closed_date,created_date) &lt;= 21 THEN '15-21'
+    WHEN date_diff_d(closed_date,created_date) &lt;= 30 THEN '22-30'
+    WHEN date_diff_d(closed_date,created_date) &lt;= 60 THEN '31-60'
+    ELSE '61+'
+  END AS bucket,
+  count(*)
+WHERE complaint_type = 'Street Light Condition'
+  AND borough = '&lt;BOROUGH&gt;'
+  AND closed_date IS NOT NULL
+  AND created_date BETWEEN '2025-01-01' AND '2026-01-01'
+GROUP BY bucket</pre>
+
+<h3 id="forecast">Estimated Completion Time (Box-and-Whisker) <span class="tag forecast">Forecast</span></h3>
+<p>The boxplot is <em>derived</em> from the histogram above &mdash; we don't run a separate query for individual close-day percentiles. For each percentile (Q1=25%, median=50%, Q3=75%, p95=95%) we walk the cumulative count across bins and <strong>linearly interpolate within</strong> the bin where the percentile falls, using the bin's day range as the interpolation interval (e.g. 8&ndash;14 days for the third bin). Without interpolation, adjacent percentiles that land in the same bin would collapse to the same midpoint value.</p>
+
+<p><strong>Worked example (Brooklyn, 2025):</strong> with histogram <code>[1202, 1713, 3695, 61, 184, 431, 714]</code> and total = 8,000, the 50% target (4,000) falls inside the 8&ndash;14d bin at fraction 0.29, giving median &asymp; 9.8d; the 75% target (6,000) is also in the 8&ndash;14d bin but at fraction 0.83, giving Q3 &asymp; 13.0d. Distinct values, same bin.</p>
+
+<h2>6. Vendor List <span class="tag verified">Verified</span></h2>
+
+<p>The 5 closest vendors shown on the map for each complaint, plus the sidebar list, are pulled from a baked subset of the <strong>NYC Department of Buildings master electrician license roster</strong>. The roster is published publicly and the licenses themselves are real.</p>
+
+<p><strong>Filtering:</strong> the raw DOB roster includes ~1,875 licensed electricians, but many of those are institutions that hold a license only for in-house maintenance (universities, hospitals, NYCHA, MTA, NYPD, city agencies, building-management companies, etc.). The dashboard filters those out via a regex pattern over the business-name field, leaving <strong>1,242 active licensed contractors</strong> as candidate vendors.</p>
+
+<p>For each submitted complaint the dashboard:</p>
+<ol>
+  <li>Geocodes the address via Google Maps Geocoding API to get a lat/lng.</li>
+  <li>Computes a haversine distance from each filtered vendor's lat/lng to the complaint location.</li>
+  <li>Returns the 5 nearest vendors, ranked 1 (closest) through 5.</li>
+</ol>
+
+<p>Each vendor card displays only fields backed by the DOB roster: business name, license number, phone, distance, plus a Google search link to help find the vendor's actual website. Vendor star ratings and review counts have been deliberately omitted from this dashboard &mdash; we don't have a verified source for that data, so we don't show it.</p>
+
+<h2 id="map">7. Map &mdash; Routes &amp; Geocoding <span class="tag verified">Verified</span></h2>
+
+<ul>
+  <li><strong>Address geocoding</strong> &mdash; <code>google.maps.Geocoder</code> converts the submitted address into a lat/lng for the complaint pin and the vendor distance calculation. Same API used by the "Use my location" button to reverse-geocode the user's GPS coordinates into address / zip / borough.</li>
+  <li><strong>Driving routes (hover preview)</strong> &mdash; <code>google.maps.DirectionsService</code> with <code>travelMode: DRIVING</code> returns the actual road path from a vendor to the complaint. The result is rendered with <code>DirectionsRenderer</code> and cached per vendor (keyed on license number) so re-hovering doesn't re-spend API quota. If the request fails (quota / no route), the dashboard falls back to a translucent straight line so the user still gets visual feedback.</li>
+  <li><strong>Map style</strong> &mdash; custom light-theme JSON that desaturates roads and POIs to match the dashboard palette.</li>
+</ul>
+
+<h2 id="similar">8. Similar Past Complaints <span class="tag verified">Verified</span></h2>
+
+<p>The "Similar resolved complaints" panel on the map page surfaces records from a 10,000-row baked sample (<code>public/baked-complaints.json</code>) generated by <code>scripts/bake-from-worker.py</code>. The script pulls 2,000 most-recent records per borough through the Cloudflare Worker, normalizes the schema to what the dashboard expects, and writes the file to disk; deploys ship that file as a static asset.</p>
+
+<p>For a given submitted complaint, similarity is scored on borough match (+3), zip match (+4), and complaint-type match (+4), with a recency bonus (+3 for 2024+, +2 for 2023+, +1 for 2022+). Top 5 by score are shown.</p>
+
+<p>The colored badge below each similar pin (and the chip in the side list) maps the close-time:</p>
+<ul>
+  <li><span style="color:var(--teal-deep);font-weight:700">Blue</span> = closed in fewer than 7 days</li>
+  <li><span style="color:#7a5800;font-weight:700">Yellow</span> = closed in 8&ndash;30 days</li>
+  <li><span style="color:#a32b36;font-weight:700">Red</span> = closed in more than 30 days</li>
+  <li><span style="color:var(--ink-mute);font-weight:700">Gray</span> = still open / pending / assigned</li>
+</ul>
+
+<h2 id="workorder">9. Work-Order Generation <span class="tag forecast">Generated</span></h2>
+
+<p>The work-order document on tab 03 is generated by <strong>Anthropic Claude Sonnet 4.5</strong> via the <code>/api/generate-work-order</code> Vercel serverless function. The model receives:</p>
+<ul>
+  <li>The user's submitted complaint (address, borough, zip, type, duration, optional notes).</li>
+  <li>The selected vendor's name + license number.</li>
+  <li>Up to 5 similar resolved past orders (from &sect;8) as few-shot examples.</li>
+  <li>A strict-JSON system prompt encoding NYC DOT's actual work-order schema, complaint codes (SLO-/SLC-/SLG-/SLF-/SLB-/SLP-), priority rules, and material library &mdash; all derived from 12 verified DOT sample orders.</li>
+</ul>
+<p>The output is rendered on-screen as a styled DOT-format document. If the API is unreachable (e.g. on local <code>python -m http.server</code> which doesn't support POST), the dashboard falls back to a local synthesizer that produces the same JSON shape from the form input.</p>
+<p>The "Approve &amp; dispatch" button is disabled until a real work order has been generated; clicking it before then shows a guard message and refuses to advance.</p>
+
+<h2>10. Infrastructure Scale <span class="tag verified">Verified</span></h2>
+<ul>
+  <li><strong>NYC DOT maintains ~250,000 streetlamps citywide.</strong> Source: <a href="https://www.amny.com/news/led-streetlight-conversion-in-nyc-more-than-70-1-14280026/" target="_blank" rel="noopener">amNY &mdash; LED streetlight conversion in NYC</a>; cross-referenced in <a href="https://en.wikipedia.org/wiki/New_York_City_Department_of_Transportation" target="_blank" rel="noopener">Wikipedia &mdash; NYC DOT</a>.</li>
+  <li><strong>4-hour emergency-response requirement for DOT streetlight contractors.</strong> Source: <a href="https://www.nyc.gov/html/dot/html/infrastructure/streetlights.shtml" target="_blank" rel="noopener">NYC DOT &mdash; Streetlights</a>.</li>
+  <li><strong>All repairs must be performed by a licensed NYC electrical contractor.</strong> Sources: NYC DOT Streetlights page; <a href="https://codelibrary.amlegal.com/codes/newyorkcity/latest/NYCrules/0-0-0-62948" target="_blank" rel="noopener">NYC Rules &sect; 2-20 Street Light and Power</a>.</li>
+</ul>
+
+<h2>11. Per-Repair Cost Range <span class="tag estimate">Estimate</span></h2>
+
+<p>These figures are U.S. market rates for streetlight service calls and electrical labor. They are <strong>not</strong> NYC DOT contract rates &mdash; those are not publicly disclosed.</p>
+
+<table>
+  <thead><tr><th>Component</th><th>Range</th><th>Source</th></tr></thead>
+  <tbody>
+    <tr><td>NYC licensed electrician labor</td><td>$50&ndash;$200 / hr</td><td><a href="https://www.homeyou.com/ny/electrician-new-york-costs" target="_blank" rel="noopener">Homeyou</a></td></tr>
+    <tr><td>Bucket truck / aerial lift</td><td>$60&ndash;$150 / hr ($1,500&ndash;$2,000 / day)</td><td><a href="https://www.lightwaytraffic.com/how-much-does-a-street-light-cost/" target="_blank" rel="noopener">Lightwaytraffic</a></td></tr>
+    <tr><td>Simple fixture / bulb repair (non-NYC baseline)</td><td>$50&ndash;$120 total</td><td><a href="https://www.ecosmartinc.com/how-much-does-a-street-light-cost/" target="_blank" rel="noopener">Ecosmart</a></td></tr>
+    <tr><td>Full fixture or pole replacement</td><td>$1,000+</td><td>Same as above</td></tr>
+    <tr><td>Annualized per-light maintenance (Los Angeles)</td><td>~$200 / light / year</td><td><a href="https://lalights.lacity.org/residents/cost_of_svc_and_stlighting_assessments.html" target="_blank" rel="noopener">City of LA</a></td></tr>
+  </tbody>
+</table>
+
+<p><strong>NYC-adjusted service-call range used on this site:</strong> <code>$200 &ndash; $500 per completed complaint</code>.</p>
+<p>Rationale: the non-NYC floor of $50&ndash;$120 per repair is unrealistic in a union-heavy, high-cost-of-living market. We shift the floor to $200, anchor the midpoint at $350, and cap the ceiling at $500 &mdash; well below the $1,000+ full-replacement benchmark. The range is deliberately conservative.</p>
+
+<h2>12. Revenue Opportunity &mdash; 2025 <span class="tag estimate">Estimate</span></h2>
+
+<table>
+  <thead><tr><th>Borough</th><th>Volume 2025</th><th>Low ($200/ea)</th><th>Mid ($350/ea)</th><th>High ($500/ea)</th></tr></thead>
+  <tbody>
+    <tr><td>Brooklyn</td><td>8,501</td><td>$1.70M</td><td>$2.98M</td><td>$4.25M</td></tr>
+    <tr><td>Queens</td><td>8,255</td><td>$1.65M</td><td>$2.89M</td><td>$4.13M</td></tr>
+    <tr><td>Bronx</td><td>6,751</td><td>$1.35M</td><td>$2.36M</td><td>$3.38M</td></tr>
+    <tr><td>Manhattan</td><td>6,199</td><td>$1.24M</td><td>$2.17M</td><td>$3.10M</td></tr>
+    <tr><td>Staten Island</td><td>3,974</td><td>$0.79M</td><td>$1.39M</td><td>$1.99M</td></tr>
+    <tr><td><strong>NYC Total</strong></td><td><strong>33,835</strong></td><td><strong>$6.77M</strong></td><td><strong>$11.84M</strong></td><td><strong>$16.92M</strong></td></tr>
+  </tbody>
+</table>
+<p><strong>Methodology:</strong> <code>annual_revenue = complaints_2025 &times; rate_per_repair</code> for each rate tier.</p>
+
+<div class="disclaimer-box">
+<p><strong>Important disclaimer.</strong> Revenue estimates use published NYC electrical service-call market rates and 2025 311 complaint volumes. They are <strong>not</strong> NYC DOT contract data and do not represent actual payments to any current contractor. They do not account for:</p>
+<ul style="margin:0 0 0 22px;color:#7c1f28">
+  <li>Share of current spend captured by prime contractors (e.g. historical contracts with Welsbach Electric Corp.)</li>
+  <li>Subcontracting arrangements or non-repair costs (materials markup, overhead)</li>
+  <li>Competitive bidding outcomes</li>
+</ul>
+</div>
+
+<h2>13. Data Pipeline &amp; Update Cadence</h2>
+<ul>
+  <li><strong>Live Socrata access:</strong> the browser routes all queries through a Cloudflare Worker proxy at <code>nyc-streetlight-proxy.nddivecha.workers.dev</code>. The Worker forwards to <code>nycopendata.socrata.com/resource/erm2-nwe9.json</code> (the Socrata-direct alias works from CDN egress IPs; the Akamai-fronted <code>data.cityofnewyork.gov</code> often does not).</li>
+  <li><strong>Bundled baseline:</strong> <code>public/baked-data.json</code> ships with the site so the dashboard works even if Socrata is unreachable. Refreshed by running <code>python scripts/bake-from-worker.py 2025</code>.</li>
+  <li><strong>localStorage cache:</strong> on every successful live fetch, the browser writes the merged snapshot to <code>localStorage[nycSL.cachedSnapshot.v2]</code> with a 7-day TTL. Subsequent visits use that cache while it's fresh.</li>
+  <li><strong>Vendor + complaint pools:</strong> baked from CSVs by <code>scripts/bake-static.py</code> &rarr; <code>baked-vendors.json</code> (1,242 vendors) and <code>baked-complaints.json</code> (10K records).</li>
+</ul>
+
+<h2>14. Complete Source List</h2>
+<ul>
+  <li><a href="https://data.cityofnewyork.us/Social-Services/311-Service-Requests-from-2010-to-Present/erm2-nwe9" target="_blank" rel="noopener">NYC OpenData &mdash; 311 Service Requests from 2010 to Present (erm2-nwe9)</a></li>
+  <li><a href="https://www.nyc.gov/html/dot/html/infrastructure/streetlights.shtml" target="_blank" rel="noopener">NYC DOT &mdash; Streetlights</a></li>
+  <li><a href="https://codelibrary.amlegal.com/codes/newyorkcity/latest/NYCrules/0-0-0-62948" target="_blank" rel="noopener">NYC Rules &sect; 2-20 Street Light and Power</a></li>
+  <li>NYC DOB Master Electrician License Roster (filtered to 1,242 active contractor entries)</li>
+  <li><a href="https://developers.google.com/maps/documentation/javascript" target="_blank" rel="noopener">Google Maps JavaScript API</a> &mdash; Geocoder &amp; DirectionsService</li>
+  <li><a href="https://docs.anthropic.com/" target="_blank" rel="noopener">Anthropic Claude API</a> &mdash; Sonnet 4.5 model for work-order generation</li>
+  <li><a href="https://www.amny.com/news/led-streetlight-conversion-in-nyc-more-than-70-1-14280026/" target="_blank" rel="noopener">amNY &mdash; LED streetlight conversion in NYC</a></li>
+  <li><a href="https://en.wikipedia.org/wiki/New_York_City_Department_of_Transportation" target="_blank" rel="noopener">Wikipedia &mdash; New York City Department of Transportation</a></li>
+  <li><a href="https://www.homeyou.com/ny/electrician-new-york-costs" target="_blank" rel="noopener">Homeyou &mdash; Electrician costs in New York, NY</a></li>
+  <li><a href="https://www.ecosmartinc.com/how-much-does-a-street-light-cost/" target="_blank" rel="noopener">Ecosmart &mdash; How much does a street light cost?</a></li>
+  <li><a href="https://www.lightwaytraffic.com/how-much-does-a-street-light-cost/" target="_blank" rel="noopener">Lightwaytraffic &mdash; How much does a street light cost?</a></li>
+  <li><a href="https://lalights.lacity.org/residents/cost_of_svc_and_stlighting_assessments.html" target="_blank" rel="noopener">LA Lights &mdash; Cost of Service and Street Light Assessment</a></li>
+</ul>
+
+<h2>15. How to Audit or Update These Numbers</h2>
+<ol>
+  <li><strong>Re-pull current Socrata data:</strong> run <code>python scripts/bake-from-worker.py 2025</code> from a machine that can reach the Cloudflare Worker URL. Writes a fresh <code>public/baked-data.json</code> + <code>public/baked-complaints.json</code>.</li>
+  <li><strong>Re-bake vendor list from CSV:</strong> run <code>python scripts/bake-static.py</code> after updating <code>data/vendors_final.csv</code>.</li>
+  <li><strong>Refine the revenue estimate:</strong> if NYC DOT publishes per-unit contract rates (e.g. via a FOIL response), replace the <code>$200&ndash;$500</code> range in the script that computes the hero callouts and rerun.</li>
+</ol>
+
+<div class="footer">
+  NYC Street Lights &middot; <a href="/">Return to dashboard</a>
+</div>
+
+</div>
+</body>
+</html>

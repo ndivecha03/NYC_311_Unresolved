@@ -1,0 +1,346 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Hourglass Background — Preview · NYC Street Lights</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=Fraunces:opsz,wght@9..144,400;9..144,600;9..144,700&display=swap" rel="stylesheet">
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+:root{
+  --bg:#fafaf7; --ink:#0a1f3d; --ink-soft:#3a4a63; --ink-mute:#6b7a8f;
+  --line:#e6e3da; --teal:#00b4d8; --teal-deep:#0077b6; --teal-soft:#e6f7fb;
+  --amber:#ffb703; --red:#e63946;
+}
+html{background:var(--bg)}
+body{background:transparent;color:var(--ink);font-family:Inter,system-ui,sans-serif;
+  -webkit-font-smoothing:antialiased;line-height:1.55;
+  position:relative;min-height:100vh;overflow-x:hidden}
+
+/* ── HOURGLASS BACKGROUND ─────────────────────────────────────────
+   Single SVG that stretches to the full page height. The path traces
+   a vertical hourglass: 100% wide at the top, tapering to ~30% wide
+   at the neck (sections 5–8), widening back to 100% near the bottom.
+   `preserveAspectRatio="none"` lets it stretch with content.        */
+.hourglass-bg{
+  position:absolute; inset:0; z-index:0;
+  pointer-events:none; overflow:hidden;
+}
+.hourglass-bg svg{display:block; width:100%; height:100%}
+
+/* ── PAGE GRID ──────────────────────────────────────────────────── */
+.wrap{max-width:1100px; margin:0 auto; padding:0 32px}
+section{padding:90px 0; position:relative; z-index:1}
+
+/* Sections that sit on the WIDE BLUE areas (top funnel + bottom framework)
+   need light text. Sections in the NECK (white area) keep the default
+   dark ink.                                                          */
+.on-blue{color:#fff}
+.on-blue h1, .on-blue h2, .on-blue h3, .on-blue strong{color:#fff}
+.on-blue .sub, .on-blue .lede{color:rgba(255,255,255,.78)}
+.on-blue .kicker{color:#9bdcef}
+
+/* Transitional sections (#streetlights, #why) sit where the hourglass
+   is mid-taper — the dark blue is narrower than the page width. To
+   prevent white text from sitting on the white margins, we constrain
+   the wrap to a narrower max-width and center it.                  */
+.on-blue.transitional .wrap{max-width:640px;text-align:center}
+.on-blue.transitional .lede{margin-left:auto;margin-right:auto;max-width:48ch}
+.on-blue.transitional .kicker{display:block;text-align:center}
+
+/* Typographic system */
+.kicker{font-size:13px;letter-spacing:.16em;text-transform:uppercase;color:var(--teal-deep);font-weight:700;margin-bottom:18px}
+h1.display{font-family:Fraunces,Georgia,serif;font-weight:600;font-size:clamp(56px,9vw,128px);
+  line-height:.95;letter-spacing:-.03em;margin-bottom:24px}
+h2.display{font-family:Fraunces,Georgia,serif;font-weight:600;font-size:clamp(40px,6vw,80px);
+  line-height:1.02;letter-spacing:-.02em;margin-bottom:24px}
+.lede{font-size:20px;max-width:62ch;color:var(--ink-soft);margin-bottom:24px}
+.on-blue .lede{color:rgba(255,255,255,.82)}
+
+/* Big number callout used in funnel sections */
+.megastat{font-family:Fraunces,Georgia,serif;font-weight:600;line-height:.95;
+  font-size:clamp(96px,14vw,200px);letter-spacing:-.04em}
+.megastat .unit{font-family:Inter,sans-serif;font-size:.18em;font-weight:600;
+  text-transform:uppercase;letter-spacing:.12em;display:block;margin-top:14px;color:rgba(255,255,255,.7)}
+.on-white .megastat .unit{color:var(--ink-mute)}
+
+/* Reusable card placeholder for the form/map/work-order/analysis stubs */
+.card-stub{background:#fff; border:1px solid var(--line); border-radius:24px;
+  padding:48px; box-shadow:0 1px 2px rgba(10,31,61,.04), 0 12px 40px rgba(10,31,61,.08);
+  margin:24px auto; max-width:760px}
+.card-stub h3{font-family:Inter,sans-serif;font-size:18px;font-weight:700;color:var(--ink);margin-bottom:8px}
+.card-stub .placeholder-note{font-size:13px;color:var(--ink-mute);font-style:italic}
+
+/* Text panel — used for neck sections that have text directly in .wrap
+   (no card-stub). Provides an opaque cream background so dark text
+   doesn't get obscured by the dark navy column passing behind it.   */
+.text-panel{
+  background:var(--bg);
+  border:1px solid var(--line);
+  border-radius:24px;
+  padding:56px 64px;
+  margin:0 auto;
+  max-width:880px;
+  box-shadow:0 1px 2px rgba(10,31,61,.04), 0 12px 40px rgba(10,31,61,.08);
+  text-align:center;
+}
+.text-panel h2{margin-left:auto;margin-right:auto;max-width:18ch}
+.text-panel .lede{margin-left:auto;margin-right:auto}
+
+/* Footer source link sits on the dark blue */
+.source-line{font-size:14px;color:rgba(255,255,255,.7);text-align:center;padding:60px 0 90px}
+.source-line a{color:#fff;font-weight:600;text-decoration:underline}
+
+/* DEV ribbon so we don't confuse this preview with the live site */
+.dev-ribbon{position:fixed; top:14px; right:14px; background:var(--amber); color:var(--ink);
+  padding:8px 14px; border-radius:999px; font-size:11px; font-weight:800;
+  letter-spacing:.08em; text-transform:uppercase; z-index:100;
+  box-shadow:0 4px 16px rgba(0,0,0,.18)}
+
+/* Mobile: collapse to single-column readable layout, keep the hourglass
+   visible but less aggressive (neck still narrows but proportionally) */
+@media (max-width:720px){
+  section{padding:64px 0}
+  .megastat{font-size:64px}
+  h1.display, h2.display{font-size:42px}
+  .card-stub{padding:24px}
+}
+</style>
+</head>
+<body>
+
+<div class="dev-ribbon">Hourglass Preview</div>
+
+<!-- ── HOURGLASS BACKGROUND ──────────────────────────────────────
+     Single absolute-positioned SVG, stretches to body height.
+     viewBox y-coords roughly map to scroll position; preserveAspectRatio
+     "none" lets it deform vertically to match the actual page length. -->
+<div class="hourglass-bg" aria-hidden="true">
+  <svg viewBox="0 0 100 100" preserveAspectRatio="none" xmlns="http://www.w3.org/2000/svg">
+    <!-- Hourglass-shaped fill in dark navy.
+         Top:    y=0   → 100% width
+         Taper:  y=0–32 → 100% → 30%
+         Neck:   y=32–78 → constant 30%
+         Widen:  y=78–97 → 30% → 100%
+         Bottom: y=97–100 → 100% -->
+    <!--
+      Path mapping (% of page height):
+        0–15  full width (hold the dark blue at top for longer)
+        15–40 gradual cubic-Bezier taper inward
+        40–65 narrow neck (form / map / work order / analysis)
+        65–90 gradual cubic-Bezier widening
+        90–100 full width again
+      Cubic Beziers keep the top/bottom of each curve vertical, so the
+      transitions feel organic rather than diagonal.
+    -->
+    <path d="
+      M 0,0
+      L 100,0
+      L 100,15
+      C 100,22 65,32 65,40
+      L 65,65
+      C 65,73 100,82 100,90
+      L 100,100
+      L 0,100
+      L 0,90
+      C 0,82 35,73 35,65
+      L 35,40
+      C 35,32 0,22 0,15
+      L 0,0
+      Z
+    " fill="#0a1f3d"/>
+  </svg>
+</div>
+
+<!-- ╔════════════════════════════════════════════════════════════════╗
+     ║  ZONE 1 — TOP FUNNEL (sections 1–4) · WIDE BLUE                ║
+     ║  Background is full-width dark navy here. Text is white.       ║
+     ╚════════════════════════════════════════════════════════════════╝ -->
+
+<section id="hero" class="on-blue">
+  <div class="wrap">
+    <span class="kicker">NYC 311 · 2025</span>
+    <div class="megastat">
+      3,654,988
+      <span class="unit">complaints filed</span>
+    </div>
+    <p class="lede" style="margin-top:32px">
+      Rodents in the walls. Leaks bleeding through ceilings. Noise after midnight.
+      Sidewalks cracked into trip hazards. Heat that won't come on in January.
+      Every grievance in the city flows into one queue.
+    </p>
+  </div>
+</section>
+
+<section id="addressed" class="on-blue">
+  <div class="wrap">
+    <span class="kicker">Reach</span>
+    <h2 class="display"><strong>97.98%</strong> technically reach an agency.</h2>
+    <p class="lede">
+      Not just DOT — DSNY handles sanitation, HPD takes housing complaints,
+      DEP runs water and sewer, NYPD fields noise and illegal parking,
+      DOB inspects buildings. <strong>Sixty-plus city agencies share the 311 load.</strong>
+      A 311 ticket almost always gets <em>somewhere</em>.
+    </p>
+  </div>
+</section>
+
+<section id="backlog" class="on-blue">
+  <div class="wrap">
+    <span class="kicker">But</span>
+    <h2 class="display"><strong>4.25%</strong> never finish.</h2>
+    <p class="lede">
+      155,172 grievances filed in 2025 sat unresolved more than 90 days later.
+      Officially routed. Practically frozen. The system delivers — until it doesn't.
+    </p>
+  </div>
+</section>
+
+<section id="streetlights" class="on-blue transitional">
+  <div class="wrap">
+    <span class="kicker">Of that backlog</span>
+    <div class="megastat">
+      4,096
+      <span class="unit">street light complaints stuck</span>
+    </div>
+    <p class="lede" style="margin-top:32px">
+      The slice we built this tool to clear.
+      A dark intersection isn't a quality-of-life nuisance &mdash;
+      it's a measurable safety gap that compounds every night it stays unlit.
+    </p>
+  </div>
+</section>
+
+<!-- ╔════════════════════════════════════════════════════════════════╗
+     ║  ZONE 2 — NECK (sections 5–8) · NARROW BLUE / WHITE PAGE       ║
+     ║  Hourglass background is a thin strip down the center;         ║
+     ║  content cards sit on white.                                   ║
+     ╚════════════════════════════════════════════════════════════════╝ -->
+
+<section id="tool" class="on-white">
+  <div class="wrap">
+    <div class="text-panel">
+      <span class="kicker">The tool</span>
+      <h2 class="display">One tool. Sixty seconds.</h2>
+      <p class="lede" style="margin-top:24px">
+        1,242 NYC-licensed electricians sit within the same five boroughs.
+        The bottleneck isn't capacity — it's how long it takes to draft a DOT-grade
+        work order and route it to the right contractor. We compress that work
+        from days to seconds.
+      </p>
+      <p class="lede" style="margin-top:20px;font-style:italic;color:var(--ink-mute)">
+        Annual scope: <strong>33,835</strong> street-light complaints filed each year.
+      </p>
+    </div>
+  </div>
+</section>
+
+<section id="report" class="on-white">
+  <div class="wrap">
+    <div class="card-stub">
+      <h3>Section 6 — Reportage form</h3>
+      <p class="placeholder-note">
+        Live: small map · address line · "Use my location" button · complaint type ·
+        duration · image upload (up to 3) · submit → auto-scroll to work order.
+      </p>
+    </div>
+  </div>
+</section>
+
+<section id="workorder" class="on-white">
+  <div class="wrap">
+    <div class="card-stub">
+      <h3>Section 7 — Work order generator</h3>
+      <p class="placeholder-note">
+        Loading spinner → DOT-format work order with attached images visible →
+        Submit and dispatch / Revise and edit.
+      </p>
+    </div>
+  </div>
+</section>
+
+<section id="analysis" class="on-white">
+  <div class="wrap">
+    <div class="card-stub">
+      <h3>Section 8 — Analysis report</h3>
+      <p class="placeholder-note">
+        Five charts, no tabs: repeat-at-address, completion-time boxplot,
+        5-year trend, 7/30/90 closure %, distribution histogram.
+      </p>
+    </div>
+  </div>
+</section>
+
+<!-- ╔════════════════════════════════════════════════════════════════╗
+     ║  ZONE 3 — REVERSE FUNNEL (sections 9–10) · WIDENING BLUE       ║
+     ║  Background widens back to full. Text returns to white.        ║
+     ╚════════════════════════════════════════════════════════════════╝ -->
+
+<section id="why" class="on-blue transitional">
+  <div class="wrap">
+    <span class="kicker">Why</span>
+    <h2 class="display">A city that grows from within.</h2>
+    <p class="lede">
+      Clearing the 4,096 stuck tickets — and the 33,835 new street-light
+      complaints filed every year — unlocks three compounding effects:
+    </p>
+    <p class="lede" style="margin-top:24px">
+      <strong>Revenue routed to local contractors:</strong>
+      $6.77M – $16.92M per year, landing in NYC-licensed electrician businesses
+      already in the same neighborhoods as the broken lights.
+    </p>
+    <p class="lede" style="margin-top:24px">
+      <strong>Hours freed for city staff:</strong>
+      ~16,917 hours per year of NYC DOT time recovered, redirected from drafting
+      boilerplate to handling the cases that need engineering judgment.
+      <em style="font-size:.85em;color:rgba(255,255,255,.55);display:block;margin-top:6px">
+        Assumes ~30 min per manually-drafted work order — a stated assumption,
+        not a measurement (no public benchmark for current municipal WO drafting time).
+      </em>
+    </p>
+    <p class="lede" style="margin-top:24px">
+      <strong>Higher municipal quality of life:</strong>
+      Every closed ticket is a block lit, a stretch of sidewalk safer at midnight,
+      a small business handed real revenue, a city employee freed to do harder work.
+    </p>
+  </div>
+</section>
+
+<section id="framework" class="on-blue">
+  <div class="wrap">
+    <span class="kicker">A framework, not a feature</span>
+    <h2 class="display">Same playbook. Every backlog.</h2>
+    <p class="lede">
+      <strong>Citizen reports → instant work-order generation → routed to a verified local vendor.</strong>
+      The same three steps apply to every backlog 311 carries:
+    </p>
+    <ul style="margin:24px 0 24px 24px;font-size:18px;color:rgba(255,255,255,.82);list-style:disc">
+      <li><strong>DSNY</strong> sanitation backlogs → local hauling crews</li>
+      <li><strong>HPD</strong> heating, leaks, habitability → verified plumbers and HVAC techs</li>
+      <li><strong>DEP</strong> water and sewer → licensed water-line contractors</li>
+      <li><strong>DOB</strong> structural and facade → licensed inspectors and engineers</li>
+      <li><strong>Parks</strong> maintenance → tree-care companies, fence and play-equipment vendors</li>
+    </ul>
+    <p class="lede">
+      <strong>Apply this beyond street lights:</strong> ~106,000 hours/year freed across DOT's
+      full docket, ~78,000 hours of stuck work made movable across NYC's full backlog,
+      and a framework that ports to every U.S. city operating a 311 system.
+    </p>
+    <p class="lede" style="margin-top:32px">
+      Interdependent communities compound. Every closed ticket builds the next one.
+      Block by block, contractor by contractor, hour by recovered hour.
+    </p>
+  </div>
+</section>
+
+<!-- Sources line -->
+<div class="on-blue source-line">
+  Built on NYC OpenData (<code style="color:rgba(255,255,255,.85)">erm2-nwe9</code>).
+  Every chart, every claim &mdash;
+  <a href="../sources.html">Sources &amp; methodology →</a>
+</div>
+
+</body>
+</html>
