@@ -1093,8 +1093,10 @@ function downloadPpbMemo(triggerLabel){
       return yPos + wrapped.length * 12 + 4;
     }
     function checkRow(text, yPos){
-      setFont('normal', 10, TEAL);
-      doc.text('☐', mar + 2, yPos + 9);
+      // Draw a manual checkbox square (helvetica doesn't support ☐ unicode)
+      doc.setDrawColor(...TEAL);
+      doc.setLineWidth(0.8);
+      doc.rect(mar + 2, yPos + 2, 9, 9);
       setFont('normal', 8.5, DARK);
       const wrapped = doc.splitTextToSize(text, col - 20);
       doc.text(wrapped, mar + 20, yPos + 9);
@@ -1128,8 +1130,8 @@ function downloadPpbMemo(triggerLabel){
     const memoDate = new Date().toLocaleDateString('en-US',{year:'numeric',month:'long',day:'numeric'});
     const addr     = [wo.housenum, wo.onprimname, wo.borough_full].filter(Boolean).join(' ') + ', NY';
     const desc     = wo.instructions || wo.complaint_type || 'Streetlight repair per attached work order.';
-    // Generate a PIN: agency code + work order number + year (placeholder if no real PIN system)
-    const pin      = wo.pin || ('DOT-SL-' + (wo.defnum || 'DRAFT').replace('SL-','') + '-' + new Date().getFullYear());
+    // Generate a PIN: agency code + work order number (placeholder if no real PIN system)
+    const pin      = wo.pin || ('DOT-' + (wo.defnum || 'DRAFT'));
 
     // ── 1. Letterhead ─────────────────────────────────────────────────────
     setFont('bold', 11, NYC_BLUE);
@@ -1217,7 +1219,20 @@ function downloadPpbMemo(triggerLabel){
     setFont('bold', 8.5, DARK);
     doc.text('Price Reasonableness Determination  [REQUIRED]', mar, y);
     y += 12;
-    y = bodyText('The Contracting Officer attests that the price selected is fair and reasonable based on: ☐ market research  ☐ prior contracts  ☐ independent cost estimate  ☐ other (describe below).', y);
+    y = bodyText('The Contracting Officer attests that the price selected is fair and reasonable based on (check all that apply):', y);
+    // Draw inline check options manually
+    const priceOpts = ['Market research', 'Prior contracts', 'Independent cost estimate', 'Other (describe below)'];
+    const optW = col / 2;
+    for(let oi = 0; oi < priceOpts.length; oi++){
+      const ox = mar + (oi % 2) * optW;
+      const oy = y + Math.floor(oi / 2) * 16;
+      doc.setDrawColor(...TEAL);
+      doc.setLineWidth(0.8);
+      doc.rect(ox + 2, oy, 8, 8);
+      setFont('normal', 8.5, DARK);
+      doc.text(priceOpts[oi], ox + 14, oy + 7);
+    }
+    y += Math.ceil(priceOpts.length / 2) * 16 + 4;
     doc.setFillColor(...LT_GRAY);
     doc.rect(mar, y, col, 28, 'F');
     rule(y + 28, 0.3, MID_GRAY);
