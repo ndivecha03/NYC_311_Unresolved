@@ -1,260 +1,1777 @@
-function downloadPpbMemo(triggerLabel){
-  const wo     = window._workOrder;
-  const vendor = window._selectedVendor;
-  if(!wo){ return; }
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>NYC Street Lights — Light up the city, one block at a time</title>
+<meta name="description" content="33,835 streetlight outages reported to NYC 311 in 2025. We close that loop in under 60 seconds.">
 
-  const memoStatus = document.getElementById('woMemoStatus');
-  if(memoStatus) memoStatus.textContent = 'Building memo…';
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=Fraunces:opsz,wght@9..144,400;9..144,600;9..144,700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="styles.css?v=20260518a">
 
-  try {
-    const { jsPDF } = window.jspdf;
-    const doc  = new jsPDF({ unit:'pt', format:'letter' });
-    const W    = doc.internal.pageSize.getWidth();
-    const mar  = 54;
-    const col  = W - mar*2;
-    const NYC_BLUE  = [0, 57, 166];
-    const TEAL      = [0, 122, 140];
-    const DARK      = [51, 51, 51];
-    const MID_GRAY  = [180, 180, 180];
-    const LT_GRAY   = [245, 245, 245];
-    const WHITE     = [255, 255, 255];
+<script>window._gmReady = new Promise(res => { window.onGoogleMapsLoaded = () => res(); });</script>
+<script src="https://maps.googleapis.com/maps/api/js?key=AIzaSyCxMiaz9dcPviOvTGCi9jT1kZLW49Zg37w&libraries=places&loading=async&callback=onGoogleMapsLoaded" async defer onerror="window._gmReady = Promise.reject(new Error('Google Maps script failed to load'))"></script>
+</head>
 
-    let y = 48;
+<body>
 
-    function setFont(style, size, color){
-      doc.setFont('helvetica', style || 'normal');
-      doc.setFontSize(size || 9);
-      doc.setTextColor(...(color || DARK));
+<!-- ── LEFT-SIDE NAV RAIL ────────────────────────────────────────
+     Updated table of contents matching the new 11-section flow. -->
+<aside class="side-rail" id="sideToc" aria-label="Page sections">
+  <a class="side-rail-brand" href="#hero">
+    <span class="dot"></span>
+    <span class="brand-name">NYC Street Lights</span>
+  </a>
+
+  <div class="side-rail-toc">
+    <div class="side-toc-label">The problem</div>
+    <ul>
+      <li><a href="#hero" data-spy="hero">92% to 2 firms</a></li>
+      <li><a href="#rule" data-spy="rule">The 2019 rule</a></li>
+      <li><a href="#solution" data-spy="solution">Our matrix</a></li>
+    </ul>
+
+    <div class="side-toc-label" style="margin-top:24px">The tool</div>
+    <ul>
+      <li><a href="#tool" data-spy="tool">Overview</a></li>
+      <li><a href="#report" data-spy="report">Report</a></li>
+      <li><a href="#workorder" data-spy="workorder">Work order</a></li>
+      <li><a href="#equity-impact" data-spy="equity-impact">Equity impact</a></li>
+    </ul>
+
+    <div class="side-toc-label" style="margin-top:24px">A framework</div>
+    <ul>
+      <li><a href="#why" data-spy="why">Why</a></li>
+      <li><a href="#workflow" data-spy="workflow">Workflow</a></li>
+      <li><a href="#framework" data-spy="framework">Beyond street lights</a></li>
+    </ul>
+
+    <div class="side-toc-label" style="margin-top:24px">More</div>
+    <ul>
+      <li><a href="sources.html">Sources &amp; methodology</a></li>
+    </ul>
+  </div>
+
+  <div class="side-rail-cta">
+    <a class="pill primary" href="#report">
+      Report an outage <span class="arrow">→</span>
+    </a>
+  </div>
+</aside>
+
+<!-- ── HOURGLASS SVG BACKGROUND ──────────────────────────────────
+     Stretches to body height. Wide-blue at top → narrows to neck
+     (form/WO/analysis sections) → widens back at bottom. -->
+<div class="hourglass-bg" aria-hidden="true">
+  <svg viewBox="0 0 100 100" preserveAspectRatio="none" xmlns="http://www.w3.org/2000/svg">
+    <path d="
+      M 0,0
+      L 100,0
+      L 100,15
+      C 100,22 65,32 65,40
+      L 65,65
+      C 65,73 100,82 100,90
+      L 100,100
+      L 0,100
+      L 0,90
+      C 0,82 35,73 35,65
+      L 35,40
+      C 35,32 0,22 0,15
+      L 0,0
+      Z
+    " fill="#0a1f3d"/>
+  </svg>
+</div>
+
+<!-- ╔════════════════════════════════════════════════════════════════╗
+     ║  ZONE 1 — TOP FUNNEL (sections 1–4)                            ║
+     ║  Wide blue. Light text.                                        ║
+     ╚════════════════════════════════════════════════════════════════╝ -->
+
+<section id="hero" class="on-blue">
+  <div class="wrap">
+    <div class="dark-panel">
+      <span class="kicker">NYC streetlight contracts · 2003–2026</span>
+      <div class="megastat">
+        92%
+        <span class="unit">of $1.32B goes to two companies</span>
+      </div>
+      <p class="lede" style="margin-top:32px">
+        Welsbach Electric and Hellman Electric together take <strong>$883M</strong>
+        of the $1.32B in NYC streetlight and traffic-signal contracts on record.
+        The other 1,883 NYC-licensed electricians compete for the remainder — or
+        more often, get nothing at all.
+      </p>
+    </div>
+  </div>
+</section>
+
+<section id="rule" class="on-blue">
+  <div class="wrap">
+    <div class="dark-panel">
+      <span class="kicker">The 2019 rule nobody's using</span>
+      <h2 class="display">A law has existed since 2019 to fix this.</h2>
+      <p class="lede">
+        NYC PPB Rule 3-08 lets any agency buy directly from a certified M/WBE
+        vendor for up to <strong>$1.5M per purchase</strong> — no competitive
+        solicitation required. For a $5,000 streetlight repair, the rule
+        applies trivially.
+      </p>
+      <p class="lede" style="margin-top:14px">
+        We identified <strong>101 NYC-licensed electricians</strong> who are
+        eligible under this rule — minority- and women-owned, PASSPort-enrolled,
+        active license, NAICS-matched. Across all five boroughs.
+        <strong>The city is using almost none of them.</strong>
+      </p>
+    </div>
+  </div>
+</section>
+
+<section id="solution" class="on-blue">
+  <div class="wrap">
+    <div class="dark-panel">
+      <span class="kicker">What we built</span>
+      <h2 class="display">A matrix that ranks the 101.</h2>
+      <p class="lede">
+        Submit a streetlight complaint. Our tool ranks the <strong>101
+        direct-purchase-eligible electricians</strong> across <strong>eight
+        weighted components</strong> — proximity, license tenure,
+        owner-demographic equity, recent workload, and four more — then
+        surfaces the top five for your address with full score transparency.
+      </p>
+      <p class="lede" style="margin-top:14px">
+        Same complaint. Same 2019 rule. A vendor pool the city already had —
+        but wasn't using.
+      </p>
+    </div>
+  </div>
+</section>
+
+<!-- ╔════════════════════════════════════════════════════════════════╗
+     ║  ZONE 2 — NECK (sections 5–8)                                  ║
+     ║  Narrow blue down center; content cards on white.              ║
+     ╚════════════════════════════════════════════════════════════════╝ -->
+
+<section id="tool" class="on-white">
+  <div class="wrap">
+    <div class="text-panel">
+      <span class="kicker">Try it</span>
+      <h2 class="display">Submit a complaint. See the matrix work.</h2>
+      <p class="lede" style="margin-top:24px">
+        Enter any NYC address with a broken streetlight. The tool ranks the
+        <strong>101 direct-purchase-eligible electricians</strong> against
+        your complaint location and surfaces the top five — each with the
+        full score breakdown so you can see exactly why they were picked.
+        If fewer than five eligible vendors sit within 10 miles, the matrix
+        gracefully expands to the next tier and tells you it did.
+      </p>
+    </div>
+  </div>
+</section>
+
+<!-- Section 6 — Report form, then map+sidebar appear after submit -->
+<section id="report" class="on-white">
+  <div class="wrap">
+    <div class="card-form">
+      <span class="kicker" style="color:var(--teal-deep)">Step 1 of 3</span>
+      <h2 class="display" style="font-size:clamp(32px,4vw,52px);margin-bottom:14px">Report an outage.</h2>
+      <p class="lede" style="margin-bottom:32px">
+        Sixty seconds. Address, type, photos. We'll classify, dispatch, and draft the work order.
+      </p>
+
+      <form class="form" id="intakeForm" onsubmit="onSubmit(event)">
+        <!-- Hidden — auto-derived from "Use my location" or from
+             address geocoding on submit. We don't ask the user to fill
+             these manually anymore. -->
+        <input type="hidden" name="borough">
+        <input type="hidden" name="zip">
+
+        <div class="field full">
+          <button type="button" class="big-location-btn" id="useLocationBtn"
+            title="Use my current GPS location">
+            <span class="loc-icon" aria-hidden="true">⌖</span>
+            <span class="loc-text">Use my current location</span>
+          </button>
+          <div class="or-divider"><span>or enter the address manually</span></div>
+          <label>Address or nearest cross street</label>
+          <input name="address" placeholder="W 125th St &amp; Amsterdam Ave, NYC" required>
+          <div class="field-hint" id="locStatus"></div>
+        </div>
+        <div class="field">
+          <label>What's wrong?</label>
+          <select name="complaint_type" required>
+            <option value="">Select…</option>
+            <option>Light out completely</option>
+            <option>Cycling on/off</option>
+            <option>Stays on during the day</option>
+            <option>Dim / weak</option>
+            <option>Glassware broken or hanging</option>
+            <option>Glassware missing</option>
+            <option>Fixture damaged</option>
+            <option>Fixture hanging or missing</option>
+            <option>Pole leaning or knocked down</option>
+            <option>Base cover damaged or missing</option>
+            <option>Wires exposed</option>
+          </select>
+        </div>
+        <div class="field">
+          <label>How long has it been out?</label>
+          <select name="duration" required>
+            <option value="">Select…</option>
+            <option>&lt; 24 hours</option>
+            <option>1–7 days</option>
+            <option>1–4 weeks</option>
+            <option>1+ months</option>
+          </select>
+        </div>
+        <div class="field full">
+          <label>Photos (up to 3, JPG/PNG, max 5 MB each)</label>
+          <div class="dropzone" id="dropzone">
+            <input type="file" id="photoInput" accept="image/jpeg,image/png,image/heic,image/heif" multiple hidden>
+            <div class="dropzone-prompt">
+              <strong>Drag and drop</strong> photos here, or
+              <button type="button" class="link-btn" onclick="document.getElementById('photoInput').click()">browse</button>
+            </div>
+            <div class="dropzone-thumbs" id="photoThumbs"></div>
+          </div>
+        </div>
+        <div class="field full">
+          <label>Anything else? (optional)</label>
+          <textarea name="details" rows="3" placeholder="Pole leaning slightly. Sparks visible last week."></textarea>
+        </div>
+      </form>
+
+      <div class="submit-row">
+        <span class="meta">We'll never share your information.</span>
+        <button class="pill teal" type="submit" form="intakeForm">
+          Find a vendor <span class="arrow">→</span>
+        </button>
+      </div>
+    </div>
+
+    <!-- Map + sidebar — initially hidden, appears after form submit -->
+    <div class="map-area" id="mapArea" hidden>
+      <div class="map-area-header">
+        <span class="kicker" style="color:var(--teal-deep)">Step 2 of 3</span>
+        <h3 class="map-area-title">Choose a vendor for your work order.</h3>
+        <p class="map-area-sub">
+          Hover any vendor pin to see the driving route to your complaint. Click <strong>Select</strong> on the vendor you want.
+        </p>
+      </div>
+      <div class="map-fullwidth">
+        <div class="map-shell tall" id="mapCanvas"><div class="map-placeholder">Geocoding…</div></div>
+        <div class="map-legend map-legend-row">
+          <div class="legend-item"><span class="pin pin-complaint"></span> Your complaint</div>
+          <div class="legend-item">
+            <span class="pin pin-vendor-bolt" aria-hidden="true">
+              <svg viewBox="0 0 24 24" width="16" height="16">
+                <path d="M14,2 L5,14 L11,14 L9,22 L19,10 L13,10 L16,2 Z" fill="#ffb703" stroke="#fff" stroke-width="1.2" stroke-linejoin="round"/>
+              </svg>
+            </span>
+            Recommended electricians (ranked)
+          </div>
+          <div class="legend-item"><span class="pin pin-similar"></span> Similar past complaints (last 12 mo)</div>
+        </div>
+      </div>
+
+      <!-- Vendor description cards — full width, below the map -->
+      <div class="vendor-detail-section">
+        <div class="vendor-detail-header">
+          <span class="kicker" style="color:var(--teal-deep)">Step 2 of 3</span>
+          <h3 class="vendor-detail-title">Five vendors from the 101 eligible pool.</h3>
+          <p class="vendor-detail-sub">
+            Ranked across the 8-component equity-first matrix. Each card shows
+            the vendor's score, credibility signals, owner-demographic badges,
+            and why the matrix surfaced them. Click <strong>Why this vendor?</strong>
+            on any card to see the per-component breakdown.
+          </p>
+        </div>
+        <div class="map-list" id="vendorList"></div>
+        <div class="map-list" id="similarList" style="margin-top:32px"></div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- Section 7 — Work order generator -->
+<section id="workorder" class="on-white">
+  <div class="wrap">
+    <div class="wo-area" id="woArea">
+      <div class="wo-area-header">
+        <span class="kicker" style="color:var(--teal-deep)">Step 3 of 3</span>
+        <h3 class="map-area-title">Government-grade work order.</h3>
+        <p class="map-area-sub" id="woStatus">Submit the form and select a vendor to generate a work order.</p>
+      </div>
+      <div class="wo">
+        <div class="wo-doc" id="woDoc">
+          <div class="wo-placeholder">
+            <p>Once you've selected a vendor, Claude Sonnet 4.5 drafts a DOT-format work order — pre-classified, pre-prioritized, and pre-routed — in under sixty seconds.</p>
+          </div>
+        </div>
+        <div class="wo-side">
+          <div class="wo-side-card" id="woVendor">
+            <div class="lbl">Assigned vendor</div>
+            <div class="meta-line"><em style="color:var(--ink-mute)">No vendor selected yet.</em></div>
+          </div>
+          <div class="wo-side-card">
+            <button class="pill approve" id="woApprove">Submit and dispatch <span class="arrow">→</span></button>
+            <button class="pill reject" id="woReject">Revise and edit</button>
+          </div>
+          <div class="wo-side-card" id="woMemoCard">
+            <div class="lbl">PPB Rule 3-08 paperwork</div>
+            <p class="meta-line" style="margin:6px 0 10px;color:var(--ink-soft);font-size:13px">
+              Auto-generates the M/WBE Noncompetitive Small Purchase Authorization memo
+              the agency files with the dispatch.
+            </p>
+            <button class="pill teal" id="woMemoBtn"
+              onclick="downloadPpbMemo('woMemoBtn')">
+              Download PPB 3-08 memo
+            </button>
+            <div id="woMemoStatus" class="meta-line"
+                 style="margin-top:8px;font-size:12px;color:var(--ink-mute)"></div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- Section 8 — Analysis report (5 charts inline, no tabs).
+     Whole section sits inside a .analysis-card so the dark text isn't
+     obscured by the dark-navy hourglass column passing behind it. -->
+<section id="equity-impact" class="on-white">
+  <div class="wrap">
+    <div class="analysis-card">
+      <div class="analysis-header">
+        <span class="kicker" style="color:var(--teal-deep)">Equity impact</span>
+        <h2 class="analysis-title" id="equityTitle">
+          What this complaint redistributes.
+        </h2>
+      </div>
+
+      <p class="analysis-sub" style="margin-bottom:24px">
+        Every dispatch through this tool routes work that would otherwise have
+        gone to Welsbach or Hellman to a small minority- or women-owned electrician
+        within 10 miles of the complaint. The numbers below show the immediate
+        impact of <em>your</em> complaint, and the citywide impact if the matrix
+        were used at scale.
+      </p>
+
+      <!-- Three KPI tiles in a row: this dispatch, this neighborhood/year, citywide/year -->
+      <div class="equity-kpi-row">
+        <div class="equity-kpi">
+          <div class="equity-kpi-label">This complaint pays</div>
+          <div class="equity-kpi-value" id="kpiPerComplaint">$5,000</div>
+          <div class="equity-kpi-sub" id="kpiPerComplaintSub">to <em>your selected vendor</em></div>
+        </div>
+        <div class="equity-kpi">
+          <div class="equity-kpi-label">If this matrix runs your block all year</div>
+          <div class="equity-kpi-value" id="kpiPerBlock">$—</div>
+          <div class="equity-kpi-sub" id="kpiPerBlockSub">
+            to small-business electricians within 2 mi
+          </div>
+        </div>
+        <div class="equity-kpi">
+          <div class="equity-kpi-label">If NYC ran this matrix citywide</div>
+          <div class="equity-kpi-value" id="kpiCitywide">$50.7M / yr</div>
+          <div class="equity-kpi-sub">
+            redirected from 2 primes to <strong>101</strong> M/WBE electricians
+          </div>
+        </div>
+      </div>
+
+      <!-- Concentration before/after -->
+      <div class="equity-concentration">
+        <h3 class="equity-subhead">Where the $1.32B currently goes</h3>
+        <p class="equity-subhead-sub">
+          From NYC OpenData "Recent Contract Awards" (qyyg-4tf5), filtered to
+          DOT, DDC, and 6 other agencies × electrical-trade keywords (2003-2026).
+        </p>
+        <div class="conc-bar">
+          <div class="conc-seg conc-seg-welsbach" style="width:49%"
+               title="Welsbach Electric Corp · 46 awards · $648M">
+            <span class="conc-label">Welsbach · 49%</span>
+          </div>
+          <div class="conc-seg conc-seg-hellman" style="width:18%"
+               title="Hellman Electric LLC · 24 awards · $235M">
+            <span class="conc-label">Hellman · 18%</span>
+          </div>
+          <div class="conc-seg conc-seg-other10" style="width:25%"
+               title="10 other vendors with some city contract history">
+            <span class="conc-label">10 others · 25%</span>
+          </div>
+          <div class="conc-seg conc-seg-rest" style="width:8%"
+               title="The other 1,883 licensed electricians who currently get nothing">
+            <span class="conc-label">Rest · 8%</span>
+          </div>
+        </div>
+        <p class="conc-caption">
+          <strong>1,883 of 1,894</strong> NYC-licensed electricians (99.4%) hold
+          zero direct DOT/DDC/DCAS streetlight or electrical contracts.
+        </p>
+      </div>
+
+      <!-- After-state -->
+      <div class="equity-after">
+        <h3 class="equity-subhead">Where it could go under the 2019 rule</h3>
+        <p class="equity-subhead-sub">
+          101 NYC electricians are direct-purchase-eligible under PPB Rule 3-08:
+          M/WBE-certified, PASSPort-enrolled, NAICS-matched, active license.
+        </p>
+        <div class="equity-after-grid">
+          <div class="equity-after-stat">
+            <div class="equity-after-num">38</div>
+            <div class="equity-after-lbl">Black-owned</div>
+          </div>
+          <div class="equity-after-stat">
+            <div class="equity-after-num">28</div>
+            <div class="equity-after-lbl">Hispanic-owned</div>
+          </div>
+          <div class="equity-after-stat">
+            <div class="equity-after-num">17</div>
+            <div class="equity-after-lbl">Asian-owned</div>
+          </div>
+          <div class="equity-after-stat">
+            <div class="equity-after-num">18</div>
+            <div class="equity-after-lbl">Women-owned (non-minority)</div>
+          </div>
+        </div>
+        <p class="conc-caption">
+          Distributed across every borough — 29 Queens, 28 Brooklyn, 18 Bronx,
+          13 Manhattan, 13 Staten Island.
+        </p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ╔════════════════════════════════════════════════════════════════╗
+     ║  ZONE 3 — REVERSE FUNNEL + WHY (sections 9–10)                 ║
+     ║  Widening blue. Light text returns.                            ║
+     ╚════════════════════════════════════════════════════════════════╝ -->
+
+<section id="why" class="on-blue">
+  <div class="wrap">
+    <div class="dark-panel">
+      <span class="kicker">Why this matters</span>
+      <h2 class="display">A rule, finally used.</h2>
+      <p class="lede">
+        New York City has spent seven years with a procurement rule that lets
+        agencies route up to $1.5M per purchase directly to certified M/WBE
+        vendors. It has done so for streetlight repairs essentially zero times.
+        Our tool exists to change three things at once:
+      </p>
+
+      <div class="why-block">
+        <p class="lede" style="margin:24px 0 0">
+          <strong>Wealth, not just light.</strong>
+          $50M+ per year of NYC streetlight work that currently flows to
+          two large primes could instead route to 101 minority- and
+          women-owned electricians across all five boroughs — at the same
+          per-job cost, under existing law, with no procurement reform required.
+        </p>
+        <div class="why-chart" id="why-revenue-chart"></div>
+      </div>
+
+      <div class="why-block">
+        <p class="lede" style="margin:24px 0 0">
+          <strong>Transparency, not friction.</strong>
+          Every dispatch logs why a vendor was picked — score, components,
+          demographic identity, distance, prior city work. Reviewers can replay
+          any decision the system makes. Procurement staff get auto-generated
+          PPB Rule 3-08 justification memos in place of hours of paperwork.
+        </p>
+      </div>
+
+      <div class="why-block">
+        <p class="lede" style="margin:24px 0 0">
+          <strong>Vendors discoverable, not invisible.</strong>
+          1,733 NYC-licensed electricians today hold zero direct city contracts
+          and no M/WBE certification on file. The matrix surfaces the 101 who
+          are eligible, points the next 48 toward eligibility (one missing
+          criterion), and turns the rest into a knowable, geocoded pool the
+          city can actually see.
+        </p>
+      </div>
+
+      <p class="lede" style="margin-top:24px">
+        Three changes. No new laws. Same complaints. Same budget. Different
+        recipients of the dollars.
+      </p>
+    </div>
+  </div>
+</section>
+
+<!-- Section 9.5 — Workflow diagram (How a complaint moves) -->
+<section id="workflow" class="on-blue">
+  <div class="wrap">
+    <div class="dark-panel">
+      <span class="kicker">How it works</span>
+      <h2 class="display">From complaint to local crew.</h2>
+      <p class="lede">
+        A streetlight complaint passes through seven stages before a vendor is
+        on-site. Four are paperwork bottlenecks that today take days. The
+        matrix collapses them to seconds — and at step 5, it surfaces a
+        direct-purchase-eligible local vendor instead of defaulting to the
+        two incumbent primes.
+      </p>
+
+      <div class="workflow-diagram">
+        <div class="workflow-step ws-same">
+          <div class="ws-marker">1</div>
+          <div class="ws-content">
+            <div class="ws-name">Citizen submits report</div>
+            <div class="ws-times">
+              <span class="ws-time-tool">instant</span>
+            </div>
+          </div>
+        </div>
+
+        <div class="workflow-step ws-compressed">
+          <div class="ws-marker">2</div>
+          <div class="ws-content">
+            <div class="ws-name">Classify complaint type &amp; priority</div>
+            <div class="ws-times">
+              <span class="ws-time-today">~1 day</span>
+              <span class="ws-time-arrow">→</span>
+              <span class="ws-time-tool">&lt; 1 sec</span>
+            </div>
+          </div>
+        </div>
+
+        <div class="workflow-step ws-compressed">
+          <div class="ws-marker">3</div>
+          <div class="ws-content">
+            <div class="ws-name">Route to the correct agency</div>
+            <div class="ws-times">
+              <span class="ws-time-today">~days</span>
+              <span class="ws-time-arrow">→</span>
+              <span class="ws-time-tool">instant</span>
+            </div>
+          </div>
+        </div>
+
+        <div class="workflow-step ws-compressed">
+          <div class="ws-marker">4</div>
+          <div class="ws-content">
+            <div class="ws-name">Draft DOT-format work order</div>
+            <div class="ws-times">
+              <span class="ws-time-today">~30 min</span>
+              <span class="ws-time-arrow">→</span>
+              <span class="ws-time-tool">&lt; 60 sec</span>
+            </div>
+          </div>
+        </div>
+
+        <div class="workflow-step ws-compressed">
+          <div class="ws-marker">5</div>
+          <div class="ws-content">
+            <div class="ws-name">Match a direct-purchase-eligible local vendor via the equity-first matrix</div>
+            <div class="ws-times">
+              <span class="ws-time-today">routed to incumbent prime</span>
+              <span class="ws-time-arrow">→</span>
+              <span class="ws-time-tool">M/WBE under PPB Rule 3-08</span>
+            </div>
+          </div>
+        </div>
+
+        <div class="workflow-step ws-same">
+          <div class="ws-marker">6</div>
+          <div class="ws-content">
+            <div class="ws-name">Vendor dispatched to site</div>
+            <div class="ws-times">
+              <span class="ws-time-tool">hours</span>
+            </div>
+          </div>
+        </div>
+
+        <div class="workflow-step ws-same">
+          <div class="ws-marker">7</div>
+          <div class="ws-content">
+            <div class="ws-name">Repair completed &amp; logged</div>
+            <div class="ws-times">
+              <span class="ws-time-tool">varies</span>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <p class="lede" style="margin-top:32px;font-size:18px">
+        <strong>Steps 2–5 collapse from roughly a week of paperwork into under
+        two minutes — and at step 5, the matrix routes the work to a vendor
+        the city already has on file but isn't using.</strong>
+        Steps 1, 6, and 7 are physical-world events the tool doesn't speed up
+        but also doesn't get in the way of.
+      </p>
+    </div>
+  </div>
+</section>
+
+<section id="framework" class="on-blue">
+  <div class="wrap">
+    <div class="dark-panel">
+      <span class="kicker">A framework, not a feature</span>
+      <h2 class="display">Three more 311 backlogs. Same matrix.</h2>
+      <p class="lede">
+        The matrix works wherever three conditions stack: a concentrated procurement
+        structure where a handful of firms take most of the dollars, an under-used
+        equity policy lever, and a public vendor roster the city already maintains.
+        We identified three additional NYC 311 categories that fit every condition.
+      </p>
+
+      <div class="framework-row">
+
+        <!-- TRADE 1 — SIDEWALK REPAIR -->
+        <div class="trade-card">
+          <span class="trade-tag">DOT · Sidewalk Condition</span>
+          <h3 class="trade-name">Sidewalk repair</h3>
+          <div class="trade-redirect">
+            <div class="trade-redirect-num">$30M / yr</div>
+            <div class="trade-redirect-lbl">redirectable to M/WBE concrete contractors</div>
+          </div>
+          <dl class="trade-detail">
+            <dt>Policy lever</dt>
+            <dd>PPB Rule 3-08 ($1.5M cap). Typical sidewalk reconstruction
+                line items run <strong>$5K–$300K per block</strong> — well inside
+                the cap.</dd>
+            <dt>Current concentration</dt>
+            <dd>Triumph Construction, Tully Construction, and JR Cruz Corp.
+                take the majority of ~$100M/yr in DOT sidewalk reconstruction
+                awards.</dd>
+            <dt>Companies we'd surface</dt>
+            <dd>~150 M/WBE-certified concrete/sidewalk firms in NYC SBS
+                directory, plus ~600–900 active DCWP Home Improvement Contractor
+                licensees with concrete-trade keywords.</dd>
+            <dt>Datasets</dt>
+            <dd>SBS <code>ci93-uc8s</code> (M/WBE),
+                <code>acd4-wkax</code> (DCWP HIC), <code>ckqw-hc7u</code>
+                (DOB GC permits).</dd>
+          </dl>
+        </div>
+
+        <!-- TRADE 2 — TREE PRUNING -->
+        <div class="trade-card">
+          <span class="trade-tag">DPR · Damaged / Overgrown Tree</span>
+          <h3 class="trade-name">Tree pruning</h3>
+          <div class="trade-redirect">
+            <div class="trade-redirect-num">$15M / yr</div>
+            <div class="trade-redirect-lbl">redirectable to M/WBE arborist firms</div>
+          </div>
+          <dl class="trade-detail">
+            <dt>Policy lever</dt>
+            <dd>PPB Rule 3-08 applies. The current $8M+ block contracts can
+                be decomposed into per-community-district task orders
+                ($800K–$1.4M each), individually procurable inside the cap.</dd>
+            <dt>Current concentration</dt>
+            <dd>Dragonetti Brothers Landscaping holds Queens + Brooklyn block
+                pruning despite an active DOI monitorship — and was re-awarded
+                a <strong>$22M trimming package</strong> in 2024. SavATree
+                holds Manhattan/Bronx.</dd>
+            <dt>Companies we'd surface</dt>
+            <dd>~60–90 M/WBE-certified landscaping and arborist firms in the
+                SBS directory. Required credential is an ISA Certified Arborist
+                on staff — substantially lighter than electrician licensure.</dd>
+            <dt>Datasets</dt>
+            <dd>SBS <code>ci93-uc8s</code>, DPR Forestry Work Orders
+                <code>bdjm-n7q4</code>, Tree Points <code>hn5i-inap</code>.</dd>
+          </dl>
+        </div>
+
+        <!-- TRADE 3 — LEAD ABATEMENT -->
+        <div class="trade-card">
+          <span class="trade-tag">HPD · Lead Paint Complaint</span>
+          <h3 class="trade-name">Lead paint abatement</h3>
+          <div class="trade-redirect">
+            <div class="trade-redirect-num">$15M / yr</div>
+            <div class="trade-redirect-lbl">redirectable to M/WBE abatement firms</div>
+          </div>
+          <dl class="trade-detail">
+            <dt>Policy lever (stacked)</dt>
+            <dd>PPB Rule 3-08 plus HPD's Emergency Repair Program Pre-Qualified
+                List (random selection rule). Two equity levers, not one —
+                strongest case of the three.</dd>
+            <dt>Current concentration</dt>
+            <dd>Accredited Environmental Solutions, ABCZ Consulting, and
+                EnviroNYC dominate HPD's small PQL of ~10–15 prequalified
+                lead-abatement firms. Local Law 31 XRF demand pushing market
+                past $50M/yr.</dd>
+            <dt>Companies we'd surface</dt>
+            <dd>~40–60 M/WBE-certified abatement firms in SBS, validated
+                against the ~250 NYC-area EPA RRP-certified firms.</dd>
+            <dt>Datasets</dt>
+            <dd>SBS <code>ci93-uc8s</code>, Asbestos Control Program
+                <code>vq35-j9qm</code> (lead/asbestos firms overlap heavily),
+                EPA RRP Firm registry.</dd>
+          </dl>
+        </div>
+
+      </div>
+
+      <p class="lede" style="margin-top:36px">
+        <strong>$60M / yr in equity-redirectable city spending</strong> across
+        these three trades, on top of streetlights — distributed across roughly
+        280 minority- and women-owned NYC firms who pass the same eligibility
+        tests but rarely see direct city work. Same rule. Same matrix. Three
+        new docket categories, three different agencies, one consistent story.
+      </p>
+    </div>
+  </div>
+</section>
+
+<!-- Section 11 — Sources link -->
+<div class="on-blue source-line">
+  Built on NYC OpenData (<code style="color:rgba(255,255,255,.85)">erm2-nwe9</code>).
+  Every chart, every claim &mdash;
+  <a href="sources.html">Sources &amp; methodology →</a>
+</div>
+
+<!-- Load scorer as an ES module and expose globally so non-module scripts can use it. -->
+<script type="module">
+  import * as Scorer from './scorer.js?v=20260518a';
+  window.VendorScorer = Scorer;
+  window.dispatchEvent(new Event('scorer-ready'));
+</script>
+<!-- jsPDF for client-side PDF generation (used by ppb-memo.js) -->
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+<script src="charts.js?v=20260518a"></script>
+<script src="data-loader.js?v=20260518a"></script>
+<script src="ppb-memo.js?v=20260518a"></script>
+<script>
+// ────────────────────────────────────────────────────────────────────
+// State
+// ────────────────────────────────────────────────────────────────────
+window._lastForm = null;
+window._mapInitialized = false;
+window._workOrderReady = false;
+window._selectedVendor = null;
+window._uploadedPhotos = [];   // array of {dataUrl, name, size}
+
+// ────────────────────────────────────────────────────────────────────
+// Photo upload — drag/drop + click-browse, base64 in-memory
+// ────────────────────────────────────────────────────────────────────
+const MAX_PHOTOS = 3;
+const MAX_BYTES = 5 * 1024 * 1024;
+const ACCEPTED_TYPES = /^image\/(jpeg|png|heic|heif)$/i;
+
+const dropzone = document.getElementById('dropzone');
+const photoInput = document.getElementById('photoInput');
+const photoThumbs = document.getElementById('photoThumbs');
+
+function renderThumbs(){
+  photoThumbs.innerHTML = window._uploadedPhotos.map((p, i) => `
+    <div class="thumb">
+      <img src="${p.dataUrl}" alt="${p.name}">
+      <button type="button" class="thumb-remove" data-idx="${i}" title="Remove">×</button>
+    </div>`).join('');
+  photoThumbs.querySelectorAll('.thumb-remove').forEach(btn => {
+    btn.addEventListener('click', e => {
+      const idx = +e.target.dataset.idx;
+      window._uploadedPhotos.splice(idx, 1);
+      renderThumbs();
+    });
+  });
+  // Update prompt visibility
+  const prompt = dropzone.querySelector('.dropzone-prompt');
+  if(prompt) prompt.style.display = window._uploadedPhotos.length >= MAX_PHOTOS ? 'none' : '';
+}
+
+async function handleFiles(files){
+  for(const f of Array.from(files)){
+    if(window._uploadedPhotos.length >= MAX_PHOTOS) break;
+    if(!ACCEPTED_TYPES.test(f.type)){
+      console.warn('Skipped non-image file:', f.name);
+      continue;
     }
-    function rule(yPos, thick, color){
-      doc.setLineWidth(thick || 0.5);
-      doc.setDrawColor(...(color || MID_GRAY));
-      doc.line(mar, yPos, W - mar, yPos);
+    if(f.size > MAX_BYTES){
+      alert(`"${f.name}" is too large (max 5 MB).`);
+      continue;
     }
-    function sectionBar(title, yPos){
-      doc.setFillColor(...NYC_BLUE);
-      doc.rect(mar, yPos, col, 18, 'F');
-      setFont('bold', 9, WHITE);
-      doc.text(title, mar + 8, yPos + 12.5);
-      return yPos + 18 + 6;
-    }
-    function fieldRow(label, value, yPos, bold){
-      doc.setFillColor(...LT_GRAY);
-      doc.rect(mar, yPos, 130, 18, 'F');
-      setFont('bold', 7.5, DARK);
-      doc.text(label, mar + 6, yPos + 12);
-      setFont(bold ? 'bold' : 'normal', 9, [0,0,0]);
-      const wrapped = doc.splitTextToSize(String(value || '—'), col - 140);
-      doc.text(wrapped, mar + 138, yPos + 12);
-      const rowH = Math.max(18, wrapped.length * 11 + 7);
-      rule(yPos + rowH, 0.3, MID_GRAY);
-      return yPos + rowH;
-    }
-    function bodyText(text, yPos, opts){
-      setFont('normal', 8.5, DARK);
-      const wrapped = doc.splitTextToSize(text, col);
-      doc.text(wrapped, mar, yPos, opts || {});
-      return yPos + wrapped.length * 12 + 4;
-    }
-    function checkRow(text, yPos){
-      doc.setDrawColor(...TEAL);
-      doc.setLineWidth(0.8);
-      doc.rect(mar + 2, yPos + 2, 9, 9);
-      setFont('normal', 8.5, DARK);
-      const wrapped = doc.splitTextToSize(text, col - 20);
-      doc.text(wrapped, mar + 20, yPos + 9);
-      const h = Math.max(16, wrapped.length * 11 + 5);
-      rule(yPos + h, 0.3, MID_GRAY);
-      return yPos + h;
-    }
-    function sigBlock(label, value, xPos, yPos, w){
-      setFont('bold', 7.5, DARK);
-      doc.text(label, xPos, yPos);
-      setFont('normal', 9, [0,0,0]);
-      doc.text(value || '____________________________', xPos, yPos + 14);
-      rule(yPos + 16, 0.5, DARK);
-      return yPos + 28;
-    }
-    function ensureSpace(needed){
-      if(y + needed > doc.internal.pageSize.getHeight() - 54){
-        doc.addPage();
-        y = 48;
+    const dataUrl = await new Promise(res => {
+      const r = new FileReader();
+      r.onload = () => res(r.result);
+      r.readAsDataURL(f);
+    });
+    window._uploadedPhotos.push({dataUrl, name: f.name, size: f.size});
+  }
+  renderThumbs();
+}
+
+photoInput.addEventListener('change', e => handleFiles(e.target.files));
+['dragenter','dragover','dragleave','drop'].forEach(ev => {
+  dropzone.addEventListener(ev, e => { e.preventDefault(); e.stopPropagation(); });
+});
+dropzone.addEventListener('dragover', () => dropzone.classList.add('dragover'));
+dropzone.addEventListener('dragleave', () => dropzone.classList.remove('dragover'));
+dropzone.addEventListener('drop', e => {
+  dropzone.classList.remove('dragover');
+  handleFiles(e.dataTransfer.files);
+});
+
+// ────────────────────────────────────────────────────────────────────
+// Form submit → load analytics, geocode, show map+vendors
+// ────────────────────────────────────────────────────────────────────
+async function onSubmit(e){
+  e.preventDefault();
+  const form = Object.fromEntries(new FormData(e.target));
+
+  // If borough/zip aren't already populated (Use-my-Location was the only
+  // path that filled them), reverse-geocode the address to derive them.
+  if(!form.borough || !form.zip){
+    const status = document.getElementById('locStatus');
+    if(status){ status.textContent = 'Looking up borough and zip from your address…'; status.className = 'field-hint'; }
+    try{
+      const derived = await deriveBoroughZip(form.address);
+      if(!derived){
+        if(status){ status.textContent = '⚠ Could not find that address in NYC. Try the "Use my location" button or rephrase the address.'; status.className = 'field-hint err'; }
+        return;
       }
+      form.borough = derived.borough;
+      form.zip = derived.zip;
+      // Mirror back to hidden inputs for any future re-submission
+      e.target.borough.value = derived.borough;
+      e.target.zip.value = derived.zip;
+      if(status){ status.textContent = `Address resolved to ${derived.borough} ${derived.zip}.`; status.className = 'field-hint ok'; }
+    } catch(err){
+      if(status){ status.textContent = `⚠ Geocode failed: ${err.message}`; status.className = 'field-hint err'; }
+      return;
     }
+  }
 
-    const vName    = (vendor && vendor.name)    || wo._vendorName    || 'See work order';
-    const vLicense = (vendor && vendor.license) || wo._vendorLicense || '—';
-    const vPhone   = (vendor && vendor.phone)   || '—';
-    const vAddr    = (vendor && vendor.address) || '____________________________';
-    const certId   = (vendor && vendor.cert_id) || 'See SBS PASSPort record';
-    const mwbeType = (vendor && vendor.mwbe)    || 'M/WBE';
-    const memoRef  = 'PPB308-' + (wo.defnum || 'DRAFT').replace('SL-','');
-    const memoDate = new Date().toLocaleDateString('en-US',{year:'numeric',month:'long',day:'numeric'});
-    const addr     = [wo.housenum, wo.onprimname, wo.borough_full].filter(Boolean).join(' ') + ', NY';
-    const desc     = wo.instructions || wo.complaint_type || 'Streetlight repair per attached work order.';
-    const pin      = wo.pin || ('DOT-' + (wo.defnum || 'DRAFT'));
+  window._lastForm = form;
+  window._mapInitialized = false;
+  window._selectedVendor = null;
 
-    // 1. Letterhead
-    setFont('bold', 11, NYC_BLUE);
-    doc.text('City of New York', mar, y);
-    setFont('normal', 9, NYC_BLUE);
-    doc.text('NYC Department of Transportation — Division of Street Lighting', mar, y + 14);
-    setFont('normal', 8, DARK);
-    doc.text('Memo Ref: ' + memoRef, W - mar, y, {align:'right'});
-    doc.text('Date: ' + memoDate,    W - mar, y + 11, {align:'right'});
-    y += 22;
-    rule(y, 1.5, NYC_BLUE);
-    y += 10;
+  // Update analysis title with the address
+  setText('analysisTitle', `${form.address} · ${form.borough} ${form.zip}`);
+  setText('analysisSub', `Borough-level data on how ${form.borough} handles street-light complaints — submission trend, completion rates, and where this report is most likely to land.`);
 
-    setFont('bold', 14, NYC_BLUE);
-    doc.text('M/WBE NONCOMPETITIVE SMALL PURCHASE AUTHORIZATION', mar, y);
-    y += 16;
-    setFont('normal', 8.5, [100,100,100]);
-    doc.text('Pursuant to NYC Procurement Policy Board Rule 3-08(c)(1)(iv) — M/WBE Noncompetitive Small Purchase', mar, y);
-    y += 8;
-    rule(y, 0.5, MID_GRAY);
-    y += 10;
+  // Show map area + scroll to it
+  const mapArea = document.getElementById('mapArea');
+  mapArea.hidden = false;
+  showAnalysisLoading();
 
-    // 2. Procurement Summary
-    y = sectionBar('SECTION 1 — PROCUREMENT SUMMARY', y);
-    y = fieldRow('PIN',             pin, y, true);
-    y = fieldRow('Work Order #',    wo.defnum || '—', y, true);
-    y = fieldRow('Complaint Type',  wo.complaint_type || '—', y);
-    y = fieldRow('Complaint Code',  (wo.complaint_code || '—') + '   (NIGP: 91514 · NAICS: 238210)', y);
-    y = fieldRow('Site Address',    addr, y);
-    y = fieldRow('Location Detail', wo.specloc || '—', y);
-    y = fieldRow('Priority',        wo.priority_code || '—', y);
-    y = fieldRow('Est. Completion', (wo.estimated_days_to_complete || '—') + ' calendar days from dispatch', y);
-    y += 6;
-    setFont('bold', 9, DARK);
-    doc.text('Work Description:', mar, y);
-    y += 12;
-    y = bodyText(desc, y);
-    y += 6;
+  // Render analytics in parallel (analytics + map both run from form data)
+  Promise.all([
+    DataLoader.loadAnalytics({
+      borough: form.borough, zip: form.zip,
+      complaint_type: form.complaint_type, address: form.address,
+    }).then(({data}) => renderAnalytics(data, form)).catch(e => {
+      console.warn('Analytics load failed:', e);
+      renderAnalytics(DEFAULT_DATA, form);
+    }),
+    initResultsMap(form).catch(err => console.error('Map init failed:', err)),
+  ]);
 
-    // 3. Policy Authority
-    ensureSpace(80);
-    y = sectionBar('SECTION 2 — POLICY AUTHORITY', y);
-    setFont('normal', 8, TEAL);
-    const citation = 'NYC Procurement Policy Board Rule 3-08(c)(1)(iv) — M/WBE Noncompetitive Small Purchases: No competition is required for the procurement of goods, services, and construction from M/WBE vendors, provided that the Contracting Officer obtains at least three price quotes from M/WBE vendors or documents their inability to do so, and provided the purchase does not exceed the maximum amount authorized pursuant to NYC Charter §311(i)(1) (currently $1,500,000).';
-    const citLines = doc.splitTextToSize(citation, col - 12);
-    doc.text(citLines, mar + 10, y);
-    y += citLines.length * 11 + 8;
-    y = bodyText('This procurement is authorized under the above rule. Formal competitive solicitation is not required because the selected vendor holds active M/WBE certification from NYC Small Business Services (SBS) and the estimated purchase amount is within the $1,500,000 threshold. The Contracting Officer has obtained price quotes as documented in Section 3 below, confirmed the price is reasonable, and verified vendor responsibility per the checklist in Section 5.', y);
-    y += 6;
+  // Smooth scroll to the map+vendor area so user can pick a vendor
+  setTimeout(() => mapArea.scrollIntoView({behavior:'smooth', block:'start'}), 100);
+}
 
-    // 4. Price Quotes
-    ensureSpace(160);
-    y = sectionBar('SECTION 3 — PRICE QUOTES (PPB Rule 3-08(c)(1)(iv))', y);
-    y = bodyText('Per Rule 3-08(c)(1)(iv), the Contracting Officer must attempt to obtain at least three price quotes from M/WBE vendors or document the inability to do so. Complete one of the two options below.', y);
-    y += 6;
-    setFont('bold', 8.5, NYC_BLUE);
-    doc.text('OPTION A — Three quotes obtained:', mar, y);
-    y += 14;
-    for(const qh of ['Quote #1', 'Quote #2', 'Quote #3']){
-      doc.setFillColor(...LT_GRAY);
-      doc.rect(mar, y, col, 22, 'F');
-      setFont('bold', 7.5, DARK);
-      doc.text(qh, mar + 6, y + 9);
-      setFont('normal', 8, DARK);
-      doc.text('Vendor Name: ____________________________   Amount: $______________   Date: ____________', mar + 55, y + 9);
-      rule(y + 22, 0.3, MID_GRAY);
-      y += 22;
+// ────────────────────────────────────────────────────────────────────
+// Default data + analytics renderer
+// ────────────────────────────────────────────────────────────────────
+const DEFAULT_DATA = {
+  boroughVolume: 8501,
+  yearlyVolume: {
+    years: [2020, 2021, 2022, 2023, 2024, 2025],
+    values: [12489, 11756, 10911, 9512, 8639, 8501]
+  },
+  medianDays: {thisZip:9, borough:9, city:8},
+  closurePct: {d7:34.3, d30:80.6, d90:89.1},
+  histogram: [
+    {label:'0-3', count:1202},{label:'4-7', count:1713},{label:'8-14', count:3695},
+    {label:'15-21', count:61},{label:'22-30', count:184},{label:'31-60', count:431},
+    {label:'61+', count:714},
+  ],
+  duplicates: 6.5,
+};
+
+function showAnalysisLoading(){
+  ['c-volume','c-progress','c-box','c-hist'].forEach(id => {
+    const el = document.getElementById(id);
+    if(el) el.innerHTML = '<div class="loading">Loading…</div>';
+  });
+  ['k-repeat'].forEach(id => {
+    const el = document.getElementById(id);
+    if(el) el.innerHTML = '<div class="loading">…</div>';
+  });
+}
+
+function renderAnalytics(d, form){
+  form = form || {borough:'Brooklyn'};
+  const fmt = n => n==null ? '—' : (typeof n==='number' ? n.toLocaleString() : n);
+  const borough = form.borough || 'Brooklyn';
+  const yr = (window.DataLoader && DataLoader.getYear) ? DataLoader.getYear() : 2025;
+
+  setText('s-progress', `${borough} · ${yr}`);
+  setText('s-box', `${borough} · ${yr} · derived from close-time distribution`);
+  setText('s-hist', `${borough} · ${yr} · highlighted = where this complaint is forecast to land`);
+
+  // Repeat-at-address KPI tile
+  Charts.kpiTile(document.getElementById('k-repeat'), {
+    label: 'Repeat at this address (' + yr + ')',
+    value: d.repeatRate==null ? '—' : d.repeatRate,
+    delta: d.repeatRate==null ? 'no prior complaints found at this address'
+         : (d.repeatRate>1 ? 'recurring complaints found at this exact address' : 'first complaint at this address'),
+    deltaTone: d.repeatRate>1 ? 'up-bad' : ''
+  });
+
+  // Volume trend line — every year a labeled data point
+  const volEl = document.getElementById('c-volume');
+  if(volEl && d.yearlyVolume?.values?.length){
+    const yv = d.yearlyVolume;
+    const latest = yv.values[yv.values.length - 1];
+    const earliest = yv.values[0];
+    const deltaPct = earliest ? ((latest - earliest) / earliest) * 100 : 0;
+    const arrow = deltaPct >= 0 ? '↑' : '↓';
+    setText('s-volume',
+      `${borough} · ${yv.years[0]}–${yv.years[yv.years.length-1]} · ` +
+      `${earliest.toLocaleString()} → ${latest.toLocaleString()} ` +
+      `(${arrow} ${Math.abs(deltaPct).toFixed(0)}%)`
+    );
+    Charts.sparkline(volEl, {
+      series:[{name: borough, color: Charts.PALETTE.teal,
+        points: yv.values.map((v,i) => ({x: yv.years[i], y: v}))}],
+      xLabels: yv.years.map(String),
+      labelAllPoints: true,
+    });
+  }
+
+  // % closed within 7/30/90 — progress bars
+  if(d.closurePct){
+    Charts.progressBars(document.getElementById('c-progress'), {
+      items: [
+        {label:'7 days',  value: d.closurePct.d7  || 0},
+        {label:'30 days', value: d.closurePct.d30 || 0},
+        {label:'90 days', value: d.closurePct.d90 || 0},
+      ],
+    });
+  }
+
+  // Estimated completion — boxplot
+  if(d.histogram && d.medianDays){
+    const stats = quantilesFromHistogram(d.histogram);
+    Charts.boxPlot(document.getElementById('c-box'), {...stats, label:'similar'});
+  }
+
+  // Distribution histogram
+  if(d.histogram){
+    let hi = 2;
+    if(d.medianDays?.borough){
+      const md = d.medianDays.borough;
+      hi = md<=3 ? 0 : md<=7 ? 1 : md<=14 ? 2 : md<=21 ? 3 : md<=30 ? 4 : md<=60 ? 5 : 6;
     }
-    y += 8;
-    setFont('bold', 8.5, NYC_BLUE);
-    doc.text('OPTION B — Unable to obtain three quotes (explain below):', mar, y);
-    y += 14;
-    doc.setFillColor(...LT_GRAY);
-    doc.rect(mar, y, col, 36, 'F');
-    rule(y + 36, 0.3, MID_GRAY);
-    y += 44;
-    setFont('bold', 8.5, DARK);
-    doc.text('Price Reasonableness Determination  [REQUIRED]', mar, y);
-    y += 12;
-    y = bodyText('The Contracting Officer attests that the price selected is fair and reasonable based on (check all that apply):', y);
-    const priceOpts = ['Market research', 'Prior contracts', 'Independent cost estimate', 'Other (describe below)'];
-    const optW = col / 2;
-    for(let oi = 0; oi < priceOpts.length; oi++){
-      const ox = mar + (oi % 2) * optW;
-      const oy = y + Math.floor(oi / 2) * 16;
-      doc.setDrawColor(...TEAL);
-      doc.setLineWidth(0.8);
-      doc.rect(ox + 2, oy, 8, 8);
-      setFont('normal', 8.5, DARK);
-      doc.text(priceOpts[oi], ox + 14, oy + 7);
-    }
-    y += Math.ceil(priceOpts.length / 2) * 16 + 4;
-    doc.setFillColor(...LT_GRAY);
-    doc.rect(mar, y, col, 28, 'F');
-    rule(y + 28, 0.3, MID_GRAY);
-    y += 36;
-
-    // 5. Selected Vendor
-    ensureSpace(120);
-    y = sectionBar('SECTION 4 — SELECTED VENDOR', y);
-    y = fieldRow('Legal Business Name',  vName,    y, true);
-    y = fieldRow('Vendor Address',       vAddr,    y);
-    y = fieldRow('SBS Certification ID', certId,   y);
-    y = fieldRow('Certification Type',   mwbeType, y);
-    y = fieldRow('NYC License #',        vLicense, y);
-    y = fieldRow('Phone',                vPhone,   y);
-    y += 6;
-
-    // 6. Responsibility Checklist
-    ensureSpace(180);
-    y = sectionBar('SECTION 5 — RESPONSIBILITY DETERMINATION CHECKLIST', y);
-    y = bodyText('The procuring agency attests that it has verified each item below prior to authorizing this purchase.', y);
-    y += 4;
-    const checks = [
-      'Vendor is certified M/WBE by NYC SBS  [REQUIRED]',
-      'Certification is active and not expired  [REQUIRED]',
-      'Vendor holds required NYC contractor license  [REQUIRED]',
-      'No debarment, suspension, or integrity flag on file  [REQUIRED]',
-      'Prior performance satisfactory (if prior contracts exist)  [RECOMMENDED]',
-      'Estimated cost does not exceed $1,500,000  [REQUIRED]',
-      'No single vendor has received more than $3M from agency YTD  [REQUIRED]',
-      'Work falls within vendor\'s stated license classification  [REQUIRED]',
-    ];
-    for(const item of checks){
-      ensureSpace(20);
-      y = checkRow(item, y);
-    }
-    y += 6;
-
-    // 7. Signature Block
-    ensureSpace(160);
-    y = sectionBar('SECTION 6 — AUTHORIZATION & SIGNATURE', y);
-    y = bodyText('I, the undersigned authorized official, certify that: (a) the vendor named above is a currently certified M/WBE in good standing with NYC SBS; (b) at least three price quotes were obtained or the inability to do so has been documented per Section 3; (c) the price has been determined to be fair and reasonable; (d) the responsibility determination checklist in Section 5 has been completed; (e) this procurement does not exceed $1,500,000; and (f) all requirements of PPB Rule 3-08(c)(1)(iv) have been met.', y);
-    y += 16;
-    const halfW = (col - 20) / 2;
-    sigBlock('Authorizing Official',   '', mar,              y, halfW);
-    sigBlock('Date',                   '', mar + halfW + 20, y, halfW);
-    y += 36;
-    sigBlock('Title',                  '', mar,              y, halfW);
-    sigBlock('Agency',  'NYC Dept. of Transportation', mar + halfW + 20, y, halfW);
-    y += 36;
-    sigBlock('Vendor Representative (acknowledgment)', '', mar, y, halfW);
-    sigBlock('Date',                   '', mar + halfW + 20, y, halfW);
-    y += 36;
-
-    // 8. Footer
-    const pageCount = doc.internal.getNumberOfPages();
-    for(let i = 1; i <= pageCount; i++){
-      doc.setPage(i);
-      rule(doc.internal.pageSize.getHeight() - 36, 0.5, MID_GRAY);
-      setFont('normal', 7, [150,150,150]);
-      doc.text(
-        'Generated by NYC Street Lights Equity Vendor Matrix  \u00b7  ' + memoDate + '  \u00b7  Ref ' + memoRef + '  \u00b7  Retain in agency procurement file per NYC Charter \u00a7315',
-        W/2, doc.internal.pageSize.getHeight() - 24, {align:'center'}
-      );
-    }
-
-    doc.save('PPB308-Memo-' + (wo.defnum || 'DRAFT') + '.pdf');
-    if(memoStatus) memoStatus.textContent = '\u2713 Memo downloaded';
-
-  } catch(e) {
-    console.error('PPB memo generation failed:', e);
-    if(memoStatus) memoStatus.textContent = '\u26a0 Memo error: ' + e.message;
+    Charts.histogram(document.getElementById('c-hist'), {
+      bins: d.histogram, highlightIdx: hi,
+    });
   }
 }
+
+// ────────────────────────────────────────────────────────────────────
+// Approve / reject + work-order generation
+// ────────────────────────────────────────────────────────────────────
+async function generateWorkOrder(form, analytics, chosenVendor){
+  if(!form){
+    setText('woStatus', 'Submit the form to generate a work order.');
+    return;
+  }
+  const doc = document.getElementById('woDoc');
+  doc.innerHTML = '<div class="loading" style="height:200px">Generating DOT-format work order with Claude Sonnet 4.5…</div>';
+  setText('woStatus', `Calling /api/generate-work-order with ${chosenVendor ? chosenVendor.name : 'no vendor'}…`);
+
+  const similar = await DataLoader.findSimilarComplaints(
+    form.borough, form.complaint_type, form.zip, 5
+  ).catch(() => []);
+  let nearestVendor = chosenVendor || null;
+  if(!nearestVendor){
+    const geocoded = await geocodeAddress(form.address, form.zip).catch(() => null);
+    if(geocoded){
+      const auto = await DataLoader.findNearestVendors(geocoded.lat, geocoded.lng, 1).catch(() => []);
+      nearestVendor = auto[0] || null;
+    }
+  }
+
+  const payload = {
+    complaint: {
+      complaint_id: 'WEB-' + Date.now(),
+      complaint_type: form.complaint_type || 'Street Light Out',
+      address: form.address || '', borough: form.borough || '',
+      zip: form.zip || '',
+      reported_date: new Date().toISOString().slice(0,10),
+      duration: form.duration || '', details: form.details || '',
+      priority: '',
+    },
+    similar_past_orders: similar.filter(s => s.status === 'Closed').slice(0,5).map(s => ({
+      address:s.address, borough:s.borough, zip:s.zip,
+      complaint_type:s.raw, days_to_close:s.days, priority:s.priority,
+    })),
+    vendor: nearestVendor ? {
+      name: nearestVendor.name, license: nearestVendor.license, phone: nearestVendor.phone,
+    } : { name:'Bright Spark Electric Co.', license:'ME-12498' },
+  };
+
+  if(nearestVendor){
+    const vEl = document.getElementById('woVendor');
+    if(vEl){
+      vEl.innerHTML = `
+        <div class="lbl">Assigned vendor</div>
+        <div class="meta-line"><strong>${nearestVendor.name}</strong></div>
+        <div class="meta-line">NYC Lic. #${nearestVendor.license} · ${nearestVendor.distance.toFixed(1)} mi</div>
+        <div class="meta-line">${nearestVendor.phone || ''}</div>`;
+    }
+  }
+
+  try{
+    const r = await fetch('/api/generate-work-order', {
+      method:'POST',
+      headers:{'Content-Type':'application/json'},
+      body: JSON.stringify(payload),
+    });
+    if(!r.ok){
+      const err = await r.json().catch(() => ({error:'unknown'}));
+      throw new Error(err.error || `HTTP ${r.status}`);
+    }
+    const wo = await r.json();
+    renderWorkOrder(wo);
+    setText('woStatus', `Generated · WO ${wo.defnum || ''}`);
+  } catch(e){
+    console.warn('Work-order generation failed, falling back to local synth:', e);
+    renderWorkOrder(synthesizeWorkOrder(form, payload, nearestVendor));
+    setText('woStatus', `⚠ LLM API unavailable (${e.message}) — showing locally-synthesized work order from your inputs.`);
+  }
+}
+
+// Local fallback synth — same logic as the previous build, abbreviated
+function synthesizeWorkOrder(form, payload, vendor){
+  const boroMap = {Manhattan:'M', Brooklyn:'B', Bronx:'X', Queens:'Q', 'Staten Island':'SI'};
+  const boroFull = (form.borough || '').toUpperCase();
+  const boroCode = boroMap[form.borough] || '';
+  const ct = (form.complaint_type || '').toLowerCase();
+  let complaint_type = 'Street Light Out', complaint_code = 'SLO-01', priority = 2;
+  if(ct.includes('cycling'))                          { complaint_type='Street Light Cycling';  complaint_code='SLC-01'; priority=3; }
+  else if(ct.includes('day') || ct.includes('stays')) { complaint_type='Street Light Dayburning';complaint_code='SLD-02'; priority=3; }
+  else if(ct.includes('dim'))                         { complaint_type='Street Light Dim';      complaint_code='SLD-01'; priority=3; }
+  else if(ct.includes('hanging') && ct.includes('glass')){complaint_type='Glassware Hanging';   complaint_code='SLG-03'; priority=1; }
+  else if(ct.includes('broken') || ct.includes('hanging')){complaint_type='Glassware Broken';   complaint_code='SLG-02'; priority=2; }
+  else if(ct.includes('missing') && ct.includes('glass')){complaint_type='Glassware Missing';   complaint_code='SLG-01'; priority=2; }
+  else if(ct.includes('fixture'))                     { complaint_type='Fixture/Luminaire Hanging'; complaint_code='SLF-04'; priority=1; }
+  else if(ct.includes('pole'))                        { complaint_type='Lamppost Damaged';      complaint_code='SLP-01'; priority=2; }
+  else if(ct.includes('base'))                        { complaint_type='Lamppost Base Door/Cover Damaged'; complaint_code='SLB-06'; priority=2; }
+  else if(ct.includes('wires') || ct.includes('exposed')){complaint_type='Wires Exposed';       complaint_code='SLW-01'; priority=1; }
+  const priority_code = priority===1 ? 'PRIORITY 1 — EMERGENCY' : priority===2 ? 'PRIORITY 2 — NON-EMERGENCY' : 'PRIORITY 3 — ROUTINE';
+  const response_requirement = priority===1 ? 'RESPONSE REQUIRED WITHIN: 4 HOURS — EMERGENCY RESPONSE' : 'RESPONSE REQUIRED WITHIN: 10 CALENDAR DAYS';
+  const addr = form.address || '';
+  const m = addr.match(/^(\d+)\s+(.+)$/);
+  const housenum = m ? m[1] : '';
+  const streetName = (m ? m[2] : addr).toUpperCase();
+  const streetAbbr = streetName.replace(/\bSTREET|\bAVENUE|\bAV|\bST|\bROAD|\bRD|\bBOULEVARD|\bBLVD|\bPLACE|\bPL/g,'').replace(/[^A-Z0-9]/g,' ').trim().split(/\s+/)[0].slice(0,3).padEnd(3,'X');
+  const houseSlug = (housenum || '0000').padStart(4,'0');
+  return {
+    defnum:`SL-${new Date().getFullYear()}-${String(Date.now()).slice(-6)}`,
+    initby:'CSC', source:'CTZ', reported_by:'NYC 311',
+    housenum, onfacename: streetName.split(/\s+/).slice(0,3).join(' '), onprimname: streetName,
+    frmprimnam:'—', toprimname:'—', specloc:'I/F/O ADDRESS NR LAMPPOST',
+    boro: boroCode, borough_full: boroFull,
+    rptdate: new Date().toISOString(), rptclosed: null,
+    response_requirement, complaint_type, complaint_code, priority_code,
+    priority_reason: priority===1
+      ? 'Reported safety hazard requires emergency dispatch under NYC DOT 4-hour standard.'
+      : `${complaint_type.toLowerCase()} — repair required within standard window.`,
+    pole_number: `${boroCode}-${streetAbbr}-${houseSlug}`,
+    estimated_days_to_complete: priority===1 ? 2 : priority===2 ? 5 : 7,
+    materials_needed: complaint_code==='SLO-01'
+      ? 'Photocell unit (NYC-PC-2A), 150W HPS bulb (NYC-HPS-150), spare ballast (NYC-BL-150).'
+      : 'See standard repair kit per complaint code.',
+    work_steps: [
+      `1. Confirm pole number ${boroCode}-${streetAbbr}-${houseSlug} and report arrival to DOT dispatch.`,
+      '2. Establish pedestrian exclusion zone and don required PPE before approach.',
+      `3. Diagnose ${complaint_type.toLowerCase()} and replace failed component.`,
+      '4. Verify repair at next photocell trigger or via test cycle.',
+      '5. Photograph completed work and submit signed field report by end of shift.',
+    ],
+    instructions: `Diagnose and repair ${complaint_type.toLowerCase()} at ${addr}.`,
+    safety_notes: priority===1
+      ? `REQUIRED PPE: hard hat, face shield, insulated gloves (Class 0). EMERGENCY 4-HOUR RESPONSE. Contact DOT Emergency at (718) 433-3000.`
+      : `REQUIRED PPE: insulated gloves (Class 00), safety glasses, hi-vis vest. Lockout/tagout required.`,
+    inspector_approval_required: priority===1, permit_required: false,
+    status: 'Open', assigned_agency: 'NYC DOT — Division of Street Lighting',
+  };
+}
+
+// Quartile estimator (linear interpolation within histogram bins)
+function quantilesFromHistogram(bins){
+  const ranges = [[0,3],[4,7],[8,14],[15,21],[22,30],[31,60],[61,120]];
+  const total = bins.reduce((a,b) => a + (b.count || 0), 0);
+  if(total === 0) return {min:0,q1:0,median:0,q3:0,max:0};
+  function pct(p){
+    const target = total * p;
+    let cum = 0;
+    for(let i = 0; i < bins.length; i++){
+      const c = bins[i].count || 0;
+      if(cum + c >= target){
+        const [lo, hi] = ranges[i];
+        const f = c > 0 ? (target - cum) / c : 0;
+        return lo + (hi - lo) * f;
+      }
+      cum += c;
+    }
+    return ranges[ranges.length-1][1];
+  }
+  return {min:1, q1:pct(0.25), median:pct(0.5), q3:pct(0.75), max:pct(0.95)};
+}
+
+// Render the work-order document. Includes uploaded photos.
+function renderWorkOrder(wo){
+  const isReal = wo && wo.defnum;
+  window._workOrderReady = !!isReal;
+  const approveBtn = document.getElementById('woApprove');
+  if(approveBtn && isReal){
+    approveBtn.disabled = false;
+    approveBtn.style.background = '';
+    approveBtn.innerHTML = 'Submit and dispatch <span class="arrow">→</span>';
+  }
+  const pri = wo.priority_code || '';
+  const priClass = pri.startsWith('PRIORITY 1') ? 'p1' : pri.startsWith('PRIORITY 2') ? 'p2' : 'p3';
+  const steps = (wo.work_steps || []).map(s => `<li>${s.replace(/^\d+\.\s*/,'')}</li>`).join('');
+  const photoBlock = (window._uploadedPhotos || []).length
+    ? `<h4>Resident-submitted photos</h4>
+       <div class="wo-photos">
+         ${window._uploadedPhotos.map(p =>
+           `<img src="${p.dataUrl}" alt="${p.name}">`
+         ).join('')}
+       </div>`
+    : '';
+
+  document.getElementById('woDoc').innerHTML = `
+    <div class="doc-header">
+      <div>
+        <div class="doc-title">NYC DOT Work Order</div>
+        <div class="doc-num">${wo.defnum}</div>
+      </div>
+      <div class="doc-agency">${wo.assigned_agency || ''}</div>
+    </div>
+    <div>
+      <span class="priority-banner ${priClass}">${pri}</span>
+      <span class="response-banner">${wo.response_requirement || ''}</span>
+    </div>
+    <h4>Location</h4>
+    <p>${wo.housenum||''} ${wo.onprimname||wo.onfacename||''}<br>
+       Between ${wo.frmprimnam||''} and ${wo.toprimname||''}<br>
+       ${(wo.borough_full||'').replace(/\b\w/g,c=>c.toUpperCase())}, NY<br>
+       <em>${wo.specloc||''}</em><br>
+       Pole #: <strong>${wo.pole_number||'—'}</strong></p>
+    <h4>Fault classification</h4>
+    <p><strong>${wo.complaint_type}</strong> · code ${wo.complaint_code}<br>
+       ${wo.priority_reason||''}</p>
+    <h4>Materials needed</h4>
+    <p>${wo.materials_needed||'—'}</p>
+    <h4>Work steps</h4>
+    <ol>${steps}</ol>
+    <h4>Dispatch instructions</h4>
+    <p>${wo.instructions||''}</p>
+    <div class="safety-callout">
+      <strong>Safety notes</strong>
+      ${wo.safety_notes||''}
+    </div>
+    ${photoBlock}
+    <div class="grid-2">
+      <div>
+        <h4>Estimated completion</h4>
+        <p>${wo.estimated_days_to_complete||'—'} calendar days</p>
+      </div>
+      <div>
+        <h4>Approvals</h4>
+        <div class="checks">
+          <span class="check"><span class="box ${wo.inspector_approval_required?'on':''}">${wo.inspector_approval_required?'✓':''}</span> Inspector approval required</span>
+          <span class="check"><span class="box ${wo.permit_required?'on':''}">${wo.permit_required?'✓':''}</span> Permit required</span>
+        </div>
+      </div>
+    </div>
+    <h4>Reporting chain</h4>
+    <p>Initiated by ${wo.initby||'—'} · Source ${wo.source||'—'} · Reported by ${wo.reported_by||'—'}<br>
+       Reported ${(wo.rptdate||'').slice(0,10)} · Status: <strong>${wo.status||'Open'}</strong></p>
+  `;
+}
+
+// Approve / reject button wiring (unchanged guard logic)
+document.getElementById('woApprove').addEventListener('click', () => {
+  if(!window._workOrderReady){
+    setText('woStatus', '⚠ No work order to approve yet. Submit the form and select a vendor first.');
+    return;
+  }
+  const btn = document.getElementById('woApprove');
+  btn.textContent = '✓ Dispatched';
+  btn.style.background = 'var(--green)';
+  btn.disabled = true;
+  setText('woStatus', 'Approved · vendor dispatched · ' + new Date().toLocaleString());
+});
+document.getElementById('woReject').addEventListener('click', () => {
+  if(!window._workOrderReady){
+    setText('woStatus', '⚠ No work order to revise yet. Generate one first.');
+    return;
+  }
+  const note = prompt('What needs to change?');
+  if(!note) return;
+  setText('woStatus', `Revising · feedback: "${note}". Select a different vendor on the map to regenerate.`);
+});
+
+// setText helper (small)
+function setText(id, txt){
+  const el = document.getElementById(id);
+  if(el) el.textContent = txt;
+}
+
+// ────────────────────────────────────────────────────────────────────
+// "Use my location" button — geolocation + Google reverse-geocode
+// ────────────────────────────────────────────────────────────────────
+async function useCurrentLocation(){
+  const btn = document.getElementById('useLocationBtn');
+  const status = document.getElementById('locStatus');
+  if(!btn || !status) return;
+  if(!navigator.geolocation){
+    status.textContent = '⚠ Your browser does not support geolocation.';
+    status.className = 'field-hint err';
+    return;
+  }
+  btn.disabled = true;
+  btn.classList.add('locating');
+  status.textContent = 'Locating you…';
+  status.className = 'field-hint';
+  try { await window._gmReady; }
+  catch {
+    status.textContent = '⚠ Google Maps unavailable — fill the address manually.';
+    status.className = 'field-hint err';
+    btn.disabled = false; btn.classList.remove('locating');
+    return;
+  }
+  navigator.geolocation.getCurrentPosition(
+    pos => {
+      const {latitude:lat, longitude:lng} = pos.coords;
+      const g = new google.maps.Geocoder();
+      g.geocode({location:{lat,lng}}, (results, gStatus) => {
+        if(gStatus !== 'OK' || !results.length){
+          status.textContent = `⚠ Could not reverse-geocode (${gStatus}).`;
+          status.className = 'field-hint err';
+          btn.disabled = false; btn.classList.remove('locating');
+          return;
+        }
+        const r = results[0];
+        const cmp = r.address_components || [];
+        const get = t => cmp.find(c => c.types.includes(t))?.long_name || '';
+        const getShort = t => cmp.find(c => c.types.includes(t))?.short_name || '';
+        const street = [get('street_number'), get('route')].filter(Boolean).join(' ').trim();
+        const zip = get('postal_code');
+        const sub2 = get('sublocality_level_1') || get('sublocality');
+        const adm2 = get('administrative_area_level_2');
+        const locality = get('locality');
+        const map = {'manhattan':'Manhattan','new york':'Manhattan','brooklyn':'Brooklyn','kings county':'Brooklyn','queens':'Queens','queens county':'Queens','bronx':'Bronx','the bronx':'Bronx','bronx county':'Bronx','staten island':'Staten Island','richmond county':'Staten Island','richmond':'Staten Island'};
+        const lookup = s => map[(s||'').toLowerCase()];
+        const borough = lookup(sub2) || lookup(adm2) || lookup(locality) || '';
+        const stateShort = getShort('administrative_area_level_1');
+        if(!borough && stateShort && stateShort !== 'NY'){
+          status.textContent = `⚠ This dashboard only covers NYC. Your location is in ${stateShort}.`;
+          status.className = 'field-hint err';
+          btn.disabled = false; btn.classList.remove('locating');
+          return;
+        }
+        const f = document.getElementById('intakeForm');
+        if(street) f.address.value = street;
+        else if(r.formatted_address) f.address.value = r.formatted_address.split(',')[0];
+        if(zip) f.zip.value = zip;
+        if(borough) f.borough.value = borough;
+        const filled = [street && 'address', zip && 'zip', borough && 'borough'].filter(Boolean).join(', ');
+        status.textContent = `✓ Filled ${filled} from your location` + (borough ? '' : ' — but borough not detected, please choose manually.');
+        status.className = 'field-hint ok';
+        btn.disabled = false; btn.classList.remove('locating');
+      });
+    },
+    err => {
+      const msg = {1:'Permission denied. Allow location access in your browser.',
+                   2:'Position unavailable. Try again or fill manually.',
+                   3:'Timeout. Try again.'};
+      status.textContent = `⚠ ${msg[err.code] || err.message || 'Could not get your location.'}`;
+      status.className = 'field-hint err';
+      btn.disabled = false; btn.classList.remove('locating');
+    },
+    { enableHighAccuracy:true, timeout:10000, maximumAge:60000 }
+  );
+}
+document.getElementById('useLocationBtn')?.addEventListener('click', useCurrentLocation);
+
+// ────────────────────────────────────────────────────────────────────
+// Map + vendor selection (lightning bolts, driving routes)
+// ────────────────────────────────────────────────────────────────────
+async function geocodeAddress(address, zip){
+  if(!address) return null;
+  await window._gmReady;
+  return new Promise((resolve, reject) => {
+    const g = new google.maps.Geocoder();
+    g.geocode({address: `${address}, NY ${zip || ''}`, componentRestrictions:{country:'US'}},
+      (results, status) => {
+        if(status === 'OK' && results[0]){
+          const loc = results[0].geometry.location;
+          resolve({lat: loc.lat(), lng: loc.lng()});
+        } else reject(new Error(`Geocode failed: ${status}`));
+      });
+  });
+}
+
+// Reverse-geocode an address string into {borough, zip} so we can drop
+// the manual borough/zip fields. Returns null if the address can't be
+// resolved to a NYC borough.
+async function deriveBoroughZip(address){
+  if(!address) return null;
+  await window._gmReady;
+  return new Promise(resolve => {
+    const g = new google.maps.Geocoder();
+    g.geocode({address: `${address}, New York, NY`, componentRestrictions:{country:'US'}},
+      (results, status) => {
+        if(status !== 'OK' || !results.length){ resolve(null); return; }
+        const r = results[0];
+        const cmp = r.address_components || [];
+        const get = t => cmp.find(c => c.types.includes(t))?.long_name || '';
+        const sub2 = get('sublocality_level_1') || get('sublocality');
+        const adm2 = get('administrative_area_level_2');
+        const locality = get('locality');
+        const map = {
+          'manhattan':'Manhattan','new york':'Manhattan',
+          'brooklyn':'Brooklyn','kings county':'Brooklyn','kings':'Brooklyn',
+          'queens':'Queens','queens county':'Queens',
+          'bronx':'Bronx','the bronx':'Bronx','bronx county':'Bronx',
+          'staten island':'Staten Island','richmond county':'Staten Island','richmond':'Staten Island',
+        };
+        const lookup = s => map[(s || '').toLowerCase()];
+        const borough = lookup(sub2) || lookup(adm2) || lookup(locality) || '';
+        const zip = get('postal_code') || '';
+        if(!borough) resolve(null);
+        else resolve({borough, zip});
+      });
+  });
+}
+
+window._resultsMap = null;
+let _mapMarkers = [];
+async function initResultsMap(form){
+  const canvas = document.getElementById('mapCanvas');
+  if(!canvas) return;
+  canvas.innerHTML = '<div class="map-placeholder">Geocoding & loading map…</div>';
+
+  let origin;
+  try {
+    origin = await geocodeAddress(form.address, form.zip);
+    if(!origin) throw new Error('no result');
+  } catch(e){
+    canvas.innerHTML = `<div class="map-placeholder">Could not geocode "${form.address}".</div>`;
+    return;
+  }
+
+  canvas.innerHTML = '';
+  const mapEl = document.createElement('div');
+  mapEl.id = 'gmCanvas';
+  mapEl.style.height = '580px';
+  mapEl.style.width = '100%';
+  canvas.appendChild(mapEl);
+  mapEl.offsetHeight;
+
+  await window._gmReady;
+  _mapMarkers.forEach(m => m.setMap(null));
+  _mapMarkers = [];
+
+  window._resultsMap = new google.maps.Map(mapEl, {
+    center: origin, zoom: 14,
+    streetViewControl:false, mapTypeControl:false, fullscreenControl:false,
+    styles: LIGHT_MAP_STYLE,
+  });
+  const _resultsMap = window._resultsMap;
+
+  const iw = new google.maps.InfoWindow();
+
+  // Complaint pin
+  const complaintMarker = new google.maps.Marker({
+    map: _resultsMap, position: origin,
+    icon: { path: google.maps.SymbolPath.CIRCLE, scale:12, fillColor:'#e63946', fillOpacity:1, strokeColor:'#fff', strokeWeight:3 },
+    title: form.address, zIndex:1000,
+  });
+  complaintMarker.addListener('click', () => {
+    iw.setContent(`<div class="gm-popup">
+      <div class="ttl">Your complaint</div>
+      <div class="meta">${escapeHtml(form.address)} · ${escapeHtml(form.borough)} ${escapeHtml(form.zip)}</div>
+      <div class="row"><strong>${escapeHtml(form.complaint_type)}</strong></div>
+      <span class="badge">Open</span>
+    </div>`);
+    iw.open({map:_resultsMap, anchor:complaintMarker});
+  });
+  _mapMarkers.push(complaintMarker);
+
+  // Driving route renderer
+  const _ds = new google.maps.DirectionsService();
+  const _dr = new google.maps.DirectionsRenderer({
+    map:_resultsMap, suppressMarkers:true, suppressInfoWindows:true,
+    preserveViewport:true, polylineOptions:{strokeColor:'#a07f00',strokeOpacity:0.9,strokeWeight:4,zIndex:5},
+  });
+  _dr.setMap(null);
+  const _routeCache = new Map();
+  let _fallbackLine = null;
+
+  async function showRoute(vendor){
+    const key = vendor.license;
+    let res = _routeCache.get(key);
+    if(!res){
+      try{
+        res = await new Promise((resolve, reject) => {
+          _ds.route({origin:{lat:vendor.lat,lng:vendor.lng}, destination:origin, travelMode:google.maps.TravelMode.DRIVING},
+            (r, st) => st === 'OK' ? resolve(r) : reject(new Error(st)));
+        });
+        _routeCache.set(key, res);
+      } catch(err){
+        if(_fallbackLine) _fallbackLine.setMap(null);
+        _fallbackLine = new google.maps.Polyline({
+          path:[{lat:vendor.lat,lng:vendor.lng}, origin], geodesic:true,
+          strokeColor:'#a07f00', strokeOpacity:0.6, strokeWeight:3, map:_resultsMap, zIndex:5,
+        });
+        return;
+      }
+    }
+    _dr.setMap(_resultsMap);
+    _dr.setDirections(res);
+  }
+  function hideRoute(){
+    _dr.setMap(null);
+    if(_fallbackLine){ _fallbackLine.setMap(null); _fallbackLine = null; }
+  }
+
+  // Vendors — ranked by the equity-first scoring matrix.
+  const scoredResult = await DataLoader.findScoredVendors(
+    { lat: origin.lat, lng: origin.lng, borough: form.borough, estimatedCost: 5000 },
+    5
+  );
+  const scoredVendors = scoredResult.vendors || [];
+  const poolUsed = scoredResult.poolUsed;
+  const poolStats = scoredResult.poolStats;
+
+  const vList = document.getElementById('vendorList');
+  const poolBanner = poolUsed === 'eligible-only'
+    ? `<div class="pool-banner pool-banner-good">Drawn from the <strong>${poolStats.tier1Eligible}-vendor</strong> direct-purchase-eligible pool under PPB Rule 3-08.</div>`
+    : poolUsed === 'eligible-plus-almost'
+    ? `<div class="pool-banner pool-banner-warn">Fewer than 5 of the ${poolStats.tier1Eligible} direct-purchase-eligible vendors are within 10 mi. Expanded to include <strong>${poolStats.tier2Almost} almost-eligible</strong> vendors (M/WBE-certified but missing one criterion).</div>`
+    : poolUsed === 'full-pool'
+    ? `<div class="pool-banner pool-banner-warn">Eligible pool too thin near this location. Falling back to the full <strong>${poolStats.tier3Other + poolStats.tier2Almost + poolStats.tier1Eligible}-vendor</strong> licensed-electrician pool.</div>`
+    : '';
+  vList.innerHTML = poolBanner + `<div class="vendor-prompt" id="vendorPrompt">No vendor selected yet.</div>`;
+
+  const vendorMarkers = [];
+  const nearVendors = scoredVendors.filter(v => v.lat != null && v.lng != null);
+
+  function selectVendor(v){
+    window._selectedVendor = v;
+    vendorMarkers.forEach(({marker, vendor, rank}) => {
+      marker.setIcon(boltIcon(rank, vendor === v));
+      marker.setZIndex(vendor === v ? 300 : 100);
+    });
+    document.querySelectorAll('.vendor-card').forEach(el => {
+      el.classList.toggle('selected', el.dataset.license === v.license);
+    });
+    const promptEl = document.getElementById('vendorPrompt');
+    if (promptEl) promptEl.innerHTML =
+      `Selected: <strong>${escapeHtml(v.name)}</strong> · generating work order…`;
+    updateEquityImpact(v);
+    generateWorkOrder(window._lastForm, null, v);
+    // Auto-scroll to the work order section
+    setTimeout(() => {
+      document.getElementById('workorder').scrollIntoView({behavior:'smooth', block:'start'});
+    }, 300);
+  }
+
+  // Populate the equity impact KPIs for the selected vendor.
+  function updateEquityImpact(v){
+    const perComplaint = 5000; // assumed avg streetlight job
+    const perBlockJobsYear = 12; // assumed jobs/year within 2 mi
+    const perBlock = perComplaint * perBlockJobsYear;
+    const ownerLabel = (v.badges || []).find(b => /owned/i.test(b)) || (v.certifications?.certification || 'small-business');
+    const ethMatch = (v.badges || []).find(b => /owned/i.test(b));
+    setText('kpiPerComplaint', '$' + perComplaint.toLocaleString());
+    setText('kpiPerComplaintSub',
+      `to ${escapeHtml(v.name)} — ${escapeHtml(ethMatch || 'an overlooked NYC electrician')}`);
+    setText('kpiPerBlock', '$' + perBlock.toLocaleString() + ' / yr');
+    setText('kpiPerBlockSub',
+      `if every similar complaint within 2 mi of this address routed to ${escapeHtml(v.name)}`);
+  }
+
+  nearVendors.forEach((v, i) => {
+    const rank = i + 1;
+    const m = new google.maps.Marker({
+      map:_resultsMap, position:{lat:v.lat, lng:v.lng},
+      icon: boltIcon(rank, false),
+      title: `#${rank} · ${v.name} · ${v.distance.toFixed(1)} mi`,
+      zIndex: 100 + (5 - rank),
+    });
+    vendorMarkers.push({marker:m, vendor:v, rank});
+    m.addListener('mouseover', () => showRoute(v));
+    m.addListener('mouseout', hideRoute);
+    m.addListener('click', () => selectVendor(v));
+    _mapMarkers.push(m);
+
+    const searchUrl = `https://www.google.com/search?q=${encodeURIComponent(v.name + ' NYC electrician')}`;
+    const badgeHtml = (v.badges || []).map(b => {
+      const cls = badgeClass(b);
+      return `<span class="vendor-badge ${cls}">${escapeHtml(b)}</span>`;
+    }).join('');
+    const breakdownHtml = v.components ? renderBreakdown(v.components) : '';
+    const scoreDisplay = v.score != null
+      ? `<div class="vendor-score" title="Equity-first matrix score (0–100)">${v.score.toFixed(0)}</div>`
+      : '';
+    vList.insertAdjacentHTML('beforeend', `
+      <div class="vendor-card scored-card map-list-item" data-license="${escapeHtml(v.license)}">
+        <div class="vendor-rank">${rank}${scoreDisplay}</div>
+        <div class="vendor-info">
+          <div class="vendor-name">
+            <strong>${escapeHtml(v.name)}</strong>
+            <a href="${searchUrl}" target="_blank" rel="noopener noreferrer" class="vendor-link" title="Find website" onclick="event.stopPropagation()">↗</a>
+          </div>
+          <div class="vendor-sub">${escapeHtml(v.phone || '')} · Lic. #${escapeHtml(v.license)} · ${v.distance != null ? v.distance.toFixed(1) + ' mi' : ''}</div>
+          ${badgeHtml ? `<div class="vendor-badges">${badgeHtml}</div>` : ''}
+          ${breakdownHtml ? `
+            <details class="vendor-breakdown" onclick="event.stopPropagation()">
+              <summary>Why this vendor?</summary>
+              ${breakdownHtml}
+            </details>` : ''}
+        </div>
+        <div class="vendor-actions">
+          <button type="button" class="pill teal small select-vendor">Select</button>
+        </div>
+      </div>`);
+    const card = vList.querySelector(`.vendor-card[data-license="${CSS.escape(v.license)}"]`);
+    card.addEventListener('mouseenter', () => showRoute(v));
+    card.addEventListener('mouseleave', hideRoute);
+    card.querySelector('.select-vendor').addEventListener('click', e => {
+      e.stopPropagation();
+      selectVendor(v);
+    });
+  });
+
+  // Similar past complaints
+  const similar = await DataLoader.findSimilarComplaints(form.borough, form.complaint_type, form.zip, 8);
+  const sList = document.getElementById('similarList');
+  sList.innerHTML = '<div class="lbl">Similar resolved complaints</div>';
+  sList.insertAdjacentHTML('beforeend', `
+    <div class="similar-legend">
+      <span><span class="dot" style="background:#0077b6"></span>&lt;7 days</span>
+      <span><span class="dot" style="background:#ffb703"></span>8–30 days</span>
+      <span><span class="dot" style="background:#e63946"></span>&gt;30 days</span>
+      <span><span class="dot" style="background:#6b7a8f"></span>still open</span>
+    </div>`);
+  similar.slice(0,5).forEach(s => {
+    const m = new google.maps.Marker({
+      map:_resultsMap, position:{lat:s.lat, lng:s.lng},
+      icon: similarIcon(s.days, s.status),
+      title: `${s.raw || s.type} · ${s.days != null ? s.days+'d' : (s.status || 'unknown')}`,
+    });
+    m.addListener('click', () => {
+      iw.setContent(`<div class="gm-popup">
+        <div class="ttl">${escapeHtml(s.raw || s.type)}</div>
+        <div class="meta">${escapeHtml(s.address)} · ${escapeHtml(s.borough)} ${escapeHtml(s.zip)}</div>
+        <div class="row">Reported ${escapeHtml(s.date)}${s.days ? ` · closed in <strong>${s.days} days</strong>` : ''}</div>
+        <span class="badge">${escapeHtml(s.status)}</span>
+      </div>`);
+      iw.open({map:_resultsMap, anchor:m});
+    });
+    _mapMarkers.push(m);
+    const tone = s.days == null ? 'open' : s.days < 7 ? 'fast' : s.days <= 30 ? 'med' : 'slow';
+    sList.insertAdjacentHTML('beforeend', `
+      <div class="map-list-item">
+        <span><strong>${escapeHtml(s.raw || s.type)}</strong><br>${escapeHtml(s.address)}</span>
+        <span class="days-tag days-${tone}">${s.days != null ? s.days+'d' : (s.status || '—')}</span>
+      </div>`);
+  });
+
+  // Fit bounds
+  const bounds = new google.maps.LatLngBounds();
+  _mapMarkers.forEach(m => bounds.extend(m.getPosition()));
+  if(_mapMarkers.length > 1) _resultsMap.fitBounds(bounds, {top:50,left:50,right:50,bottom:50});
+}
+
+function escapeHtml(s){
+  return String(s || '').replace(/[<>&"']/g, c => ({'<':'&lt;','>':'&gt;','&':'&amp;','"':'&quot;',"'":'&#39;'}[c]));
+}
+
+// Map a vendor badge label to a CSS class for color theming.
+function badgeClass(label){
+  const l = String(label).toLowerCase();
+  if (l.includes('direct-purchase')) return 'b-dp';
+  if (l.includes('overlooked'))      return 'b-overlooked';
+  if (l === 'mbe')                   return 'b-mbe';
+  if (l === 'wbe')                   return 'b-wbe';
+  if (l === 'lbe' || l === 'ebe')    return 'b-lbe';
+  if (l.includes('owned'))           return 'b-eth';
+  if (l === 'passport')              return 'b-passport';
+  return 'b-generic';
+}
+
+// Render a tiny horizontal bar per scoring component.
+function renderBreakdown(c){
+  const WEIGHTS = window.VendorScorer?.WEIGHTS || {};
+  const rows = [
+    ['Workload balance',           c.workload_balance,           WEIGHTS.workload_balance],
+    ['Overlooked-but-qualified',   c.overlooked_but_qualified,   WEIGHTS.overlooked_but_qualified],
+    ['Direct-purchase eligible',   c.direct_purchase_eligibility,WEIGHTS.direct_purchase_eligibility],
+    ['Demographic equity',         c.demographic_equity,         WEIGHTS.demographic_equity],
+    ['Proximity',                  c.proximity,                  WEIGHTS.proximity],
+    ['Reliability',                c.reliability,                WEIGHTS.reliability],
+    ['Baseline capability',        c.baseline_capability,        WEIGHTS.baseline_capability],
+    ['Capacity headroom',          c.capacity_headroom,          WEIGHTS.capacity_headroom],
+  ];
+  return `<div class="score-bars">${rows.map(([label, pts, max]) => {
+    const pct = max ? Math.max(0, Math.min(100, (pts / max) * 100)) : 0;
+    return `
+      <div class="score-row">
+        <span class="score-label">${escapeHtml(label)}</span>
+        <span class="score-bar"><span class="score-fill" style="width:${pct}%"></span></span>
+        <span class="score-num">${pts.toFixed(1)} / ${max}</span>
+      </div>`;
+  }).join('')}</div>`;
+}
+
+function boltIcon(rank, isSelected){
+  const W=44, H=54;
+  const fill = isSelected ? '#a07f00' : '#ffb703';
+  const bolt = 'M24,3 L11,23 L20,23 L17,38 L33,18 L23,18 L26,3 Z';
+  const ring = isSelected ? `<circle cx='22' cy='20' r='19' fill='none' stroke='#a07f00' stroke-width='2.5'/>` : '';
+  const shadow = `<ellipse cx='22' cy='40' rx='14' ry='3' fill='rgba(10,31,61,0.18)'/>`;
+  const badge = `
+    <circle cx='22' cy='44' r='9' fill='#ffffff' stroke='${fill}' stroke-width='2.5'/>
+    <text x='22' y='47.5' font-family='Inter,system-ui,sans-serif' font-size='12' font-weight='800' fill='#0a1f3d' text-anchor='middle'>${rank}</text>`;
+  const svg = `<svg xmlns='http://www.w3.org/2000/svg' width='${W}' height='${H}' viewBox='0 0 ${W} ${H}'>${shadow}${ring}<path d='${bolt}' fill='${fill}' stroke='#ffffff' stroke-width='1.5' stroke-linejoin='round'/>${badge}</svg>`;
+  return {
+    url:'data:image/svg+xml;charset=utf-8,'+encodeURIComponent(svg),
+    anchor: new google.maps.Point(W/2, 22),
+    scaledSize: new google.maps.Size(W, H),
+  };
+}
+
+function similarIcon(days, status){
+  const PIN_GRAY = '#6b7a8f';
+  const openLike = ['Open','Pending','Assigned','In Progress','Started'];
+  let badgeColor, badgeBg, label;
+  if(openLike.includes(status)){ badgeColor='#6b7a8f'; badgeBg='#f1efe9'; label='open'; }
+  else if(days == null){ badgeColor='#8899aa'; badgeBg='#ffffff'; label='—'; }
+  else if(days < 7){ badgeColor='#0077b6'; badgeBg='#e6f7fb'; label=days+'d'; }
+  else if(days <= 30){ badgeColor='#7a5800'; badgeBg='#fff5d9'; label=days+'d'; }
+  else { badgeColor='#a32b36'; badgeBg='#fde6e8'; label=days+'d'; }
+  const svg = `<svg xmlns='http://www.w3.org/2000/svg' width='62' height='40' viewBox='0 0 62 40'>` +
+    `<circle cx='31' cy='12' r='8' fill='${PIN_GRAY}' stroke='#fff' stroke-width='2'/>` +
+    `<rect x='13' y='22' width='36' height='14' rx='3' fill='${badgeBg}' stroke='${badgeColor}' stroke-width='1'/>` +
+    `<text x='31' y='32' font-family='Inter,system-ui,sans-serif' font-size='10' font-weight='700' fill='${badgeColor}' text-anchor='middle'>${label}</text>` +
+    `</svg>`;
+  return {
+    url:'data:image/svg+xml;charset=utf-8,'+encodeURIComponent(svg),
+    anchor: new google.maps.Point(31, 12),
+    scaledSize: new google.maps.Size(62, 40),
+  };
+}
+
+const LIGHT_MAP_STYLE = [
+  {elementType:'geometry', stylers:[{color:'#fafaf7'}]},
+  {elementType:'labels.text.fill', stylers:[{color:'#3a4a63'}]},
+  {elementType:'labels.text.stroke', stylers:[{color:'#fafaf7'}]},
+  {featureType:'administrative', elementType:'geometry.stroke', stylers:[{color:'#e6e3da'}]},
+  {featureType:'poi', elementType:'geometry', stylers:[{color:'#f1efe9'}]},
+  {featureType:'poi', elementType:'labels', stylers:[{visibility:'off'}]},
+  {featureType:'road', elementType:'geometry', stylers:[{color:'#ffffff'}]},
+  {featureType:'road.arterial', elementType:'geometry', stylers:[{color:'#ffffff'}]},
+  {featureType:'road.highway', elementType:'geometry', stylers:[{color:'#e6f7fb'}]},
+  {featureType:'road', elementType:'labels.text.fill', stylers:[{color:'#6b7a8f'}]},
+  {featureType:'transit', elementType:'labels', stylers:[{visibility:'off'}]},
+  {featureType:'water', elementType:'geometry', stylers:[{color:'#cce8f0'}]},
+  {featureType:'water', elementType:'labels.text.fill', stylers:[{color:'#0077b6'}]},
+];
+
+// ────────────────────────────────────────────────────────────────────
+// Why-section visuals — borough revenue stack + time-compression bars.
+// Both are computed from the verified baked-data borough volumes ×
+// the disclosed $200/$350/$500 per-repair rate ranges.
+// ────────────────────────────────────────────────────────────────────
+(async () => {
+  // Wait until charts.js is parsed
+  if(typeof Charts === 'undefined') return;
+
+  // Pull baked-data borough volumes if available, else use fallbacks
+  let boroughs = [
+    {name:'Brooklyn',      volume: 8501},
+    {name:'Queens',        volume: 8255},
+    {name:'Bronx',         volume: 6751},
+    {name:'Manhattan',     volume: 6199},
+    {name:'Staten Island', volume: 3974},
+  ];
+  try{
+    const baked = await fetch('baked-data.json?v=20260508b').then(r => r.json());
+    if(baked?.boroughs){
+      boroughs = ['Brooklyn','Queens','Bronx','Manhattan','Staten Island']
+        .map(name => ({name, volume: baked.boroughs[name]?.volume || 0}))
+        .filter(b => b.volume > 0);
+    }
+  } catch(e){ /* fall back to hardcoded */ }
+
+  // R2: revenue stack — based on the 4,096 stuck tickets,
+  // distributed across boroughs proportionally to volume.
+  const revEl = document.getElementById('why-revenue-chart');
+  if(revEl && Charts.revenueRange){
+    const STUCK = 4096;
+    const totalVol = boroughs.reduce((s,b) => s + b.volume, 0) || 1;
+    const items = boroughs
+      .sort((a,b) => b.volume - a.volume)
+      .map(b => {
+        const stuckShare = Math.round((b.volume / totalVol) * STUCK);
+        return {
+          label: b.name,
+          low:  stuckShare * 200,
+          mid:  stuckShare * 350,
+          high: stuckShare * 500,
+        };
+      });
+    Charts.revenueRange(revEl, { items, onDark: true });
+  }
+
+  // H1: time-comparison — ~30 min vs <60 sec
+  const hrEl = document.getElementById('why-hours-chart');
+  if(hrEl && Charts.timeComparison){
+    Charts.timeComparison(hrEl, {
+      bars: [
+        { label: 'Manual today',    time: 30,    value: '~30 min',      color: Charts.PALETTE.amber },
+        { label: 'With this tool',  time: 0.05,  value: '< 60 sec',     color: Charts.PALETTE.teal  },
+      ],
+      footer: 'Across 33,835 tickets/year → ~16,917 hours recovered',
+      onDark: true,
+    });
+  }
+})();
+
+// ────────────────────────────────────────────────────────────────────
+// Side TOC scroll-spy
+// ────────────────────────────────────────────────────────────────────
+(function(){
+  const links = document.querySelectorAll('#sideToc a[data-spy]');
+  if(!links.length) return;
+  const sections = [...links].map(a => ({a, el:document.getElementById(a.dataset.spy)})).filter(x => x.el);
+  function setActive(id){
+    links.forEach(a => a.classList.toggle('active', a.dataset.spy === id));
+  }
+  if('IntersectionObserver' in window){
+    const visible = new Map();
+    const io = new IntersectionObserver(entries => {
+      entries.forEach(e => {
+        if(e.isIntersecting) visible.set(e.target.id, e.intersectionRatio);
+        else visible.delete(e.target.id);
+      });
+      if(visible.size){
+        const top = [...visible.entries()].sort((a,b) => b[1]-a[1])[0][0];
+        setActive(top);
+      }
+    }, {rootMargin:'-30% 0px -55% 0px', threshold:[0,0.25,0.5,0.75,1]});
+    sections.forEach(s => io.observe(s.el));
+  }
+})();
+</script>
+
+</body>
+</html>
